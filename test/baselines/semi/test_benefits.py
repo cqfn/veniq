@@ -31,8 +31,10 @@ class BenefitTest(TestCase):
     def test_1(self):
         example_1 = (3, 14)
         example_2 = (15, 18)
-        original_value = _LCOM2(dict_semantic)
-        opportunity_value_1 = _LCOM2(dict_semantic, example_1, 'opportunity')
-        original_after_ref_value_1 = _LCOM2(dict_semantic, example_1, 'after_ref')
+        original_value = _LCOM2(self.dict_semantic)
+        opportunity_value_1 = _LCOM2(self.dict_semantic, example_1, 'opportunity')
+        original_after_ref_value_1 = _LCOM2(self.dict_semantic, example_1, 'after_ref')
         self.assertEqual(original_value > opportunity_value_1, True)
         self.assertEqual(original_value > original_after_ref_value_1, True)
+
+        self.assertEqual(original_value > opportunity_value_1, True)
