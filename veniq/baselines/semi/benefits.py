@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Dict
 from aibolit.ast_framework import AST, ASTNodeType
 from aibolit.utils.ast_builder import build_ast
 from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic
@@ -68,4 +68,4 @@ def is_first_more_benefit(
     first_benefit = _get_benefit(path_original_code, range_1)
     second_benefit = _get_benefit(path_original_code, range_2)
     diff_between_benefits = abs(first_benefit - second_benefit) / max(first_benefit, second_benefit)
-    return  diff_between_benefits >= difference_threshold
+    return diff_between_benefits >= difference_threshold
