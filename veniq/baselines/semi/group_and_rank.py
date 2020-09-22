@@ -9,7 +9,7 @@ def _temp_hasMoreBenefitThan(oport_1: Tuple[int],
     """
     Temporary method implementing fitness function for
     ranking hypotheses.
-    To be substituted with metric implemented in veniq.baselines.semi.fitness_func
+    To be substituted with a real implementation.
     Returns True if oport_1 has more benefit than oport_2
     """
     return True
