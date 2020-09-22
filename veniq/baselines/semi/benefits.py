@@ -63,7 +63,7 @@ def _LCOM2(file_dict: Dict, range_stats=[], mode='original') -> int:
 
     if mode == 'after_ref':
         list_statements = [i for i in file_dict if i < range_stats[0] or i > range_stats[1]]
-    elif mode == 'opporturnity':
+    elif mode == 'opportunity':
         list_statements = [i for i in range(range_stats[0], range_stats[1] + 1)]
     else:
         list_statements = file_dict.keys()
