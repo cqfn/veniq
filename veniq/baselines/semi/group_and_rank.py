@@ -31,8 +31,7 @@ def in_same_group(oport_1: Tuple[int], oport_2: Tuple[int],
     by checking overlap and size difference.
     """
     simil_size = is_similar_size(oport_1, oport_2,
-                                 max_size_difference=
-                                 max_size_difference)
+                                 max_size_difference=max_size_difference)
     overlap = is_overlap(oport_1, oport_2, min_overlap=min_overlap)
     return simil_size and overlap
 
