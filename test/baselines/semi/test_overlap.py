@@ -18,4 +18,4 @@ class TestOverlap(unittest.TestCase):
 
     def test_partial_overlap_with_miv_overlap_false(self):
         res = is_overlap((1, 12), (12, 22))
-        self.assertEqual(res, True)
+        self.assertEqual(res, False)
