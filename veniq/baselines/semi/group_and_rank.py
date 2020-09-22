@@ -2,17 +2,18 @@ from typing import List, Tuple
 
 from veniq.baselines.semi.grouping_size import is_similar_size
 from veniq.baselines.semi.overlap import is_overlap
-#from veniq.baselines.semi.fitness_func import primary_benefit
 
 
 def _temp_hasMoreBenefitThan(oport_1: Tuple[int],
                              oport_2: Tuple[int]) -> bool:
     """
-    Temporary method implementing fitness function for ranking hypotheses.
+    Temporary method implementing fitness function for
+    ranking hypotheses.
     To be substituted with metric implemented in veniq.baselines.semi.fitness_func
     Returns True if oport_1 has more benefit than oport_2
     """
     return True
+
 
 def _temp_fitness_f(oport: Tuple[int]) -> float:
     """
@@ -21,15 +22,18 @@ def _temp_fitness_f(oport: Tuple[int]) -> float:
     """
     return 1.0
 
+
 def in_same_group(oport_1: Tuple[int], oport_2: Tuple[int],
                   max_size_difference: float = 0.2,
                   min_overlap: float = 0.1) -> bool:
     """
-    Checks if two oportunuties should be grouped, by checking overlap and size difference.
+    Checks if two oportunuties should be grouped, 
+    by checking overlap and size difference.
     """
-    return is_similar_size(oport_1, oport_2, max_size_difference=
-                           max_size_difference) and \
+    return is_similar_size(oport_1, oport_2,
+                           max_size_difference=max_size_difference) and \
            is_overlap(oport_1, oport_2, min_overlap=min_overlap)
+
 
 def group_and_rank_in_groups(oportunities: List[Tuple[int]],
                              **kwargs) -> List[Tuple[int]]:
@@ -57,6 +61,7 @@ def group_and_rank_in_groups(oportunities: List[Tuple[int]],
 
     primary_oport_indices = set(range(len(oportunities))) - alternatives
     return [oportunities[i] for i in primary_oport_indices]
+
 
 def output_best_oportunities(oportunities: List[Tuple[int]],
                              top_k: int = 5,
