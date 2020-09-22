@@ -13,8 +13,8 @@ def is_overlap(a: List[int], b: List[int], min_overlap=0.1):
     :return: True if it is an overlap, False if it is not
     """
 
-    a_LoC = abs(a[1] - a[0])
-    b_LoC = abs(b[1] - b[0])
+    a_LoC = abs(a[1] + 1 - a[0])
+    b_LoC = abs(b[1] + 1 - b[0])
     overlap = len(set(range(a[0], a[1] + 1)) & set(range(b[0], b[1] + 1)))
     overlap_index = overlap / float(max(a_LoC, b_LoC))
     return overlap_index >= min_overlap
