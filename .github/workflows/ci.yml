@@ -37,7 +37,7 @@ jobs:
           deps_list: 'requirements.txt'
       - name: Run mypy
         run: |
-          python -m mypy test veniq
+          python3 -m mypy test veniq
 
 
   Tests:
