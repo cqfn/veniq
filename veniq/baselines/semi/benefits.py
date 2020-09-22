@@ -1,11 +1,10 @@
 from typing import Tuple
-from aibolit.ast_framework import ASTNode, AST, ASTNodeType
+from aibolit.ast_framework import AST, ASTNodeType
 from aibolit.utils.ast_builder import build_ast
-from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic  # type: ignore
-from collections import OrderedDict
+from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic
 
 
-def _LCOM2(filepath, range = []):
+def _LCOM2(filepath, range=[]):
     pass
 
 
@@ -42,9 +41,9 @@ def _get_dict(filepath: str):
     )
 
     for method_ast, class_name in methods_ast_and_class_name:
-        method_name = method_ast.get_root().name
-        original = method_semantic = extract_method_statements_semantic(method_ast)
-    reprocessed_dict = _reprocess_dict(method_semantic)
+        # method_name = method_ast.get_root().name
+        original_method_semantic = extract_method_statements_semantic(method_ast)
+    reprocessed_dict = _reprocess_dict(original_method_semantic)
     return reprocessed_dict
 
 
@@ -68,4 +67,5 @@ def is_first_more_benefit(
     """
     first_benefit = _get_benefit(path_original_code, range_1)
     second_benefit = _get_benefit(path_original_code, range_2)
-    return abs(first_benefit - second_benefit) / max(first_benefit, second_benefit) >= difference_threshold
+    diff_between_benefits = abs(first_benefit - second_benefit) / max(first_benefit, second_benefit)
+    return  diff_between_benefits >= difference_threshold
