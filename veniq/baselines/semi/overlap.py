@@ -12,7 +12,7 @@ def is_overlap(
     the second is end statements number
     :param b: array of 2 elements, the first is start statements number,
     the second is end statements number
-    :param min_overlap: min accepted value
+    :param min_overlap: min accepted value, teh default is 0.1
     :return: True if it is an overlap, False if it is not
     """
 
