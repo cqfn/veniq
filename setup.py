@@ -11,7 +11,7 @@ setup(
     url='https://github.com/cqfn/veniq.git',
     download_url='https://github.com/cqfn/veniq.git',
     author=veniq.__author__,
-    author_email=['katya.garmash@gmail.com', 'vitasprotas@gmail.com'],
+    author_email=['katya.garmash@gmail.com', 'vitasprotas@gmail.com',],
     license=veniq.__licence__,
     packages=find_packages(),
     entry_points={
