@@ -21,7 +21,7 @@ jobs:
           failIf: new
           # Additional arguments to pass to flake8, default "." (current directory)
           args: ""
-  test:
+  Tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
