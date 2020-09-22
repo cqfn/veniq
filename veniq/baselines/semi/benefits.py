@@ -13,7 +13,7 @@ def _LCOM2_after_ref(filepath, range):
     pass
 
 
-def _reprocess_dict(method_semantic):
+def _reprocess_dict(method_semantic: Dict):
     reprocessed_dict = dict()
     for statement in method_semantic.keys():
         new_values = []
