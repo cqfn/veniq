@@ -1,10 +1,13 @@
 from typing import Tuple
 
 
-def is_similar_size(range_1: Tuple[int, int],
-                    range_2: Tuple[int, int],
-                    max_size_difference: float = 0.2) -> bool:
+def is_similar_size(
+    range_1: Tuple[int, int],
+    range_2: Tuple[int, int],
+    max_size_difference: float = 0.2
+) -> bool:
     """
+
     Takes two opportunities and check if they are similar in size.
     Default value of max_size_difference is from the originl paper.
     """
