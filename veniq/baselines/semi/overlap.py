@@ -1,7 +1,7 @@
 from typing import List
 
 
-def is_overlap(a: List[int], b: List[int], min_overlap=0.1):
+def is_overlap(a: Tuple[int, int], b: Tuple[int, int], min_overlap: float=0.1) -> bool:
     """
     Checks whether 2 opportunities are overlapped
 
