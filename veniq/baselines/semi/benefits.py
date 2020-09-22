@@ -50,11 +50,11 @@ def _get_dict(filepath: str) -> Dict[int, List[str]]:
     return reprocessed_dict
 
 
-def _LCOM2(file_dict: Dict, range_stats = [], mode = 'original') -> int:
+def _LCOM2(file_dict: Dict, range_stats=[], mode='original') -> int:
     '''
     LCOM_2 = P - Q;
-    P is the number of pairs of statements 
-    that do not share variables and Q is the number 
+    P is the number of pairs of statements
+    that do not share variables and Q is the number
     of pairs of lines that share variables
     '''
     P = 0
@@ -98,6 +98,6 @@ def is_first_more_benefit(
     """
     first_benefit = _get_benefit(path_original_code, range_1)
     second_benefit = _get_benefit(path_original_code, range_2)
-    diff_between_benefits = abs(first_benefit - second_benefit) 
+    diff_between_benefits = abs(first_benefit - second_benefit)
     diff_between_benefits /= max(first_benefit, second_benefit)
     return diff_between_benefits >= difference_threshold
