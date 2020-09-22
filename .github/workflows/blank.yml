@@ -21,3 +21,14 @@ jobs:
           failIf: new
           # Additional arguments to pass to flake8, default "." (current directory)
           args: ""
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: '3.7.7'
+      - name: Test
+        uses: onichandame/python-test-action@master
+        with:
+          deps_list: 'requirements.txt'
