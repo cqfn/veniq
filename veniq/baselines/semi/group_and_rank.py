@@ -27,12 +27,14 @@ def in_same_group(oport_1: Tuple[int], oport_2: Tuple[int],
                   max_size_difference: float = 0.2,
                   min_overlap: float = 0.1) -> bool:
     """
-    Checks if two oportunuties should be grouped, 
+    Checks if two oportunuties should be grouped,
     by checking overlap and size difference.
     """
-    return is_similar_size(oport_1, oport_2,
-                           max_size_difference=max_size_difference) and \
-           is_overlap(oport_1, oport_2, min_overlap=min_overlap)
+    simil_size = is_similar_size(oport_1, oport_2,
+                                 max_size_difference=
+                                 max_size_difference)
+    overlap = is_overlap(oport_1, oport_2, min_overlap=min_overlap)
+    return simil_size and overlap
 
 
 def group_and_rank_in_groups(oportunities: List[Tuple[int]],
