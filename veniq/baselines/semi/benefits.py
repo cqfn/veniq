@@ -1,5 +1,5 @@
-from typing import Tuple, Dict, Union
-from aibolit.ast_framework import AST, ASTNodeType, ASTNode
+from typing import Tuple, Dict
+from aibolit.ast_framework import AST, ASTNodeType
 from aibolit.utils.ast_builder import build_ast
 from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic
 from collections import Counter
