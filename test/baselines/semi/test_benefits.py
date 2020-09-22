@@ -36,5 +36,20 @@ class BenefitTest(TestCase):
         original_after_ref_value_1 = _LCOM2(self.dict_semantic, example_1, 'after_ref')
         self.assertEqual(original_value > opportunity_value_1, True)
         self.assertEqual(original_value > original_after_ref_value_1, True)
-
         self.assertEqual(original_value > opportunity_value_1, True)
+
+    def test_2(self):
+        example_1 = (3, 14)
+        example_2 = (15, 18)
+        difference_threshold = 0.01
+        def _get_benefit(dict_semantic: str, range_stats: Tuple[int, int]) -> int:
+            original_value = _LCOM2(dict_semantic)
+            opportunity_value = _LCOM2(dict_semantic, range_stats, 'opportunity')
+            original_after_ref_value = _LCOM2(dict_semantic, range_stats, 'after_ref')
+            return original_value - max(opportunity_value, original_after_ref_value)
+        
+        first_benefit = _get_benefit(self.dict_semantic, example_1)
+        second_benefit = _get_benefit(self.dict_semantic, example_2)
+        diff_between_benefits = abs(first_benefit - second_benefit)
+        diff_between_benefits /= max(first_benefit, second_benefit)
+        self.assertEqual(diff_between_benefits >= difference_threshold, True)
