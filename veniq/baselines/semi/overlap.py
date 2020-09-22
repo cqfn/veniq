@@ -3,7 +3,7 @@ from typing import List
 
 def is_overlap(a: List[int], b: List[int], min_overlap=0.1):
     """
-    Checks whether 2 opportunities are overlapping
+    Checks whether 2 opportunities are overlapped
 
     :param a: array of 2 elements, the first is start statements number,
     the second is end statements number
