@@ -5,8 +5,9 @@ setup(
     name='veniq',
     version=veniq.__version__,
     description=veniq.__doc__.strip(),
-    long_description='Veniq uses Machine Learning to analyze source code, '
-                     'find possible refactorings, and suggest those that seem optimal',
+    long_description='Veniq uses Machine Learning '
+                     'to analyze source code, find possible refactorings, '
+                     'and suggest those that seem optimal',
     url='https://github.com/cqfn/veniq.git',
     download_url='https://github.com/cqfn/veniq.git',
     author=veniq.__author__,
