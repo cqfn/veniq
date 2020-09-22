@@ -37,6 +37,7 @@ jobs:
           deps_list: 'requirements.txt'
       - name: Run mypy
         run: |
+          python3 -m pip install --upgrade pip
           pip3 install .
           python3 -m mypy .
 
