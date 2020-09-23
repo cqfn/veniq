@@ -10,7 +10,7 @@ on:
 
 jobs:
   flake8:
-    name: flake8
+    name: flake8 and mypy
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -19,26 +19,11 @@ jobs:
         with:
           python-version: '3.8.5'
           deps_list: 'requirements.txt'
-      - name: Run Flake8
+      - name: Run Flake8 and mypy
         run: |
           pip3 install .
-          flake8 -m mypy veniq test
-
-  mypy:
-    name: mypy
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out code
-        uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: '3.8.5'
-          deps_list: 'requirements.txt'
-      - name: Run mypy
-        run: |
-          pip3 install .
+          python3 -m flake8 veniq test
           python3 -m mypy veniq test
-
 
   Tests:
     runs-on: ubuntu-latest
