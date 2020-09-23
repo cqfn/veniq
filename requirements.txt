@@ -8,8 +8,8 @@ cchardet==2.1.6
 lxml==4.5.0
 cached-property==1.2.0
 deprecated==1.2.10
-typing-extensions; python_version<'3.7'
+typing-extensions; python_version<'3.8'
 tqdm == 4.32.1
 bs4==0.0.1
 pebble==4.5.3
-dataclasses==0.6
+dataclasses==0.7
