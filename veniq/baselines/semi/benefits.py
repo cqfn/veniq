@@ -1,7 +1,7 @@
-from typing import Tuple, Dict, List
-from aibolit.ast_framework import AST, ASTNodeType
-from aibolit.utils.ast_builder import build_ast
-from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic
+from typing import Tuple, Dict, List, Any
+from aibolit.ast_framework import AST, ASTNodeType  # type: ignore
+from aibolit.utils.ast_builder import build_ast  # type: ignore
+from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic  # type: ignore
 from collections import Counter
 
 
@@ -15,7 +15,7 @@ def _check_is_common(
     return len(list(duplicates)) >= 1
 
 
-def _reprocess_dict(method_semantic: Dict) -> Dict[int, List[str]]:
+def _reprocess_dict(method_semantic: Dict[Any, Any]) -> Dict[int, List[str]]:
     reprocessed_dict = dict()
     for statement in method_semantic.keys():
         new_values = []
@@ -42,7 +42,7 @@ def _get_dict(filepath: str) -> Dict[int, List[str]]:
         (ast.get_subtree(method_declaration), method_declaration.parent.name)
         for method_declaration in methods_declarations
     )
-
+    original_method_semantic: Dict[Any, Any] = {}
     for method_ast, class_name in methods_ast_and_class_name:
         # method_name = method_ast.get_root().name
         original_method_semantic = extract_method_statements_semantic(method_ast)
@@ -50,23 +50,25 @@ def _get_dict(filepath: str) -> Dict[int, List[str]]:
     return reprocessed_dict
 
 
-def _LCOM2(file_dict: Dict, range_stats=[], mode='original') -> int:
-    '''
+def lcom2(file_dict: Dict, range_stats=None, mode='original') -> int:
+    """
     LCOM_2 = P - Q;
     P is the number of pairs of statements
     that do not share variables and Q is the number
     of pairs of lines that share variables
-    '''
+    """
     P = 0
     Q = 0
-    list_statements = []
+
+    if range_stats is None:
+        range_stats = []
 
     if mode == 'after_ref':
         list_statements = [i for i in file_dict if i < range_stats[0] or i > range_stats[1]]
-    elif mode == 'opporturnity':
+    elif mode == 'opportunity':
         list_statements = [i for i in range(range_stats[0], range_stats[1] + 1)]
     else:
-        list_statements = file_dict.keys()
+        list_statements = list(file_dict.keys())
 
     for stat_1 in list_statements:
         for stat_2 in list_statements:
@@ -80,9 +82,9 @@ def _LCOM2(file_dict: Dict, range_stats=[], mode='original') -> int:
 
 def _get_benefit(filepath: str, range_stats: Tuple[int, int]) -> int:
     dict_semantic = _get_dict(filepath)
-    original_value = _LCOM2(dict_semantic)
-    opportunity_value = _LCOM2(dict_semantic, range_stats, 'opportunity')
-    original_after_ref_value = _LCOM2(dict_semantic, range_stats, 'after_ref')
+    original_value = lcom2(dict_semantic)
+    opportunity_value = lcom2(dict_semantic, range_stats, 'opportunity')
+    original_after_ref_value = lcom2(dict_semantic, range_stats, 'after_ref')
     return original_value - max(opportunity_value, original_after_ref_value)
 
 
@@ -98,6 +100,6 @@ def is_first_more_benefit(
     """
     first_benefit = _get_benefit(path_original_code, range_1)
     second_benefit = _get_benefit(path_original_code, range_2)
-    diff_between_benefits = abs(first_benefit - second_benefit)
+    diff_between_benefits = float(abs(first_benefit - second_benefit))
     diff_between_benefits /= max(first_benefit, second_benefit)
     return diff_between_benefits >= difference_threshold

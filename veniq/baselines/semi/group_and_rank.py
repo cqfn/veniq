@@ -16,7 +16,7 @@ def _temp_hasMoreBenefitThan(
     return True
 
 
-def _temp_fitness_f(oport: Tuple[int, int]) -> float:
+def _temp_fitness_f(opport: Tuple[int, int]) -> float:
     """
     Actually, this function also needs to have access to the whole
     method body. We will fix it in the next PR.
@@ -64,21 +64,24 @@ def group_and_rank_in_groups(
                 else:
                     alternatives.add(i)
 
-    primary_oport_indices = set(range(len(oportunities))) - alternatives
-    return [oportunities[i] for i in primary_oport_indices]
+    primary_opport_indices = set(range(len(oportunities))) - alternatives
+    return [oportunities[i] for i in primary_opport_indices]
 
 
-def output_best_oportunities(
-        oportunities: List[Tuple[int, int]],
+def output_best_opportunities(
+        opportunities: List[Tuple[int, int]],
         top_k: int = 5,
         **kwargs) -> List[Tuple[int, int]]:
     """
     Runs grouping and ranking to produce the set of 'primanry oportunities'.
     Given the final list, outputs top-k according to the fitness functon.
     """
-    primary_oportunities = group_and_rank_in_groups(oportunities, **kwargs)
-    primary_oportunities_eval = {o: _temp_fitness_f(o) for o in
-                                 primary_oportunities}
-    sorted_oport = sorted(primary_oportunities_eval.items(),
-                          key=lambda x: x[1], reverse=True)
+    primary_opportunities = group_and_rank_in_groups(opportunities, **kwargs)
+    primary_opportunities_eval = {o: _temp_fitness_f(o) for o in
+                                  primary_opportunities}
+    sorted_oport = sorted(
+        primary_opportunities_eval.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
     return [x[0] for x in sorted_oport[:top_k]]

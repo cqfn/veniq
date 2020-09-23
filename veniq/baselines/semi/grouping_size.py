@@ -1,7 +1,7 @@
 from typing import Tuple
 
 
-def is_similar_size1(
+def is_similar_size(
     range_1: Tuple[int, int],
     range_2: Tuple[int, int],
     max_size_difference: float = 0.2
