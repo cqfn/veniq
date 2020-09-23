@@ -17,5 +17,5 @@ class RemoveComments:
         return string
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+def flatten(arr):
+    return [item for sublist in arr for item in sublist]
