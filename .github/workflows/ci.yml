@@ -10,18 +10,19 @@ on:
 
 jobs:
   flake8:
+    name: flake8
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
+      - name: Check out code
+        uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
         with:
-          # The GitHub API token to create reviews with
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # Fail if "new" violations detected or "any", default "new"
-          failIf: new
-          event-type: flake8-event
-          # Additional arguments to pass to flake8, default "." (current directory)
-          args: ""
+          python-version: '3.8.5'
+          deps_list: 'requirements.txt'
+      - name: Run Flake8
+        run: |
+          pip3 install .
+          flake8 -m mypy veniq test
 
   mypy:
     name: mypy
