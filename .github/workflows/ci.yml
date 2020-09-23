@@ -15,8 +15,6 @@ jobs:
       - uses: actions/checkout@v2
       - uses: grantmcconnaughey/lintly-flake8-github-action@v1.0
         with:
-          python-version: '3.8.5'
-          deps_list: 'requirements.txt'
           # The GitHub API token to create reviews with
           token: ${{ secrets.GITHUB_TOKEN }}
           # Fail if "new" violations detected or "any", default "new"
