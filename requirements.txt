@@ -1,1 +1,3 @@
 flake8==3.7.9
+mypy==0.770
+typing-extensions; python_version<'3.8'

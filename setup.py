@@ -8,10 +8,10 @@ setup(
     long_description='Veniq uses Machine Learning '
                      'to analyze source code, find possible refactorings, '
                      'and suggest those that seem optimal',
-    url='https://github.com/cqfn/veniq.git',
-    download_url='https://github.com/cqfn/veniq.git',
+    url='https://github.com/cqfn/veniq',
+    download_url='https://github.com/cqfn/veniq',
     author=veniq.__author__,
-    author_email='yegor256@gmail.com',
+    author_email=['katya.garmash@gmail.com', 'vitasprotas@gmail.com'],
     license=veniq.__licence__,
     packages=find_packages(),
     entry_points={
@@ -29,6 +29,5 @@ setup(
         'License :: OSI Approved :: MIT License',
         'Topic :: Software Development',
         'Topic :: Utilities'
-    ],
-    include_package_data=True,
+    ]
 )

@@ -4,8 +4,9 @@ from veniq.baselines.semi.grouping_size import is_similar_size
 from veniq.baselines.semi.overlap import is_overlap
 
 
-def _temp_hasMoreBenefitThan(oport_1: Tuple[int],
-                             oport_2: Tuple[int]) -> bool:
+def _temp_hasMoreBenefitThan(
+        oport_1: Tuple[int, int],
+        oport_2: Tuple[int, int]) -> bool:
     """
     Temporary method implementing fitness function for
     ranking hypotheses.
@@ -15,7 +16,7 @@ def _temp_hasMoreBenefitThan(oport_1: Tuple[int],
     return True
 
 
-def _temp_fitness_f(oport: Tuple[int]) -> float:
+def _temp_fitness_f(oport: Tuple[int, int]) -> float:
     """
     Actually, this function also needs to have access to the whole
     method body. We will fix it in the next PR.
@@ -23,9 +24,11 @@ def _temp_fitness_f(oport: Tuple[int]) -> float:
     return 1.0
 
 
-def in_same_group(oport_1: Tuple[int], oport_2: Tuple[int],
-                  max_size_difference: float = 0.2,
-                  min_overlap: float = 0.1) -> bool:
+def in_same_group(
+        oport_1: Tuple[int, int],
+        oport_2: Tuple[int, int],
+        max_size_difference: float = 0.2,
+        min_overlap: float = 0.1) -> bool:
     """
     Checks if two oportunuties should be grouped,
     by checking overlap and size difference.
@@ -36,8 +39,9 @@ def in_same_group(oport_1: Tuple[int], oport_2: Tuple[int],
     return simil_size and overlap
 
 
-def group_and_rank_in_groups(oportunities: List[Tuple[int]],
-                             **kwargs) -> List[Tuple[int]]:
+def group_and_rank_in_groups(
+        oportunities: List[Tuple[int, int]],
+        **kwargs) -> List[Tuple[int, int]]:
     """
         Implements Fig.7 in the paper. Groups oportunities
         and selects primary per group. Returns the set
@@ -49,7 +53,7 @@ def group_and_rank_in_groups(oportunities: List[Tuple[int]],
         if i in alternatives:
             continue
 
-        for j in range(i+1, len(oportunities)):
+        for j in range(i + 1, len(oportunities)):
             oport_2 = oportunities[j]
             if oport_2 in alternatives:
                 continue
@@ -64,9 +68,10 @@ def group_and_rank_in_groups(oportunities: List[Tuple[int]],
     return [oportunities[i] for i in primary_oport_indices]
 
 
-def output_best_oportunities(oportunities: List[Tuple[int]],
-                             top_k: int = 5,
-                             **kwargs) -> List[Tuple[int]]:
+def output_best_oportunities(
+        oportunities: List[Tuple[int, int]],
+        top_k: int = 5,
+        **kwargs) -> List[Tuple[int, int]]:
     """
     Runs grouping and ranking to produce the set of 'primanry oportunities'.
     Given the final list, outputs top-k according to the fitness functon.
