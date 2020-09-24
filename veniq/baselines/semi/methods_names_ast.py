@@ -1,10 +1,11 @@
 from typing import Dict, List
+from argparse import ArgumentParser
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
-from argparse import ArgumentParser
 
 
-def methods_ast_and_class_name(filepath: str, args_class_name=None, args_method_name=None) -> Dict[int, List[str]]:
+
+def methods_ast_and_name(filepath: str, args_class_name=None, args_method_name=None) -> Dict[int, List[str]]:
     ast = AST.build_from_javalang(build_ast(filepath))
     classes_declarations = (
         node for node in ast.get_root().types
@@ -45,6 +46,5 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-
-    for i, j in methods_ast_and_class_name(args.file, args.class_name. args.method_name):
-        print(i, j)
+    for ast, class_name in methods_ast_and_name(args.file, args.class_name, args.method_name):
+        print(ast, class_name)
