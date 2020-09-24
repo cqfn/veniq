@@ -11,7 +11,7 @@ def _check_is_common(
     statement_2: int
 ) -> bool:
     '''
-    This function is aimed to check whether 2 statements have 
+    This function is aimed to check whether 2 statements have
     common semantics or not.
     '''
     joined_names: Counter = Counter(dict_file[statement_1] + dict_file[statement_2])
