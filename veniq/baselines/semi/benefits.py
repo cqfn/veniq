@@ -70,7 +70,7 @@ def _LCOM2(file_dict: Dict, range_stats=[], mode='original') -> int:
     elif mode == 'opportunity':
         list_statements = [i for i in range(range_stats[0], range_stats[1] + 1)]
     else:
-        list_statements = file_dict.keys()
+        list_statements = list(file_dict.keys())
 
     for stat_1 in list_statements:
         for stat_2 in list_statements:
@@ -93,7 +93,7 @@ def is_first_more_benefit(
     path_original_code: str,
     range_1: Tuple[int, int],
     range_2: Tuple[int, int],
-    difference_threshold: float = 0.01
+    difference_threshold = 0.01
 ) -> bool:
     """
     Takes two opportunities and check if first opportunity
