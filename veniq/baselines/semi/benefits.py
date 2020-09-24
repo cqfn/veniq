@@ -100,4 +100,5 @@ def is_first_more_benefit(
     second_benefit = _get_benefit(dict_semantic, range_2)
     diff_between_benefits = abs(first_benefit - second_benefit)
     diff_between_benefits /= max(first_benefit, second_benefit)
+
     return diff_between_benefits >= difference_threshold
