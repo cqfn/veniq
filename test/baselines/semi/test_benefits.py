@@ -27,7 +27,7 @@ class BenefitTest(TestCase):
         30: ['manifests', 'i'],
         31: ['manifests', 'i'],
         34: ['manifests']
-                    }
+        }
 
     def test_1(self):
         example_1 = (3, 14)
