@@ -93,7 +93,7 @@ def is_first_more_benefit(
     path_original_code: str,
     range_1: Tuple[int, int],
     range_2: Tuple[int, int],
-    difference_threshold = 0.01
+    difference_threshold: float = 0.01
 ) -> bool:
     """
     Takes two opportunities and check if first opportunity
@@ -102,7 +102,5 @@ def is_first_more_benefit(
     dict_semantic = _get_dict(path_original_code)
     first_benefit = _get_benefit(dict_semantic, range_1)
     second_benefit = _get_benefit(dict_semantic, range_2)
-    diff_between_benefits = abs(first_benefit - second_benefit)
-    diff_between_benefits /= max(first_benefit, second_benefit)
-
+    diff_between_benefits = abs(first_benefit - second_benefit) / max(first_benefit, second_benefit)
     return diff_between_benefits >= difference_threshold
