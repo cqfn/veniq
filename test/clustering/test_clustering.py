@@ -45,5 +45,5 @@ class ClusteringTestCase(TestCase):
 
       def test_article(self):
             self.assertEqual(SEMI(self.example),
-            [[3, 12], [13, 22], [30, 31]], 'Error on STEP 1')
+            [[26, 34], [13, 25], [3, 25], [13, 22], [3, 12], [30, 31], [30, 34], [3, 34]], 'Wrong unique clusters')
 
