@@ -1,12 +1,12 @@
 from unittest import TestCase
 
-from veniq.baselines.semi.group_and_rank import in_same_group,\
-                                                group_and_rank_in_groups,\
-                                                output_best_oportunities
+from veniq.baselines.semi.group_and_rank import (
+    in_same_group,
+    group_and_rank_in_groups,
+    output_best_oportunities)
 
 
 class GroupAndRankTest(TestCase):
-
     oport_0 = (3, 5)
     oport_1 = (2, 32)
     oport_2 = (2, 34)
