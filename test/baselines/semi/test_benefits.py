@@ -1,5 +1,5 @@
 from unittest import TestCase
-from typing import Tuple
+from typing import Tuple, Dict, List
 from veniq.baselines.semi.benefits import _LCOM2
 
 
@@ -42,7 +42,7 @@ class BenefitTest(TestCase):
         example_2 = (15, 18)
         difference_threshold = 0.01
 
-        def _get_benefit(dict_semantic: str, range_stats: Tuple[int, int]) -> int:
+        def _get_benefit(dict_semantic: Dict[int, List[str]], range_stats: Tuple[int, int]) -> int:
             original_value = _LCOM2(dict_semantic)
             opportunity_value = _LCOM2(dict_semantic, range_stats, 'opportunity')
             original_after_ref_value = _LCOM2(dict_semantic, range_stats, 'after_ref')
