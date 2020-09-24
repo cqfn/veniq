@@ -1,8 +1,8 @@
+from collections import Counter
 from typing import Tuple, Dict, List
 from aibolit.ast_framework import AST, ASTNodeType, ASTNode
 from aibolit.utils.ast_builder import build_ast
 from aibolit.extract_method_baseline.extract_semantic import extract_method_statements_semantic, StatementSemantic
-from collections import Counter
 
 
 def _check_is_common(
@@ -10,6 +10,10 @@ def _check_is_common(
     statement_1: int,
     statement_2: int
 ) -> bool:
+'''
+This function is aimed to check whether 2 statements have 
+common semantics or not.
+'''
     joined_names: Counter = Counter(dict_file[statement_1] + dict_file[statement_2])
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
@@ -43,7 +47,7 @@ def _get_dict(filepath: str) -> Dict[int, List[str]]:
         for method_declaration in methods_declarations
     )
 
-    for method_ast, class_name in methods_ast_and_class_name:
+    for method_ast, _ in methods_ast_and_class_name:
         # method_name = method_ast.get_root().name
         original_method_semantic = extract_method_statements_semantic(method_ast)
     reprocessed_dict = _reprocess_dict(original_method_semantic)
