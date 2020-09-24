@@ -10,10 +10,10 @@ def _check_is_common(
     statement_1: int,
     statement_2: int
 ) -> bool:
-'''
-This function is aimed to check whether 2 statements have 
-common semantics or not.
-'''
+    '''
+    This function is aimed to check whether 2 statements have 
+    common semantics or not.
+    '''
     joined_names: Counter = Counter(dict_file[statement_1] + dict_file[statement_2])
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
