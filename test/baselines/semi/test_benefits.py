@@ -1,5 +1,5 @@
 from unittest import TestCase
-
+from typing import Tuple
 from veniq.baselines.semi.benefits import _LCOM2
 
 
@@ -30,7 +30,6 @@ class BenefitTest(TestCase):
 
     def test_1(self):
         example_1 = (3, 14)
-        example_2 = (15, 18)
         original_value = _LCOM2(self.dict_semantic)
         opportunity_value_1 = _LCOM2(self.dict_semantic, example_1, 'opportunity')
         original_after_ref_value_1 = _LCOM2(self.dict_semantic, example_1, 'after_ref')
