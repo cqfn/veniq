@@ -23,10 +23,10 @@ def _is_in_range(elem: int, values: List[int]) -> bool:
 
 def _process_statement(
     dict_file: Dict,
-    list_statements: List[Union[int, ASTNode]],
     step: int
 ) -> List[List[int]]:
     clusters: List[List[int]] = []
+    list_statements = list(dict_file.keys())
     for stat_1 in list_statements:
         stat_1_line = stat_1 if isinstance(stat_1, int) else stat_1.line
         for stat_2 in list_statements[:stat_1_line + step]:
@@ -42,7 +42,6 @@ def _process_statement(
 
 def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
     opportunities = []
-    statements = list(dict_file.keys())
 
     first_statement_ = list(dict_file.keys())[0]
     last_statement_ = list(dict_file.keys())[-1]
@@ -51,7 +50,7 @@ def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
     method_length = last_statement - first_statement
 
     for step in range(1, method_length + 1):
-        clusters = _process_statement(dict_file, statements, step)
+        clusters = _process_statement(dict_file, step)
         opportunities += clusters
     unique_oppo = [list(oppo) for oppo in set(map(tuple, opportunities))]
     return unique_oppo
