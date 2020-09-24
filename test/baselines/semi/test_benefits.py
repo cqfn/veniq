@@ -4,7 +4,8 @@ from veniq.baselines.semi.benefits import _LCOM2
 
 
 class BenefitTest(TestCase):
-    dict_semantic = {
+    dict_semantic = 
+    {
         3: ['length', 'rcs'],
         4: ['length', 'i', 'rcs'],
         5: [],
@@ -27,7 +28,7 @@ class BenefitTest(TestCase):
         30: ['manifests', 'i'],
         31: ['manifests', 'i'],
         34: ['manifests']
-        }
+    }
 
     def test_1(self):
         example_1 = (3, 14)
