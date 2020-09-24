@@ -1,13 +1,13 @@
 # flake8: noqa
 from unittest import TestCase
 from collections import OrderedDict
-from veniq.clustering.clustering import process_statement
+from veniq.baselines.semi.clustering import process_statement
 
 
 class ClusteringTestCase(TestCase):
       example = OrderedDict([
              (2, []),
-             (3, ['manifests', 'rcs', 'length']), 
+             (3, ['manifests', 'rcs', 'length']),
              (4, ['rcs', 'length', 'i']),
              (5, ['rec']),
              (6, ['rcs', 'i']),
@@ -46,23 +46,23 @@ class ClusteringTestCase(TestCase):
       def test_article(self):
             statements = list(self.example.keys())
 
-            self.assertEqual(process_statement(self.example, statements, 1), 
+            self.assertEqual(process_statement(self.example, statements, 1),
             [[3, 12], [13, 22], [30, 31]], 'Error on STEP 1')
-            
-            self.assertEqual(process_statement(self.example, statements, 2), 
+
+            self.assertEqual(process_statement(self.example, statements, 2),
             [[3, 12], [13, 25], [30, 34]], 'Error on STEP 2')
 
-            self.assertEqual(process_statement(self.example, statements, 3), 
+            self.assertEqual(process_statement(self.example, statements, 3),
             [[3, 25], [26, 34]], 'Error on STEP 3')
 
-            self.assertEqual(process_statement(self.example, statements, 4), 
+            self.assertEqual(process_statement(self.example, statements, 4),
             [[3, 25], [26, 34]], 'Error on STEP 4')
 
-            self.assertEqual(process_statement(self.example, statements, 5), 
+            self.assertEqual(process_statement(self.example, statements, 5),
             [[3, 25], [26, 34]], 'Error on STEP 5')
-            
-            self.assertEqual(process_statement(self.example, statements, 11), 
+
+            self.assertEqual(process_statement(self.example, statements, 11),
             [[3, 34]], 'Error on STEP 11')
 
-            self.assertEqual(process_statement(self.example, statements, 12), 
+            self.assertEqual(process_statement(self.example, statements, 12),
             [[3, 34]], 'Error on STEP 12')
