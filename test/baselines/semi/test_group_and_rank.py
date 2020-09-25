@@ -40,41 +40,32 @@ class GroupAndRankTest(TestCase):
         34: ['manifests']
     }
 
-
     def test_in_same_group_1(self):
         self.assertTrue(in_same_group(self.oport_1, self.oport_2))
-
 
     def test_in_same_group_2(self):
         self.assertTrue(in_same_group(self.oport_3, self.oport_4))
 
-
     def test_not_in_same_group(self):
         self.assertFalse(in_same_group(self.oport_0, self.oport_5))
-
 
     def test_diff_in_size(self):
         self.assertFalse(in_same_group(self.oport_0, self.oport_1))
 
-
     def test_not_overlap(self):
         self.assertFalse(in_same_group(self.oport_2, self.oport_3))
-
 
     def test_not_overlap_custom(self):
         self.assertTrue(in_same_group(self.oport_3, self.oport_4))
         self.assertFalse(in_same_group(self.oport_3, self.oport_4,
                                        min_overlap=0.9))
 
-
     def test_group_and_rank_in_groups(self):
         selected_primary = group_and_rank_in_groups(self.line_to_semantic_dict,
                                                     self.opportunities,
                                                     max_size_difference=0.25)
         expect_primary = [(3, 4), (13, 14), (11, 14), (31, 34)]
-
         self.assertEqual(set(selected_primary), set(expect_primary))
-
 
     def test_output_best_oportunities_top3(self):
         expect_top3 = [(3, 4), (13, 14), (11, 14)]
