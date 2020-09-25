@@ -13,6 +13,8 @@ class GroupAndRankTest(TestCase):
     oport_3 = (33, 50)
     oport_4 = (35, 50)
     oport_5 = (55, 65)
+
+    opportunities = [(3, 4), (13, 14), (11, 14), (30, 34), (31, 34)]
     line_to_semantic_dict = {
         3: ['length', 'rcs'],
         4: ['length', 'i', 'rcs'],
@@ -42,53 +44,42 @@ class GroupAndRankTest(TestCase):
     def test_in_same_group_1(self):
         self.assertTrue(in_same_group(self.oport_1, self.oport_2))
 
+
     def test_in_same_group_2(self):
         self.assertTrue(in_same_group(self.oport_3, self.oport_4))
+
 
     def test_not_in_same_group(self):
         self.assertFalse(in_same_group(self.oport_0, self.oport_5))
 
+
     def test_diff_in_size(self):
         self.assertFalse(in_same_group(self.oport_0, self.oport_1))
 
+
     def test_not_overlap(self):
         self.assertFalse(in_same_group(self.oport_2, self.oport_3))
+
 
     def test_not_overlap_custom(self):
         self.assertTrue(in_same_group(self.oport_3, self.oport_4))
         self.assertFalse(in_same_group(self.oport_3, self.oport_4,
                                        min_overlap=0.9))
 
-    # def test_group_and_rank_in_groups(self):
-    #     expect_primary = [self.oport_0, self.oport_1,
-    #                       self.oport_3, self.oport_5]
 
-    #     self.assertEqual(set(group_and_rank_in_groups(self.oportunities)),
-    #                      set(expect_primary))
+    def test_group_and_rank_in_groups(self):
+        selected_primary = group_and_rank_in_groups(self.line_to_semantic_dict,
+                                                    self.opportunities,
+                                                    max_size_difference=0.25)
+        expect_primary = [(3, 4), (13, 14), (11, 14), (31, 34)]
 
-    # def test_group_and_rank_in_groups_custom_overlap(self):
-    #     expect_primary = [self.oport_0, self.oport_1,
-    #                       self.oport_3, self.oport_4, self.oport_5]
+        self.assertEqual(set(selected_primary), set(expect_primary))
 
-    #     self.assertEqual(set(group_and_rank_in_groups(self.oportunities,
-    #                                                   min_overlap=0.9)),
-    #                      set(expect_primary))
 
-    # def test_output_best_oportunities(self):
-    #     expect_list = [self.oport_0, self.oport_1,
-    #                    self.oport_3, self.oport_5]
-    #     self.assertEqual(output_best_oportunities(self.oportunities),
-    #                      expect_list)
-
-    # def test_output_best_oportunities_top1(self):
-    #     expect_list = [self.oport_0]
-    #     self.assertEqual(output_best_oportunities(self.oportunities, top_k=1),
-    #                      expect_list)
-
-    # def test_output_best_oportunities_custom_overlap_top4(self):
-    #     expect_list = [self.oport_0, self.oport_1,
-    #                    self.oport_3, self.oport_4]
-    #     self.assertEqual(output_best_oportunities(self.oportunities,
-    #                                               top_k=4,
-    #                                               min_overlap=0.9),
-    #                      expect_list)
+    def test_output_best_oportunities_top3(self):
+        expect_top3 = [(3, 4), (13, 14),  (11, 14)]
+        select_top3 = output_best_oportunities(self.line_to_semantic_dict,
+                                               self.opportunities,
+                                               top_k=3,
+                                               max_size_difference=0.25)
+        self.assertEqual(set(expect_top3), set(select_top3))

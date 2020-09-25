@@ -1,4 +1,4 @@
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import Tuple, Dict, List
 
 
@@ -11,7 +11,9 @@ def _check_is_common(
     This function is aimed to check whether 2 statements have
     common semantics or not.
     '''
-    joined_names: Counter = Counter(dict_file[statement_1] + dict_file[statement_2])
+
+    joined_names: Counter = Counter(defaultdict(lambda: [], dict_file)[statement_1] +\
+                                    defaultdict(lambda: [], dict_file)[statement_2])
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
 
@@ -63,7 +65,8 @@ def is_first_more_benefit(
         line_to_semantic_dict: Dict[int, List[str]],
         range_1: Tuple[int, int],
         range_2: Tuple[int, int],
-        difference_threshold: float = 0.01
+        difference_threshold: float = 0.01,
+        **kwargs
     ) -> bool:
     """
     Takes two opportunities and check if first opportunity
