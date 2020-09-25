@@ -12,8 +12,10 @@ def _check_is_common(
     common semantics or not.
     '''
 
-    joined_names: Counter = Counter(defaultdict(lambda: [], dict_file)[statement_1] +
-                                    defaultdict(lambda: [], dict_file)[statement_2])
+    joined_names: Counter = Counter(
+        defaultdict(lambda: [], dict_file)[statement_1] +
+        defaultdict(lambda: [], dict_file)[statement_2]
+    )
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
 
