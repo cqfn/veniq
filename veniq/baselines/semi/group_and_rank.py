@@ -68,6 +68,10 @@ def output_best_oportunities(
                                                     **kwargs)
     primary_oportunities_eval = {o: _get_benefit(line_to_semantic_dict, o) for o in
                                  primary_oportunities}
-    sorted_oport = sorted(primary_oportunities_eval.items(),
-                          key=lambda x: x[1], reverse=True)
+    sorted_oport = sorted(
+        primary_oportunities_eval.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
     return [x[0] for x in sorted_oport[:top_k]]
