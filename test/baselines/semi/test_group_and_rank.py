@@ -61,9 +61,12 @@ class GroupAndRankTest(TestCase):
                                        min_overlap=0.9))
 
     def test_group_and_rank_in_groups(self):
-        selected_primary = group_and_rank_in_groups(self.line_to_semantic_dict,
-                                                    self.opportunities,
-                                                    max_size_difference=0.25)
+        selected_primary = group_and_rank_in_groups(
+            self.line_to_semantic_dict,
+            self.opportunities,
+            max_size_difference=0.25
+        )
+
         expect_primary = [(3, 4), (13, 14), (11, 14), (31, 34)]
         self.assertEqual(set(selected_primary), set(expect_primary))
 
