@@ -77,7 +77,7 @@ class GroupAndRankTest(TestCase):
 
 
     def test_output_best_oportunities_top3(self):
-        expect_top3 = [(3, 4), (13, 14),  (11, 14)]
+        expect_top3 = [(3, 4), (13, 14), (11, 14)]
         select_top3 = output_best_oportunities(self.line_to_semantic_dict,
                                                self.opportunities,
                                                top_k=3,
