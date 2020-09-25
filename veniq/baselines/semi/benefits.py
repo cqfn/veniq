@@ -18,9 +18,11 @@ def _check_is_common(
     return len(list(duplicates)) >= 1
 
 
-def _LCOM2(line_to_semantic_dict: Dict,
-           range_statements: Tuple[int, int] = None,
-           mode='original') -> int:
+def _LCOM2(
+    line_to_semantic_dict: Dict,
+    range_statements: Tuple[int, int] = None,
+    mode='original'
+) -> int:
     '''
     LCOM_2 = P - Q;
     P is the number of pairs of statements
