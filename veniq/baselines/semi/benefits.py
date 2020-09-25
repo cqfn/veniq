@@ -6,13 +6,13 @@ def _check_is_common(
         dict_file: Dict[int, List[str]],
         statement_1: int,
         statement_2: int
-        ) -> bool:
+    ) -> bool:
     '''
     This function is aimed to check whether 2 statements have
     common semantics or not.
     '''
 
-    joined_names: Counter = Counter(defaultdict(lambda: [], dict_file)[statement_1] +\
+    joined_names: Counter = Counter(defaultdict(lambda: [], dict_file)[statement_1] +
                                     defaultdict(lambda: [], dict_file)[statement_2])
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
@@ -37,7 +37,7 @@ def _LCOM2(line_to_semantic_dict: Dict,
     list_statements = []
 
     if mode == 'after_ref':
-        list_statements = list(range(range_statements[0])) + list(range(range_statements[1]+1,
+        list_statements = list(range(range_statements[0])) + list(range(range_statements[1] + 1,
                                                                         len(line_to_semantic_dict)))
     elif mode == 'opportunity':
         list_statements = list(range(range_statements[0], range_statements[1] + 1))
@@ -67,7 +67,7 @@ def is_first_more_benefit(
         range_2: Tuple[int, int],
         difference_threshold: float = 0.01,
         **kwargs
-    ) -> bool:
+        ) -> bool:
     """
     Takes two opportunities and check if first opportunity
     is more benefit than the second one.
