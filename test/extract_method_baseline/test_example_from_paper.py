@@ -4,9 +4,9 @@ from unittest import TestCase
 
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
-from veniq.extract_method_baseline.extract_semantic import (
-    extract_method_statements_semantic,  # type: ignore
-    StatementSemantic,  # type: ignore
+from veniq.baselines.semi.extract_semantic import (
+    extract_method_statements_semantic,
+    StatementSemantic,
 )
 
 
