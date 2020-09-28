@@ -20,7 +20,7 @@ def _check_is_common(
 
 def _LCOM2(
         line_to_semantic_dict: Dict[int, List[str]],
-        range_statements: Tuple[int] = None,
+        range_statements: Tuple[int, int] = None,
         mode='original'
 ) -> int:
     '''
@@ -38,11 +38,13 @@ def _LCOM2(
     Q = 0
     list_statements = []
 
+    start_em = range_statements[0]
+    end_em = range_statements[1]
     if mode == 'after_ref':
-        list_statements = list(range(range_statements[0])) + list(range(range_statements[1] + 1,
-                                                                        len(line_to_semantic_dict)))
+
+        list_statements = list(start_em) + list(range(end_em + 1, len(line_to_semantic_dict)))
     elif mode == 'opportunity':
-        list_statements = list(range(range_statements[0], range_statements[1] + 1))
+        list_statements = list(range(start_em, end_em + 1))
     else:
         list_statements = list(line_to_semantic_dict.keys())
 
