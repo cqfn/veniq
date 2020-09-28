@@ -52,6 +52,7 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     ASTNodeType.RETURN_STATEMENT: _extract_blocks_from_plain_statement,
     ASTNodeType.STATEMENT_EXPRESSION: _extract_blocks_from_plain_statement,
     ASTNodeType.THROW_STATEMENT: _extract_blocks_from_plain_statement,
+    ASTNodeType.LOCAL_VARIABLE_DECLARATION: _extract_blocks_from_plain_statement,
     # single block statements
     ASTNodeType.BLOCK_STATEMENT: _extract_blocks_from_single_block_statement_factory("body"),
     ASTNodeType.DO_STATEMENT: _extract_blocks_from_single_block_statement_factory("statements"),
