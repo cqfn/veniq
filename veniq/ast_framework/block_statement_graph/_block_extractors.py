@@ -16,6 +16,15 @@ def extract_blocks_from_statement(statement: ASTNode) -> List[BlockInfo]:
         raise NotImplementedError(f"Node {statement.node_type} is not supported.")
 
 
-_block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
+def _extract_blocks_from_plain_statement(statement: ASTNode) -> List[BlockInfo]:
+    return []
 
+
+_block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
+    ASTNodeType.ASSERT_STATEMENT: _extract_blocks_from_plain_statement,
+    ASTNodeType.BREAK_STATEMENT: _extract_blocks_from_plain_statement,
+    ASTNodeType.CONTINUE_STATEMENT: _extract_blocks_from_plain_statement,
+    ASTNodeType.RETURN_STATEMENT: _extract_blocks_from_plain_statement,
+    ASTNodeType.STATEMENT_EXPRESSION: _extract_blocks_from_plain_statement,
+    ASTNodeType.THROW_STATEMENT: _extract_blocks_from_plain_statement,
 }
