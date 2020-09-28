@@ -1,17 +1,13 @@
-from typing import TYPE_CHECKING, NamedTuple, List
+from typing import TYPE_CHECKING
 from networkx import DiGraph
 
 from veniq.ast_framework import AST, ASTNode
 from ._nodes_factory import NodesFactory
-from ._constants import BlockReason, NODE, BLOCK_REASON
+from ._block_extractors import BlockInfo, extract_blocks_from_statement
+from ._constants import NODE, BLOCK_REASON
 
 if TYPE_CHECKING:
     from .block import Block
-
-
-class _BlockInfo(NamedTuple):
-    reason: BlockReason
-    statements: List[ASTNode]
 
 
 _NodeId = int
@@ -28,7 +24,7 @@ def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> _NodeId:
     new_statement_attributes = {NODE: statement}
     graph.add_node(new_statement_index, **new_statement_attributes)
 
-    blocks = _extract_blocks_from_statement(statement)
+    blocks = extract_blocks_from_statement(statement)
     for block in blocks:
         new_block_index = _build_graph_from_block(block, graph)
         graph.add_edge(new_statement_index, new_block_index)
@@ -36,7 +32,7 @@ def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> _NodeId:
     return new_statement_index
 
 
-def _build_graph_from_block(block_info: _BlockInfo, graph: DiGraph) -> _NodeId:
+def _build_graph_from_block(block_info: BlockInfo, graph: DiGraph) -> _NodeId:
     new_block_index = len(graph)
     new_block_attributes = {BLOCK_REASON: block_info.reason}
     graph.add_node(new_block_index, **new_block_attributes)
@@ -46,7 +42,3 @@ def _build_graph_from_block(block_info: _BlockInfo, graph: DiGraph) -> _NodeId:
         graph.add_edge(new_block_index, new_statement_index)
 
     return new_block_index
-
-
-def _extract_blocks_from_statement(statement: ASTNode) -> List[_BlockInfo]:
-    pass
