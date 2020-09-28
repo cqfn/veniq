@@ -11,11 +11,11 @@ TraverseCallback = Callable[[Union[Block, Statement]], None]
 class NodesFactory:
     @staticmethod
     def create_statement_node(graph: DiGraph, id: NodeId) -> Statement:
-        return Statement(graph, id, NodesFactory.create_block_node)
+        return Statement(graph, id, NodesFactory.create_block_node, NodesFactory._traverse_graph)
 
     @staticmethod
     def create_block_node(graph: DiGraph, id: NodeId) -> Block:
-        return Block(graph, id, NodesFactory.create_statement_node)
+        return Block(graph, id, NodesFactory.create_statement_node, NodesFactory._traverse_graph)
 
     @staticmethod
     def _detect_and_create_node(graph: DiGraph, id: NodeId) -> Union[Block, Statement]:
