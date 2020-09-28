@@ -1,4 +1,4 @@
-from networkx import DiGraph  # type: ignore
+from networkx import DiGraph
 
 from .statement import Statement
 from .block import Block

@@ -1,11 +1,11 @@
-from networkx import DiGraph  # type: ignore
+from networkx import DiGraph
 from typing import Callable, Iterator, TYPE_CHECKING
 
 from veniq.ast_framework import ASTNode
 from ._constants import NODE
 
 if TYPE_CHECKING:
-    from .block import Block  # noqa: F401
+    from .block import Block
 
 
 class Statement:

@@ -1,4 +1,4 @@
-from networkx import DiGraph  # type: ignore
+from networkx import DiGraph
 from typing import Callable, Iterator, Optional, TYPE_CHECKING
 
 from ._constants import BLOCK_REASON, BlockReason
