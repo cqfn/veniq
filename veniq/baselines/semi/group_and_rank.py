@@ -3,7 +3,7 @@ from typing import List, Tuple, Dict
 from veniq.baselines.semi.grouping_size import is_similar_size
 from veniq.baselines.semi.overlap import is_overlap
 from veniq.baselines.semi.benefits import is_first_more_benefit,\
-                                          _get_benefit
+    _get_benefit
 
 
 def in_same_group(
