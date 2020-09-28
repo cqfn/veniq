@@ -1,4 +1,4 @@
-from enum import Enum, auto
+from enum import Enum
 
 from networkx import DiGraph
 
@@ -10,11 +10,11 @@ BLOCK_REASON = "block_reason"
 
 
 class NodeType(Enum):
-    Statement = auto()
-    Block = auto()
+    Statement = "Statement"
+    Block = "Block"
 
     @staticmethod
-    def get_node_type(graph: DiGraph, node_id: NodeId) -> "NodeType":
+    def detect(graph: DiGraph, node_id: NodeId) -> "NodeType":
         node_attributes = graph.nodes(data=True)[node_id]
         if NODE in node_attributes:
             return NodeType.Statement
