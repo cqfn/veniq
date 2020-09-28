@@ -7,4 +7,4 @@ BLOCK_REASON = "block_reason"
 
 class BlockReason(Enum):
     SINGLE_BLOCK = "SINGLE_BLOCK"
-    # Thi enum is going to grow soon
+    # This enum is going to grow soon
