@@ -20,7 +20,7 @@ def _check_is_common(
 
 def _LCOM2(
         line_to_semantic_dict: Dict[int, List[str]],
-        range_statements: Tuple[int, int] = None,
+        range_statements: Tuple[int] = None,
         mode='original'
 ) -> int:
     '''
