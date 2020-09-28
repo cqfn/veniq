@@ -6,15 +6,15 @@ def _check_is_common(
         dict_file: Dict[int, List[str]],
         statement_1: int,
         statement_2: int
-    ) -> bool:
+        ) -> bool:
     '''
     This function is aimed to check whether 2 statements have
     common semantics or not.
     '''
 
     joined_names: Counter = Counter(
-        defaultdict(lambda: [], dict_file)[statement_1] +
-        defaultdict(lambda: [], dict_file)[statement_2]
+        defaultdict(lambda: [], dict_file)[statement_1]
+        + defaultdict(lambda: [], dict_file)[statement_2]
     )
     duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
     return len(list(duplicates)) >= 1
@@ -71,7 +71,7 @@ def is_first_more_benefit(
         range_2: Tuple[int, int],
         difference_threshold: float = 0.01,
         **kwargs
-        ) -> bool:
+    ) -> bool:
     """
     Takes two opportunities and check if first opportunity
     is more benefit than the second one.
@@ -79,5 +79,5 @@ def is_first_more_benefit(
     first_benefit = _get_benefit(line_to_semantic_dict, range_1)
     second_benefit = _get_benefit(line_to_semantic_dict, range_2)
     diff_between_benefits = abs(first_benefit - second_benefit) / \
-                             max(first_benefit, second_benefit)
+                            max(first_benefit, second_benefit)
     return diff_between_benefits >= difference_threshold
