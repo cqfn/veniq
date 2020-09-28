@@ -1,4 +1,10 @@
-from enum import Enum
+from enum import Enum, auto
+
+
+class NodeType(Enum):
+    Statement = auto()
+    Block = auto()
+
 
 # networkx field names
 NODE = "node"
