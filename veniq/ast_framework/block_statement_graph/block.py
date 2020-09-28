@@ -9,23 +9,23 @@ if TYPE_CHECKING:
 
 class Block:
     def __init__(self, graph: DiGraph, id: NodeId, statement_factory: Callable[[DiGraph, NodeId], "Statement"]):
-        self.graph = graph
-        self.id = id
-        self.statement_factory = statement_factory
+        self._graph = graph
+        self._id = id
+        self._statement_factory = statement_factory
 
     @property
     def reason(self) -> BlockReason:
-        return self.graph.nodes[self.id][BLOCK_REASON]
+        return self._graph.nodes[self._id][BLOCK_REASON]
 
     @property
     def statements(self) -> Iterator["Statement"]:
-        for statement_id in self.graph.successors(self.id):
-            yield self.statement_factory(self.graph, statement_id)
+        for statement_id in self._graph.successors(self._id):
+            yield self._statement_factory(self._graph, statement_id)
 
     @property
     def origin_statement(self) -> Optional["Statement"]:
         try:
-            statement_id = next(self.graph.predecessors(self.id))
-            return self.statement_factory(self.graph, statement_id)
+            statement_id = next(self._graph.predecessors(self._id))
+            return self._statement_factory(self._graph, statement_id)
         except StopIteration:
             return None

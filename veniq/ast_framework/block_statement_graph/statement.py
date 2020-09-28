@@ -10,24 +10,24 @@ if TYPE_CHECKING:
 
 class Statement:
     def __init__(self, graph: DiGraph, id: NodeId, block_factory: Callable[[DiGraph, NodeId], "Block"]):
-        self.graph = graph
-        self.id = id
-        self.block_factory = block_factory
+        self._graph = graph
+        self._id = id
+        self._block_factory = block_factory
 
     @property
     def node(self) -> ASTNode:
-        return self.graph.nodes[self.id][NODE]
+        return self._graph.nodes[self._id][NODE]
 
     @property
     def has_nested_blocks(self) -> bool:
-        return self.graph.out_degree(self.id) > 0
+        return self._graph.out_degree(self._id) > 0
 
     @property
     def nested_blocks(self) -> Iterator["Block"]:
-        for block_id in self.graph.successors(self.id):
-            yield self.block_factory(self.graph, block_id)
+        for block_id in self._graph.successors(self._id):
+            yield self._block_factory(self._graph, block_id)
 
     @property
     def parent_block(self) -> "Block":
-        block_id = next(self.graph.predecessors(self.id))
-        return self.block_factory(self.graph, block_id)
+        block_id = next(self._graph.predecessors(self._id))
+        return self._block_factory(self._graph, block_id)
