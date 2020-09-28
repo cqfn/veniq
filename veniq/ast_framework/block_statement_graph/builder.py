@@ -4,13 +4,10 @@ from networkx import DiGraph
 from veniq.ast_framework import AST, ASTNode
 from ._nodes_factory import NodesFactory
 from ._block_extractors import BlockInfo, extract_blocks_from_statement
-from ._constants import NODE, BLOCK_REASON
+from ._constants import NODE, BLOCK_REASON, NodeId
 
 if TYPE_CHECKING:
     from .block import Block
-
-
-_NodeId = int
 
 
 def build_block_statement_graph(method_ast: AST) -> "Block":
@@ -19,7 +16,7 @@ def build_block_statement_graph(method_ast: AST) -> "Block":
     return NodesFactory.create_block_node(graph, root_index)
 
 
-def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> _NodeId:
+def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> NodeId:
     new_statement_index = len(graph)
     new_statement_attributes = {NODE: statement}
     graph.add_node(new_statement_index, **new_statement_attributes)
@@ -32,7 +29,7 @@ def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> _NodeId:
     return new_statement_index
 
 
-def _build_graph_from_block(block_info: BlockInfo, graph: DiGraph) -> _NodeId:
+def _build_graph_from_block(block_info: BlockInfo, graph: DiGraph) -> NodeId:
     new_block_index = len(graph)
     new_block_attributes = {BLOCK_REASON: block_info.reason}
     graph.add_node(new_block_index, **new_block_attributes)

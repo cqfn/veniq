@@ -2,6 +2,7 @@ from enum import Enum, auto
 
 from networkx import DiGraph
 
+NodeId = int
 
 # networkx field names
 NODE = "node"
@@ -13,7 +14,7 @@ class NodeType(Enum):
     Block = auto()
 
     @staticmethod
-    def get_node_type(graph: DiGraph, node_id: int) -> "NodeType":
+    def get_node_type(graph: DiGraph, node_id: NodeId) -> "NodeType":
         node_attributes = graph.nodes(data=True)[node_id]
         if NODE in node_attributes:
             return NodeType.Statement

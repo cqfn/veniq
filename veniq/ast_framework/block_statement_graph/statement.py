@@ -2,14 +2,14 @@ from networkx import DiGraph
 from typing import Callable, Iterator, TYPE_CHECKING
 
 from veniq.ast_framework import ASTNode
-from ._constants import NODE
+from ._constants import NODE, NodeId
 
 if TYPE_CHECKING:
     from .block import Block
 
 
 class Statement:
-    def __init__(self, graph: DiGraph, id: int, block_factory: Callable[[DiGraph, int], "Block"]):
+    def __init__(self, graph: DiGraph, id: NodeId, block_factory: Callable[[DiGraph, NodeId], "Block"]):
         self.graph = graph
         self.id = id
         self.block_factory = block_factory

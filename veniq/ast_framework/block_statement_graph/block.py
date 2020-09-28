@@ -1,14 +1,14 @@
 from networkx import DiGraph
 from typing import Callable, Iterator, Optional, TYPE_CHECKING
 
-from ._constants import BLOCK_REASON, BlockReason
+from ._constants import BLOCK_REASON, BlockReason, NodeId
 
 if TYPE_CHECKING:
     from .statement import Statement  # noqa: F401
 
 
 class Block:
-    def __init__(self, graph: DiGraph, id: int, statement_factory: Callable[[DiGraph, int], "Statement"]):
+    def __init__(self, graph: DiGraph, id: NodeId, statement_factory: Callable[[DiGraph, NodeId], "Statement"]):
         self.graph = graph
         self.id = id
         self.statement_factory = statement_factory
