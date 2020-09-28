@@ -52,8 +52,8 @@ def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
     for step in range(1, method_length + 1):
         clusters = _process_statement(dict_file, step)
         opportunities += clusters
-    unique_oppo = [list(oppo) for oppo in set(map(tuple, opportunities))] # type: ignore
-    return unique_oppo # type: ignore
+    unique_oppo = [list(oppo) for oppo in set(map(tuple, opportunities))]  # type: ignore
+    return unique_oppo  # type: ignore
 
 
 def _get_lines_to_node_dict(dict_file: Dict[ASTNode, List[str]]) -> Dict[int, ASTNode]:
