@@ -1,10 +1,9 @@
 from argparse import ArgumentParser
 import os
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, List
 
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
-
 
 
 def _get_last_line(child_statement: ASTNode) -> int:
@@ -12,7 +11,7 @@ def _get_last_line(child_statement: ASTNode) -> int:
     This function is aimed to find the last line of
     the all childrens and childerns of childrens
     for a chosen statement.
-    Main goal is to get the last line of method. 
+    Main goal is to get the last line of method.
     '''
     last_line = child_statement.line
     if hasattr(child_statement, 'children'):
@@ -33,20 +32,20 @@ def _method_body_lines(method_node: ASTNode, file_path: str) -> Tuple[int, int]:
     return (start_line, end_line)
 
 
-def _get_method_lines_dict(classes_declaration: ASTNode) -> Dict[ASTNode, Dict[str, Tuple[int, int]]]:
+def _get_method_lines_dict(classes_declaration: List) -> Dict[ASTNode, Dict[str, Tuple[int, int]]]:
     '''
-    This method is aimed to process each class, 
+    This method is aimed to process each class,
     also for each class to process all it's methods.
     Find starting and end lines of each method's body.
     And finally to store it into dictionary.
     '''
-    dictionary = {}
+    dictionary: Dict[ASTNode, Dict[str, Tuple[int, int]]] = {}
     for classes_declaration_node in classes_declaration:
         for method_node in classes_declaration_node.methods:
             lines = _method_body_lines(method_node, args.file)
             if not dictionary.get(method_node):
                 dictionary[method_node] = {classes_declaration_node.name: lines}
-            elif not dictionary[method_node].get(classes_declaration_node).name:
+            elif not dictionary[method_node].get(classes_declaration_node):
                 dictionary[method_node][classes_declaration_node.name] = lines
     return dictionary
 
@@ -54,7 +53,7 @@ def _get_method_lines_dict(classes_declaration: ASTNode) -> Dict[ASTNode, Dict[s
 def _get_method_node_of_invocated(
     invocated_method_node: ASTNode,
     dict_method_lines: Dict
-    ) -> Union[ASTNode, None]:
+) -> Union[ASTNode, None]:
     '''
     To find method node of class by
     its invoced version in the other one method.
@@ -69,9 +68,9 @@ def _process_invocations_inside(
     method_node: ASTNode,
     file_path,
     dict_method_lines
-    ):
+) -> None:
     '''
-    To process each class's method in order to find 
+    To process each class's method in order to find
     its invocation inside and also process them.
     '''
     file_ast = AST.build_from_javalang(build_ast(args.file))
@@ -94,11 +93,11 @@ def _create_new_files(
     invocation_node: ASTNode,
     file_path: str,
     dict_method_lines: Dict
-    ) -> None:
+) -> None:
     '''
     If invocations of class's methods were found,
     we process through all of them and for each
-    substitution opportunity by method's body, 
+    substitution opportunity by method's body,
     we creat new file.
     '''
     file_name = file_path.replace('\\', '/').split('/')[-1].split('.java')[0]
@@ -111,24 +110,25 @@ def _create_new_files(
     original_file = open(file_path)
 
     method_node_invoced = _get_method_node_of_invocated(invocation_node, dict_method_lines)
-    method_lines = method_node_invoced.line
-    class_method_lines = dict_method_lines[method_node_invoced][method_node.parent.name]
-    lines = list(original_file)
+    if method_node_invoced is not None:
+        method_lines = method_node_invoced.line
+        class_method_lines = dict_method_lines[method_node_invoced][method_node.parent.name]  # type: ignore
+        lines = list(original_file)
 
-    # original code before method invocation, which will be substituted
-    lines_to_write = lines[:invocation_node.line - 1]
-    # body of the original method, which will be inserted
-    lines_to_write += lines[class_method_lines[0] - 1:class_method_lines[1]]
-    # original code after method invocation
-    lines_to_write += lines[invocation_node.line:]
-    for i in lines_to_write:
-        f.write(i)
+        # original code before method invocation, which will be substituted
+        lines_to_write = lines[:invocation_node.line - 1]
+        # body of the original method, which will be inserted
+        lines_to_write += lines[class_method_lines[0] - 1:class_method_lines[1]]
+        # original code after method invocation
+        lines_to_write += lines[invocation_node.line:]
+        for i in lines_to_write:
+            f.write(i)
 
-    method_params = lines[method_lines - 1: method_lines]
-    invocated_method_params = lines[invocation_node.line - 1: invocation_node.line]
-    _insert_variables(method_params, invocated_method_params)
-    print(method_params)
-    print(invocated_method_params,'\n')
+        method_params = lines[method_lines - 1: method_lines]
+        invocated_method_params = lines[invocation_node.line - 1: invocation_node.line]
+        _insert_variables(method_params, invocated_method_params)
+        print(method_params)
+        print(invocated_method_params, '\n')
 
 
 def main(file_path: str) -> None:
