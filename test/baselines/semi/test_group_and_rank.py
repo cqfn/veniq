@@ -67,11 +67,11 @@ class GroupAndRankTest(TestCase):
             max_size_difference=0.25
         )
 
-        expect_primary = [(3, 4), (13, 14), (11, 14), (31, 34)]
+        expect_primary = [(3, 4), (13, 14), (11, 14), (30, 34)]
         self.assertEqual(set(selected_primary), set(expect_primary))
 
     def test_output_best_oportunities_top3(self):
-        expect_top3 = [(3, 4), (13, 14), (11, 14)]
+        expect_top3 = [(3, 4), (30, 34), (11, 14)]
         select_top3 = output_best_oportunities(self.line_to_semantic_dict,
                                                self.opportunities,
                                                top_k=3,
