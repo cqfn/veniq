@@ -84,6 +84,11 @@ def _process_invocations_inside(
             _create_new_files(method_node, method_invoce, file_path, dict_method_lines)
 
 
+def _insert_variables(method_declaration_arguments, method_invocation_arguments):
+    # TO DO
+    pass
+
+
 def _create_new_files(
     method_node: ASTNode,
     invocation_node: ASTNode,
@@ -121,6 +126,7 @@ def _create_new_files(
 
     method_params = lines[method_lines - 1: method_lines]
     invocated_method_params = lines[invocation_node.line - 1: invocation_node.line]
+    _insert_variables(method_params, invocated_method_params)
     print(method_params)
     print(invocated_method_params,'\n')
 
