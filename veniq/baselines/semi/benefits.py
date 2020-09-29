@@ -41,10 +41,9 @@ def _LCOM2(
     start_em = range_statements[0]
     end_em = range_statements[1]
     if mode == 'after_ref':
-
-        list_statements = list(start_em) + list(range(end_em + 1, len(line_to_semantic_dict)))
+        list_statements = [i for i in line_to_semantic_dict if i < start_em or i > end_em]
     elif mode == 'opportunity':
-        list_statements = list(range(start_em, end_em + 1))
+        list_statements = [i for i in range(start_em, end_em)]
     else:
         list_statements = list(line_to_semantic_dict.keys())
 
