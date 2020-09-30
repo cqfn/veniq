@@ -1,27 +1,9 @@
-from typing import List, Tuple
+from typing import List, Tuple, Dict
 
 from veniq.baselines.semi.grouping_size import is_similar_size
 from veniq.baselines.semi.overlap import is_overlap
-
-
-def _temp_hasMoreBenefitThan(
-        oport_1: Tuple[int, int],
-        oport_2: Tuple[int, int]) -> bool:
-    """
-    Temporary method implementing fitness function for
-    ranking hypotheses.
-    To be substituted with a real implementation.
-    Returns True if oport_1 has more benefit than oport_2
-    """
-    return True
-
-
-def _temp_fitness_f(oport: Tuple[int, int]) -> float:
-    """
-    Actually, this function also needs to have access to the whole
-    method body. We will fix it in the next PR.
-    """
-    return 1.0
+from veniq.baselines.semi.benefits import is_first_more_benefit,\
+    _get_benefit
 
 
 def in_same_group(
@@ -40,6 +22,7 @@ def in_same_group(
 
 
 def group_and_rank_in_groups(
+        line_to_semantic_dict: Dict[int, List[str]],
         oportunities: List[Tuple[int, int]],
         **kwargs) -> List[Tuple[int, int]]:
     """
@@ -59,7 +42,10 @@ def group_and_rank_in_groups(
                 continue
 
             if in_same_group(oport_1, oport_2, **kwargs):
-                if _temp_hasMoreBenefitThan(oport_1, oport_2):
+                if is_first_more_benefit(line_to_semantic_dict,
+                                         oport_1,
+                                         oport_2,
+                                         **kwargs):
                     alternatives.add(j)
                 else:
                     alternatives.add(i)
@@ -69,16 +55,23 @@ def group_and_rank_in_groups(
 
 
 def output_best_oportunities(
-        oportunities: List[Tuple[int, int]],
+        line_to_semantic_dict: Dict[int, List[str]],
+        opportunities_struct: List[Tuple[int, int]],
         top_k: int = 5,
         **kwargs) -> List[Tuple[int, int]]:
     """
-    Runs grouping and ranking to produce the set of 'primanry oportunities'.
+    Runs grouping and ranking to produce the set of 'primary oportunities'.
     Given the final list, outputs top-k according to the fitness functon.
     """
-    primary_oportunities = group_and_rank_in_groups(oportunities, **kwargs)
-    primary_oportunities_eval = {o: _temp_fitness_f(o) for o in
+    primary_oportunities = group_and_rank_in_groups(line_to_semantic_dict,
+                                                    opportunities_struct,
+                                                    **kwargs)
+    primary_oportunities_eval = {o: _get_benefit(line_to_semantic_dict, o) for o in
                                  primary_oportunities}
-    sorted_oport = sorted(primary_oportunities_eval.items(),
-                          key=lambda x: x[1], reverse=True)
+    sorted_oport = sorted(
+        primary_oportunities_eval.items(),
+        key=lambda x: x[1],
+        reverse=True
+    )
+
     return [x[0] for x in sorted_oport[:top_k]]
