@@ -1,0 +1,78 @@
+Problems with method inline:
+1)	We need to understand overridden functions:
+func(String a, String b) {}
+func(Object a, Object b) {}
+Now we have method invocation:
+func(a, b)
+We cannot understand what type a and b have (AST framework/ javalang  doesn’t allow to do it). So, we ignore overridden functions
+2)	How can we change all parameters is function when we are inlining?
+func(String a, int  b) { a = “4”; a += “5”; Int i = 0; func1(a, b)}
+
+We need to replace all occurrences of a parameter. AST framework/ javalang doesn’t allow to do it, we cannot do it via regexp, since we will have lots of errors.
+I suggested the following way:
+
+If we have method invocation:
+func(“5”, 4)
+           …, we can extract new variables with the same type:
+                String a  = “5”; 
+                Int  b = 4;
+             a = “4”; \\ start inline
+              a += “5”; 
+              Int i = 0; 
+              func1(a, b) \\ end inline
+
+                But in this case we can loose all data if a and b is used before and after method invocation.
+
+3)	We need to take cast into account, since there can be the following cases:
+a.	String a = (String) getProperty(SECURITY_MANAGER, 6);
+
+b.	String a = null;
+A = (String) getProperty(SECURITY_MANAGER, 6);
+
+Object  getProperty(String a, int b) { … }
+
+But we do not know type of a variable, since it is not supported in AST and javalang
+
+So, we cannot do casts
+
+4)	Suppose we have the following method invocation:
+  try {
+                    String name = SECURITY_MANAGER;
+                    setProperty(SECURITY_MANAGER, value ? new SecurityManager() : null);  //method invocation
+                }
+                catch (SAXNotRecognizedException exc) {
+                    // If the property is not supported 
+                    // re-throw the exception if the value is true.
+                    if (value) {
+                        throw exc;
+                    }
+                }
+  
+
+         Original function is the following:
+         public void setProperty_original(String name, Object value) throws SAXNotRecognizedException, SAXNotSupportedException { xmlReader.setProperty(name, value); }
+
+As you see, the 2nd parameter is the ternary operator: “value ? new SecurityManager() : null”.
+It can be more difficult and we cannot extract this into variable with the method, described in 2)
+We need to generate code from AST. AST framework/javalang doesn’t support it.
+So, the main problem is that we cannot generate code from AST tree, that’ why we cannot make automatic sciprt for gathering data. All data need to be validated manually
+
+5)	It is extremely difficult to create a separate class with all methods inline, since we cannot generate source code from AST tree, we cannot remove other methods.
+Every time we insert code we need to recalculate lines of code for each methods, since new line appear.
+
+
+6)	for(int i = getConnections(); i < 5; ++i){
+Variable declaration here, and we can handle method inv in var declaration, but in for cycle it is difficult understand that it is inside for loop
+7)	InputHandler	int ox = schemOriginX(), oy = func();
+We cannot understand multiple variable declaration
+8)	Difficult to understand if/for/while with 1 statement without braces.
+We need to find such cases and insert square braces when inlining
+9)	case: consumeNewline();
+Need to add square brackets everytime
+
+
+
+
+
+
+
