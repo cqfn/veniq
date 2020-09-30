@@ -69,7 +69,11 @@ We cannot understand multiple variable declaration
 We need to find such cases and insert square braces when inlining
 9)	case: consumeNewline();
 Need to add square brackets everytime
+10) We cannot inline function in lambda:
 
+cont.rect((x, y, w, h) -> render()).grow();
+table.setDisabled(() -> !canLaunch());
+ui.showConfirm("$confirm", "$launch.skip.confirm", () -> !canSkipWave(), () -> state.wavetime = 0f);
 
 
 
