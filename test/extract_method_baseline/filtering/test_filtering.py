@@ -9,21 +9,27 @@ from veniq.utils.ast_builder import build_ast
 
 class FilteringTestCase(TestCase):
     def test_non_continuos_statements_range(self):
+        # lines 9 and 15
         self._opportunity_test_helper([59, 71], False)
 
     def test_not_whole_block_selected(self):
+        # lines 8-12
         self._opportunity_test_helper([55, 59, 66, 67], False)
 
     def test_non_continuos_high_level_nodes(self):
+        # lines 3 and 19-22
         self._opportunity_test_helper([25, 78, 100, 109, 113], False)
 
     def test_statement_out_of_parent_block(self):
+        # lines 11 and 15
         self._opportunity_test_helper([67, 71], False)
 
     def test_correct_simple_opportunity(self):
+        # lines 6-15
         self._opportunity_test_helper([41, 50, 55, 59, 66, 67, 71], True)
 
     def test_correct_large_opportunity(self):
+        # lines 5-26
         self._opportunity_test_helper([32, 41, 50, 55, 59, 66, 67, 71, 78, 100, 109, 113, 118], True)
 
     def _opportunity_test_helper(
