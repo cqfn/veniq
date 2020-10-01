@@ -30,7 +30,7 @@ def _syntactic_filter(statements: ExtractionOpportunity, method_block_statement_
 
 
 class SyntacticFilterCallbacks:
-    def __init__(self, statements: List[ASTNode], root_block: Block):
+    def __init__(self, statements: ExtractionOpportunity, root_block: Block):
         self._blocks_stack: List[Block] = [root_block]
         self._parent_block: Optional[Block] = None
 
