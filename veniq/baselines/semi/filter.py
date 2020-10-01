@@ -84,6 +84,9 @@ class SyntacticFilterCallbacks:
     def _on_block_leaving(self, block: Block) -> None:
         self._blocks_stack.pop()
 
+        if block == self._parent_block and not self._is_all_statements_found():
+            self._is_statements_extractable = False
+
     def _on_statement_leaving(self, statement: Statement) -> None:
         if self._high_level_statement == statement:
             self._is_traversing_high_level_statement = False
