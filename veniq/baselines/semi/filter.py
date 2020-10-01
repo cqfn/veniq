@@ -21,7 +21,7 @@ def filter_extraction_opportunities(
 
 
 def _syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:
-    syntacticFilterCallbacks = SyntacticFilterCallbacks(statements)
+    syntacticFilterCallbacks = SyntacticFilterCallbacks(statements, method_block_statement_graph)
     method_block_statement_graph.traverse(
         syntacticFilterCallbacks.on_node_entering, syntacticFilterCallbacks.on_node_leaving
     )
@@ -29,8 +29,8 @@ def _syntactic_filter(statements: ExtractionOpportunity, method_block_statement_
 
 
 class SyntacticFilterCallbacks:
-    def __init__(self, statements: List[ASTNode]):
-        self._blocks_stack: List[Block] = []
+    def __init__(self, statements: List[ASTNode], root_block: Block):
+        self._blocks_stack: List[Block] = [root_block]
         self._parent_block: Optional[Block] = None
 
         self._is_traversing_high_level_statement = False
