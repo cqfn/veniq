@@ -1,5 +1,5 @@
 from networkx import DiGraph
-from typing import Callable, Iterator, Optional, TYPE_CHECKING
+from typing import Any, Callable, Iterator, Optional, TYPE_CHECKING
 
 from ._constants import BLOCK_REASON, BlockReason, NodeId
 
@@ -42,3 +42,12 @@ class Block:
         self, on_node_entering: "TraverseCallback", on_node_leaving: "TraverseCallback" = lambda _: None
     ):
         self._traverse_function(self._graph, self._id, on_node_entering, on_node_leaving)
+
+    def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
+        if not isinstance(other, Block):
+            raise NotImplementedError(f"Only Block objects are supported, got {other}")
+
+        return self._graph == other._graph and self._id == other._id
