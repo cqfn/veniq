@@ -76,6 +76,11 @@ def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
 
 
 def _get_lines_to_node_dict(dict_file: Dict[ASTNode, List[str]]) -> Dict[int, ASTNode]:
+    '''
+    Here we form new dictionary, which consist of
+    lines in code of statements and their ASTNode
+    representation.
+    '''
     lines_to_node_dict: Dict[int, ASTNode] = {}
     for node in dict_file:
         lines_to_node_dict[node.line] = node
@@ -86,7 +91,16 @@ def _transform_clusters(
     clusters_by_digits: List[List[int]],
     lines_to_node_dict: Dict[int, ASTNode]
 ) -> List[List[ASTNode]]:
+    '''
+    This method is aimed to represent clusters by
+    digits to the clusters by ASTNodes.
 
+    It means that we have clusters, such as:
+    [[1,3], [4, 6]]
+    But we want to represent it by ASTNodes. Also,
+    each cluster should contain not only all elements 
+    in the clusters.
+    '''
     clusters_by_nodes: List[List[ASTNode]] = []
     for cluster in clusters_by_digits:
         lines_list = list(lines_to_node_dict.keys())
@@ -98,6 +112,10 @@ def _transform_clusters(
 
 
 def SEMI_ASTNodes(dict_file: Dict[ASTNode, List[str]]) -> List[List[ASTNode]]:
+    '''
+    This is the version of SEMI algoirthm with some changes:
+    as the output we have clusters represented by all ASTNodes in them.
+    '''
     clusters: List[List[int]] = SEMI(dict_file)
     lines_to_node_dict = _get_lines_to_node_dict(dict_file)
     return _transform_clusters(clusters, lines_to_node_dict)
