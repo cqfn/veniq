@@ -98,7 +98,7 @@ def _transform_clusters(
     It means that we have clusters, such as:
     [[1,3], [4, 6]]
     But we want to represent it by ASTNodes. Also,
-    each cluster should contain not only all elements 
+    each cluster should contain not only all elements
     in the clusters.
     '''
     clusters_by_nodes: List[List[ASTNode]] = []
