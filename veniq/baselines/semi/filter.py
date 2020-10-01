@@ -1,10 +1,26 @@
 from typing import List, Optional, Union
 
-from veniq.ast_framework import ASTNode
-from veniq.ast_framework.block_statement_graph import Block, Statement
+from veniq.ast_framework import AST, ASTNode
+from veniq.ast_framework.block_statement_graph import Block, Statement, build_block_statement_graph
 
 
-def _syntactic_filter(statements: List[ASTNode], method_block_statement_graph: Block) -> bool:
+ExtractionOpportunity = List[ASTNode]
+
+
+def filter_extraction_opportunities(
+    extraction_opportunities: List[ExtractionOpportunity], method_ast: AST
+) -> List[ExtractionOpportunity]:
+    block_statement_graph = build_block_statement_graph(method_ast)
+    extraction_opportunities = list(
+        filter(
+            lambda extraction_opportunity: _syntactic_filter(extraction_opportunity, block_statement_graph),
+            extraction_opportunities,
+        )
+    )
+    return extraction_opportunities
+
+
+def _syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:
     syntacticFilterCallbacks = SyntacticFilterCallbacks(statements)
     method_block_statement_graph.traverse(
         syntacticFilterCallbacks.on_node_entering, syntacticFilterCallbacks.on_node_leaving
