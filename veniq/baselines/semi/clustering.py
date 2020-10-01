@@ -62,7 +62,6 @@ def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
     to apply algo for each step.
     '''
     opportunities = []
-
     first_statement_ = list(dict_file.keys())[0]
     last_statement_ = list(dict_file.keys())[-1]
     first_statement = first_statement_ if isinstance(first_statement_, int) else first_statement_.line
