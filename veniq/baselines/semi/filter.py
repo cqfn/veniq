@@ -8,7 +8,8 @@ ExtractionOpportunity = List[ASTNode]
 
 
 def filter_extraction_opportunities(
-    extraction_opportunities: List[ExtractionOpportunity], method_ast: AST
+    extraction_opportunities: List[ExtractionOpportunity],
+    method_ast: AST
 ) -> List[ExtractionOpportunity]:
     block_statement_graph = build_block_statement_graph(method_ast)
     extraction_opportunities = list(
