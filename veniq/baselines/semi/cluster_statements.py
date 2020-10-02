@@ -63,7 +63,7 @@ class _StatementsClusterIterator:
         # self._statement_index has passed over self._statements
         # all statements after first_statement_index are goes in last cluster
         if self._statement_index == len(self._statements):
-            last_statement_index = len(self._statements) - 1
+            last_statement_index = len(self._statements) - fails_qty - 1
 
         return [self._statements[i] for i in range(first_statement_index, last_statement_index + 1)]
 
