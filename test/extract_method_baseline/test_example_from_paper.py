@@ -5,7 +5,7 @@ from unittest import TestCase
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
-from veniq.baselines.semi.clustering import find_clusters
+from veniq.baselines.semi.cluster_statements import cluster_statements
 
 
 def objects_semantic(*objects_names: str) -> StatementSemantic:
@@ -26,8 +26,9 @@ class PaperExampleTestCase(TestCase):
             )
 
     def test_statements_clustering(self):
+        self.maxDiff = None
         semantic = extract_method_statements_semantic(self.method_ast)
-        clusters = find_clusters(semantic)
+        clusters = cluster_statements(semantic)
 
         for cluster_index, (actual_cluster, expected_cluster) in enumerate(
             zip_longest(clusters, self.expected_clusters)
@@ -156,4 +157,29 @@ class PaperExampleTestCase(TestCase):
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.IF_STATEMENT,
         ],  # lines 7-29
+        [
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.BREAK_STATEMENT,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.RETURN_STATEMENT,
+        ]  # lines 7-38
     ]
