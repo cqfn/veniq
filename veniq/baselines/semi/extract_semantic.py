@@ -52,7 +52,7 @@ def _extract_statement_semantic(statement: ASTNode, method_ast: AST) -> Dict[AST
         ASTNodeType.CONTINUE_STATEMENT,  # Single keyword statement has no semantic
         ASTNodeType.CLASS_DECLARATION,  # Inner class declarations are currently not supported
     }:
-        return OrderedDict()
+        return OrderedDict([(statement, StatementSemantic())])
 
     raise NotImplementedError(f"Extracting semantic from {statement.node_type} is not supported")
 
