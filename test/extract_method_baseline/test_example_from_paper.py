@@ -5,6 +5,7 @@ from unittest import TestCase
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
+from veniq.baselines.semi.clustering import find_clusters
 
 
 def objects_semantic(*objects_names: str) -> StatementSemantic:
@@ -22,6 +23,20 @@ class PaperExampleTestCase(TestCase):
                 expected_semantic,
                 f"Failed on {statement.node_type} statement on line {statement.line}. "
                 f"Comparison index is {comparison_index}.",
+            )
+
+    def test_statements_clustering(self):
+        semantic = extract_method_statements_semantic(self.method_ast)
+        clusters = find_clusters(semantic)
+
+        for cluster_index, (actual_cluster, expected_cluster) in enumerate(
+            zip_longest(clusters, self.expected_clusters)
+        ):
+            actual_cluster_statement_types = [statement.node_type for statement in actual_cluster]
+            self.assertEqual(
+                actual_cluster_statement_types,
+                expected_cluster,
+                f"Failed on {cluster_index}th cluster comparison",
             )
 
     @classmethod
@@ -75,4 +90,70 @@ class PaperExampleTestCase(TestCase):
         objects_semantic("manifests"),  # line 38
     ]
 
+    expected_clusters = [
+        [ASTNodeType.LOCAL_VARIABLE_DECLARATION, ASTNodeType.FOR_STATEMENT],  # lines 7-8
+        [ASTNodeType.LOCAL_VARIABLE_DECLARATION],  # line 9
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+        ],  # lines 10-16
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+        ],  # lines 17-29
+        [ASTNodeType.STATEMENT_EXPRESSION],  # line 30
+        [ASTNodeType.BREAK_STATEMENT],  # line 31
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.RETURN_STATEMENT,
+        ],  # lines 34-38
+        [
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+        ],  # lines 7-16
+        [
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.BREAK_STATEMENT,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.RETURN_STATEMENT,
+        ],  # lines 30-38
+        [
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+        ],  # lines 7-29
     ]

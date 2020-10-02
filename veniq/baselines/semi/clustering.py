@@ -1,153 +1,91 @@
-from collections import Counter
-from typing import List, Union, Dict
-from collections import OrderedDict
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
 
-from veniq.baselines.semi.extract_semantic import \
-    extract_method_statements_semantic, StatementSemantic
-from veniq.ast_framework import ASTNode, AST
+from veniq.ast_framework import AST, ASTNode
+from veniq.baselines.semi.extract_semantic import StatementSemantic, extract_method_statements_semantic
 from veniq.baselines.semi.common_cli import common_cli
 
-
-def _check_is_common(
-    dict_file: Dict,
-    statement_1: Union[int, ASTNode],
-    statement_2: Union[int, ASTNode]
-) -> bool:
-    '''
-    This function obtain two statements and check whether
-    they have common variables or method invocations or not.
-    '''
-    joined_names: Counter = Counter(dict_file[statement_1] + dict_file[statement_2])
-    duplicates = {element: count for element, count in joined_names.items() if count > 1}.keys()
-    return len(list(duplicates)) >= 1
+Cluster = List[ASTNode]
 
 
-def _is_in_range(elem: int, values: List[int]) -> bool:
-    '''
-    here we check whether considered element is between
-    the gap of values or not.
-    '''
-    return elem >= values[0] and elem <= values[1]
+@dataclass
+class Range:
+    first: int
+    last: int
 
 
-def _process_statement(
-    dict_file: Dict,
-    step: int
-) -> List[List[int]]:
-    '''
-    This function is aimed to process all statements
-    for clustering: parwise checking of statements  in order to find
-    common variables and form the list of clusters for a given step.
-    '''
-    clusters: List[List[int]] = []
-    list_statements = list(dict_file.keys())
-    for stat_1 in list_statements:
-        stat_1_line = stat_1 if isinstance(stat_1, int) else stat_1.line
-        for stat_2 in list_statements[:stat_1_line + step]:
-            stat_2_line = stat_2 if isinstance(stat_2, int) else stat_2.line
-            if stat_1_line < stat_2_line and _check_is_common(dict_file, stat_1, stat_2):
-                if len(clusters) != 0 and _is_in_range(stat_1_line, clusters[-1]):
-                    if not _is_in_range(stat_2_line, clusters[-1]):
-                        clusters[-1][1] = stat_2_line
-                else:
-                    clusters.append([stat_1_line, stat_2_line])
+def find_clusters(statements_semantic: Dict[ASTNode, StatementSemantic]) -> List[Cluster]:
+    clusters: List[Cluster] = []
+    for step in range(1, len(statements_semantic) + 1):
+        new_clusters = _find_clusters_with_step(statements_semantic, step)
+        clusters.extend([cluster for cluster in new_clusters if cluster not in clusters])
+
     return clusters
 
 
-def SEMI(dict_file: Dict[ASTNode, List[str]]) -> List[List[int]]:
-    '''
-    Implementation of the original clustering method from the original
-    article with some changes.
-    Here we obtain length of the considered method and starting
-    to apply algo for each step.
-    '''
-    opportunities = []
-    first_statement_ = list(dict_file.keys())[0]
-    last_statement_ = list(dict_file.keys())[-1]
-    first_statement = first_statement_ if isinstance(first_statement_, int) else first_statement_.line
-    last_statement = last_statement_ if isinstance(last_statement_, int) else last_statement_.line
-    method_length = last_statement - first_statement + 1
+def _find_clusters_with_step(
+    statements_semantic: Dict[ASTNode, StatementSemantic], step: int
+) -> List[Cluster]:
+    fails_qty = 0
+    statement_index = 0
 
-    for step in range(1, method_length + 1):
-        clusters = _process_statement(dict_file, step)
-        opportunities += clusters
-    unique_oppo = [list(oppo) for oppo in set(map(tuple, opportunities))]  # type: ignore
-    return unique_oppo  # type: ignore
+    statements_semantic_flat: List[Tuple[ASTNode, StatementSemantic]] = list(statements_semantic.items())
 
+    clusters: List[Cluster] = []
+    statements_range: Optional[Range] = None
 
-def _get_lines_to_node_dict(dict_file: Dict[ASTNode, List[str]]) -> Dict[int, ASTNode]:
-    '''
-    Here we form new dictionary, which consist of
-    lines in code of statements and their ASTNode
-    representation.
-    '''
-    lines_to_node_dict: Dict[int, ASTNode] = {}
-    for node in dict_file:
-        lines_to_node_dict[node.line] = node
-    return lines_to_node_dict
+    while statement_index < len(statements_semantic_flat):
+        statement, semantic = statements_semantic_flat[statement_index]
+        if statements_range is None:
+            statements_range = Range(statement_index, statement_index)
+            statement_index += 1
+        else:
+            previous_statement, previous_semantic = statements_semantic_flat[statements_range.last]
+            if previous_semantic.is_similar(semantic):
+                statements_range.last = statement_index
+                statement_index += 1
+                fails_qty = 0
+            else:
+                fails_qty += 1
+                if fails_qty == step:
+                    clusters.append(
+                        _convert_indexes_to_statements(statements_semantic_flat, statements_range)
+                    )
+                    statements_range = None
+                    statement_index -= step - 1
+                    fails_qty = 0
+                else:
+                    statement_index += 1
 
+    if statements_range is not None:
+        clusters.append(_convert_indexes_to_statements(statements_semantic_flat, statements_range))
 
-def _transform_clusters(
-    clusters_by_digits: List[List[int]],
-    lines_to_node_dict: Dict[int, ASTNode]
-) -> List[List[ASTNode]]:
-    '''
-    This method is aimed to represent clusters by
-    digits to the clusters by ASTNodes.
-
-    It means that we have clusters, such as:
-    [[1,3], [4, 6]]
-    But we want to represent it by ASTNodes. Also,
-    each cluster should contain not only all elements
-    in the clusters.
-    '''
-    clusters_by_nodes: List[List[ASTNode]] = []
-    for cluster in clusters_by_digits:
-        lines_list = list(lines_to_node_dict.keys())
-        nodes_list = list(lines_to_node_dict.values())
-        start_index = lines_list.index(cluster[0])
-        end_index = lines_list.index(cluster[1])
-        clusters_by_nodes.append(nodes_list[start_index:end_index + 1])
-    return clusters_by_nodes
+    return clusters
 
 
-def SEMI_ASTNodes(dict_file: Dict[ASTNode, List[str]]) -> List[List[ASTNode]]:
-    '''
-    This is the version of SEMI algoirthm with some changes:
-    as the output we have clusters represented by all ASTNodes in them.
-    '''
-    clusters: List[List[int]] = SEMI(dict_file)
-    lines_to_node_dict = _get_lines_to_node_dict(dict_file)
-    return _transform_clusters(clusters, lines_to_node_dict)
+def _convert_indexes_to_statements(
+    statements_semantic_flat: List[Tuple[ASTNode, StatementSemantic]], statements_range: Range
+) -> Cluster:
+    return [statements_semantic_flat[i][0] for i in range(statements_range.first, statements_range.last + 1)]
 
 
-def _reprocess_dict(method_semantic: Dict[ASTNode, StatementSemantic]) -> Dict[ASTNode, List[str]]:
-    '''
-    Since we have dictionary of inapropriate look,
-    as it might be, we reprocess this dictionary.
-    '''
-    reprocessed_dict = OrderedDict([])
-    for statement in method_semantic.keys():
-        new_values = []
-        new_values += list(method_semantic[statement].used_variables)
-        new_values += list(method_semantic[statement].used_objects)
-        new_values += list(method_semantic[statement].used_methods)
-        reprocessed_dict.update({statement: new_values})
-    return reprocessed_dict
+def _print_clusters(method_ast: AST, filepath: str, class_name: str, method_name: str):
+    statements_semantic = extract_method_statements_semantic(method_ast)
+    statement_clusters = find_clusters(statements_semantic)
+    print(
+        f"{len(statement_clusters)} clusters found in method {method_name} "
+        f"in class {class_name} in file {filepath}:"
+    )
+
+    for index, cluster in enumerate(statement_clusters):
+        first_statement = cluster[0]
+        last_statement = cluster[-1]
+        print(
+            f"{index}th cluster:\n"
+            f"\tFirst statement: {first_statement.node_type} on line {first_statement.line}\n"
+            f"\tLast statement: {last_statement.node_type} on line {last_statement.line}\n"
+        )
 
 
-def _print_clusters(
-    method_ast: AST, filepath: str, class_name: str, method_name: str
-):
-    method_semantic = extract_method_statements_semantic(method_ast)
-    reprocessed_dict = _reprocess_dict(method_semantic)
-
-    print('-' * 100)
-    print(f'Starting algorithm for method: {method_name} in class: {class_name}')
-    print('-' * 100)
-    clusters = SEMI(reprocessed_dict)
-    print(clusters)
-
-
-if __name__ == '__main__':
-    common_cli(_print_clusters, "Cluster statements in method.")
+if __name__ == "__main__":
+    common_cli(_print_clusters, "Clusters statements based on their semantic.")
