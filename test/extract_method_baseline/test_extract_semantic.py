@@ -10,8 +10,8 @@ from veniq.baselines.semi.extract_semantic import (
 )
 
 
-def variables_semantic(*variables_names: str) -> StatementSemantic:
-    return StatementSemantic(used_variables=set(variables_names))
+def objects_semantic(*objects_names: str) -> StatementSemantic:
+    return StatementSemantic(used_objects=set(objects_names))
 
 
 class ExtractStatementSemanticTestCase(TestCase):
@@ -43,70 +43,67 @@ class ExtractStatementSemanticTestCase(TestCase):
                         self.assertEqual(actual_statement_semantic, expected_statement_semantic)
 
     expected_semantic = {
-        "block": [variables_semantic("x")],
-        "forCycle": [variables_semantic("x", "i"), variables_semantic("x", "i", "result")],
-        "whileCycle": [variables_semantic("x"), variables_semantic("x")],
-        "doWhileCycle": [variables_semantic("x"), variables_semantic("x")],
+        "block": [objects_semantic("x")],
+        "forCycle": [objects_semantic("x", "i"), objects_semantic("x", "i", "result")],
+        "whileCycle": [objects_semantic("x"), objects_semantic("x")],
+        "doWhileCycle": [objects_semantic("x"), objects_semantic("x")],
         "ifBranching": [
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
         ],
-        "synchronizedBlock": [variables_semantic("x"), variables_semantic("x")],
+        "synchronizedBlock": [objects_semantic("x"), objects_semantic("x")],
         "switchBranching": [
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
         ],
         "tryBlock": [
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
-            variables_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
         ],
-        "assertStatement": [variables_semantic("x")],
-        "returnStatement": [variables_semantic("x")],
-        "expression": [variables_semantic("x")],
-        "throwStatement": [variables_semantic("x")],
-        "localVariableDeclaration": [variables_semantic("x")],
-        "breakStatement": [StatementSemantic()],
-        "continueStatement": [StatementSemantic()],
+        "assertStatement": [objects_semantic("x")],
+        "returnStatement": [objects_semantic("x")],
+        "expression": [objects_semantic("x")],
+        "throwStatement": [objects_semantic("x")],
+        "localVariableDeclaration": [objects_semantic("x")],
+        "breakStatement": [StatementSemantic(), StatementSemantic()],
+        "continueStatement": [StatementSemantic(), StatementSemantic()],
         "localMethodCall": [StatementSemantic(used_methods={"localMethod"})],
         "objectMethodCall": [StatementSemantic(used_objects={"o"}, used_methods={"method"})],
-        "nestedObject": [StatementSemantic(used_objects={"o"}, used_variables={"x"})],
+        "nestedObject": [StatementSemantic(used_objects={"o", "x"})],
         "nestedObjectMethodCall": [
-            StatementSemantic(used_objects={"o.nestedObject"}, used_methods={"method"})
+            StatementSemantic(used_objects={"o", "nestedObject"}, used_methods={"method"})
         ],
         "severalStatements": [
-            variables_semantic("x"),
-            variables_semantic("x"),
-            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}, used_variables={"x"}),
-            variables_semantic("x"),
+            objects_semantic("x"),
+            objects_semantic("x"),
+            StatementSemantic(used_objects={"System", "out", "x"}, used_methods={"println"}),
+            objects_semantic("x"),
         ],
         "deepNesting": [
-            variables_semantic("i"),
-            variables_semantic("i"),
-            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}, used_variables={"i"}),
-            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}),
+            objects_semantic("i"),
+            objects_semantic("i"),
+            StatementSemantic(used_objects={"System", "out", "i"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System", "out"}, used_methods={"println"}),
         ],
         "complexExpressions": [
-            variables_semantic("x", "y"),
-            variables_semantic("o1", "o2"),
+            objects_semantic("x", "y"),
+            objects_semantic("o1", "o2"),
+            StatementSemantic(used_objects={"o1", "x", "y", "z"}, used_methods={"method", "secondMethod"}),
             StatementSemantic(
-                used_objects={"o1"}, used_methods={"method", "secondMethod"}, used_variables={"x", "y", "z"}
-            ),
-            StatementSemantic(
-                used_objects={"o1", "o2"},
+                used_objects={"o1", "o2", "z"},
                 used_methods={"method", "thirdMethod", "fourthMethod", "temporalMethod"},
-                used_variables={"z"},
             ),
         ],
-        "multilineStatement": [variables_semantic("x", "y", "o")],
+        "multilineStatement": [objects_semantic("x", "y", "o")],
         "multipleStatementsPerLine": [
-            StatementSemantic(used_methods={"localMethod"}, used_variables={"x"}),
-            StatementSemantic(used_methods={"localMethod"}, used_variables={"y"}),
+            StatementSemantic(used_methods={"localMethod"}, used_objects={"x"}),
+            StatementSemantic(used_methods={"localMethod"}, used_objects={"y"}),
         ],
     }

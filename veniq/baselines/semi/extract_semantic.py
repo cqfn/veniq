@@ -8,13 +8,11 @@ from veniq.baselines.semi.common_cli import common_cli
 
 @dataclass
 class StatementSemantic:
-    used_variables: Set[str] = field(default_factory=set)
     used_objects: Set[str] = field(default_factory=set)
     used_methods: Set[str] = field(default_factory=set)
 
     def is_similar(self, other: "StatementSemantic") -> bool:
-        return len(self.used_variables & other.used_variables) != 0 or \
-            len(self.used_objects & other.used_objects) != 0 or \
+        return len(self.used_objects & other.used_objects) != 0 or \
             len(self.used_methods & other.used_methods) != 0
 
 
@@ -164,15 +162,15 @@ def _extract_semantic_from_ast(statement_ast: AST) -> StatementSemantic:
         ASTNodeType.MEMBER_REFERENCE, ASTNodeType.METHOD_INVOCATION, ASTNodeType.VARIABLE_DECLARATOR
     ):
         if node.node_type == ASTNodeType.MEMBER_REFERENCE:
-            statement_semantic.used_variables.add(node.member)
+            statement_semantic.used_objects.add(node.member)
             if node.qualifier is not None:
-                statement_semantic.used_objects.add(node.qualifier)
+                statement_semantic.used_objects.update(node.qualifier.split("."))
         elif node.node_type == ASTNodeType.METHOD_INVOCATION:
             statement_semantic.used_methods.add(node.member)
             if node.qualifier is not None:
-                statement_semantic.used_objects.add(node.qualifier)
+                statement_semantic.used_objects.update(node.qualifier.split("."))
         elif node.node_type == ASTNodeType.VARIABLE_DECLARATOR:
-            statement_semantic.used_variables.add(node.name)
+            statement_semantic.used_objects.add(node.name)
 
     return statement_semantic
 
@@ -182,11 +180,6 @@ def _print_semantic_as_text(method_ast: AST, filepath: str, class_name: str, met
     method_semantic = extract_method_statements_semantic(method_ast)
     for statement, semantic in method_semantic.items():
         print(f"\t{statement.node_type} on line {statement.line} uses:")
-
-        if len(semantic.used_variables) != 0:
-            print("\t\tVariables:")
-            for variable_name in semantic.used_variables:
-                print("\t\t\t- " + variable_name)
 
         if len(semantic.used_objects) != 0:
             print("\t\tObjects:")
