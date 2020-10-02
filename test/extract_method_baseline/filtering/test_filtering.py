@@ -1,36 +1,31 @@
-from typing import List
+from typing import List, Union
 from pathlib import Path
 from unittest import TestCase
 
 from veniq.baselines.semi.filter import filter_extraction_opportunities, ExtractionOpportunity
-from veniq.ast_framework import AST, ASTNode, ASTNodeType
+from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
+from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
 
 
 class FilteringTestCase(TestCase):
     def test_non_continuos_statements_range(self):
-        # lines 9 and 15
-        self._opportunity_test_helper([59, 71], False)
+        self._opportunity_test_helper([9, 15], False)
 
     def test_not_whole_block_selected(self):
-        # lines 8-12
-        self._opportunity_test_helper([55, 59, 66, 67], False)
+        self._opportunity_test_helper([8, 9, 11, 12], False)
 
     def test_non_continuos_high_level_nodes(self):
-        # lines 3 and 19-22
-        self._opportunity_test_helper([25, 78, 100, 109, 113], False)
+        self._opportunity_test_helper([3, 19, 20, 21, 22], False)
 
     def test_statement_out_of_parent_block(self):
-        # lines 11 and 15
-        self._opportunity_test_helper([67, 71], False)
+        self._opportunity_test_helper([11, 15], False)
 
     def test_correct_simple_opportunity(self):
-        # lines 6-15
-        self._opportunity_test_helper([41, 50, 55, 59, 66, 67, 71], True)
+        self._opportunity_test_helper([6, 7, 8, 9, 11, 12, 15], True)
 
     def test_correct_large_opportunity(self):
-        # lines 5-26
-        self._opportunity_test_helper([32, 41, 50, 55, 59, 66, 67, 71, 78, 100, 109, 113, 118], True)
+        self._opportunity_test_helper([5, 6, 7, 8, 9, 11, 12, 15, 19, 20, 21, 22], True)
 
     def _opportunity_test_helper(
         self, extraction_opportunity_statements_ids: List[int], is_opportunity_correct: bool
@@ -45,8 +40,17 @@ class FilteringTestCase(TestCase):
         )
 
     @staticmethod
-    def _create_extraction_opportunity(method_ast: AST, statements_ids: List[int]) -> ExtractionOpportunity:
-        return [ASTNode(method_ast.tree, statement_id) for statement_id in statements_ids]
+    def _create_extraction_opportunity(method_ast: AST, statements_lines: List[int]) -> ExtractionOpportunity:
+        extraction_opportunity: ExtractionOpportunity = []
+        block_statement_graph = build_block_statement_graph(method_ast)
+
+        def fill_extraction_opportunity(node: Union[Block, Statement]):
+            nonlocal extraction_opportunity
+            if isinstance(node, Statement) and node.node.line in statements_lines:
+                extraction_opportunity.append(node.node)
+
+        block_statement_graph.traverse(fill_extraction_opportunity)
+        return extraction_opportunity
 
     @staticmethod
     def _is_correct_extraction_opportunity(
