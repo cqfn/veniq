@@ -13,7 +13,7 @@ def LCOM2(statements_semantic: Dict[Statement, StatementSemantic]) -> int:
         else:
             not_similar_pairs_qty += 1
 
-    lcom2 = similar_pairs_qty - not_similar_pairs_qty
+    lcom2 = not_similar_pairs_qty - similar_pairs_qty
     if lcom2 < 0:
         lcom2 = 0
 
