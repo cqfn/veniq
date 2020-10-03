@@ -108,6 +108,7 @@ def rank_extraction_opportunities(
     return sorted(
         extraction_opportunities_groups,
         key=lambda extraction_opportunity_group: extraction_opportunity_group.benifit,
+        reverse=True,
     )
 
 
