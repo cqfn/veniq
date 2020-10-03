@@ -38,7 +38,7 @@ class ExtractionOpportunityGroup:
         benifit_difference = abs(new_opportunity_benifit - self.benifit)
         max_benifit = max(new_opportunity_benifit, self.benifit)
         is_new_opportunity_optimal: bool
-        if benifit_difference / max_benifit >= self._settings.significant_difference_treshold:
+        if max_benifit > 0 and benifit_difference / max_benifit >= self._settings.significant_difference_treshold:
             is_new_opportunity_optimal = new_opportunity_benifit > self.benifit
         else:
             is_new_opportunity_optimal = len(extraction_opportunity) > len(self._optimal_opportunity)
