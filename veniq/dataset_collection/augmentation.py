@@ -10,7 +10,8 @@ from pathlib import Path
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from dataset_collection.types_identifier import AlgorithmFactory
+from utils.encoding_detector import read_text_with_autodetected_encoding
+from veniq.dataset_collection.types_identifier import IBaseInlineAlgorithm, AlgorithmFactory
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
 
@@ -83,11 +84,15 @@ def _get_method_node_of_invoked(
 def _is_match_to_the_conditions(method_invoked: ASTNode) -> bool:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
         parent = method_invoked.parent.parent
+        class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
+        member_references = [x for x in method_invoked.parent.children if hasattr(x, 'member')]
+        children = [x for x in member_references if x.member != method_invoked.member] + class_names
     else:
         parent = method_invoked.parent
+        children = True
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
-    is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION)
+    is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and not children
     chains_after = [x for x in method_invoked.children if x.node_type == ASTNodeType.METHOD_INVOCATION]
     is_not_chain_after = not chains_after
     is_not_inside_if = not (parent.node_type == ASTNodeType.IF_STATEMENT)
@@ -160,8 +165,7 @@ def _create_new_files(
         output_path.mkdirs(parent=True)
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
-    with open(file_path) as f:
-        text_lines = f.read().split('\n')
+    text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
     line_to_csv = [
         str(file_path),
@@ -172,14 +176,14 @@ def _create_new_files(
         method_node.name,
     ]
 
-    algorithm_for_inlining = AlgorithmFactory().create_obj(determine_type(method_node))
+    # algorithm_for_inlining = AlgorithmFactory().create_obj(determine_type(method_node))
 
-    algorithm_for_inlining().inline_function(
-        file_path,
-        invocation_node.line - 1,
-        method_node.line,
-        new_full_filename,
-    )
+    # algorithm_for_inlining().inline_function(
+    #     file_path,
+    #     invocation_node.line - 1,
+    #     method_node.line,
+    #     new_full_filename,
+    # )
 
     return line_to_csv
 
@@ -206,10 +210,10 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
             for method_invoked in method_decl.get_proxy_nodes(
                     ASTNodeType.METHOD_INVOCATION):
                 found_method_decl = method_declarations.get(method_invoked.member, [])
+                if method_invoked.member in ['await']:
+                    print(1)
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    if method_invoked.member in ['prepare']:
-                        print(1)
                     is_matched = _is_match_to_the_conditions(method_invoked)
 
                     if is_matched:
@@ -223,7 +227,6 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                                 dict_method_lines
                             ))
 
-    print(results)
     return results
 
 
@@ -257,7 +260,7 @@ if __name__ == '__main__':
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    with open(Path(output_dir, '../out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
+    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
         writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
@@ -278,6 +281,7 @@ if __name__ == '__main__':
                 if single_file_features:
                     for i in single_file_features:
                         writer.writerow(i)
+                csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
             except Exception as e:
