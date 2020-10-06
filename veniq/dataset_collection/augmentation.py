@@ -135,8 +135,8 @@ def check_method_without_return(
 
     var_decls_original = set(names)
     intersected_names = var_decls & var_decls_original
-    # if we do ot have intersected name in target method and inlined method
-    # and if we do nto have var declarations at all
+    # if we do not have intersected name in target method and inlined method
+    # and if we do not have var declarations at all
     if not var_decls or not intersected_names:
         return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
 
@@ -146,11 +146,21 @@ def check_method_without_return(
 def get_variables_decl_in_node(
         method_decl: AST) -> List[str]:
     names = []
+    for x in method_decl.get_proxy_nodes(ASTNodeType.VARIABLE_DECLARATOR):
+        if hasattr(x, 'name'):
+            names.append(x.name)
+        elif hasattr(x, 'names'):
+            names.extend(x.names)
+
     for x in method_decl.get_proxy_nodes(ASTNodeType.VARIABLE_DECLARATION):
         if hasattr(x, 'name'):
             names.append(x.name)
         elif hasattr(x, 'names'):
             names.extend(x.names)
+
+    for x in method_decl.get_proxy_nodes(ASTNodeType.TRY_RESOURCE):
+        names.append(x.name)
+
     return names
 
 
