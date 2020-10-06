@@ -80,6 +80,7 @@ def _get_method_node_of_invoked(
             return method_node
     return None
 
+
 @typing.no_type_check
 def _is_match_to_the_conditions(
         method_invoked: ASTNode) -> bool:
