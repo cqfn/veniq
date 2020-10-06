@@ -58,6 +58,17 @@ def _extract_blocks_from_if_branching(statement: ASTNode) -> List[BlockInfo]:
     return block_infos
 
 
+def _extract_blocks_from_switch_branching(statement: ASTNode) -> List[BlockInfo]:
+    return [BlockInfo(
+        reason=BlockReason.SINGLE_BLOCK,
+        statements=[
+            switch_statement
+            for switch_case in statement.cases
+            for switch_statement in switch_case.statements
+        ]
+    )]
+
+
 def _unwrap_block_to_statements_list(
     block_statement_or_statement_list: Union[ASTNode, List[ASTNode]]
 ) -> List[ASTNode]:
@@ -84,6 +95,7 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     ASTNodeType.METHOD_DECLARATION: _extract_blocks_from_single_block_statement_factory("body"),
     ASTNodeType.SYNCHRONIZED_STATEMENT: _extract_blocks_from_single_block_statement_factory("block"),
     ASTNodeType.WHILE_STATEMENT: _extract_blocks_from_single_block_statement_factory("body"),
+    ASTNodeType.SWITCH_STATEMENT: _extract_blocks_from_switch_branching,
     # multi block statements
     ASTNodeType.IF_STATEMENT: _extract_blocks_from_if_branching,
 }

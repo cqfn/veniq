@@ -85,6 +85,22 @@ class BlockStatementGraphExamples {
         }
     }
 
+    void switchBranches(int x) {
+        switch(x) {
+            case 0:
+                x = 1;
+                System.out.println(x);
+
+            case 1: {
+                x = 0;
+            }
+            System.out.println(x);
+
+            default:
+                x = -1;
+        }
+    }
+
     void complexExample1(int x) {
         x += 1;
 
