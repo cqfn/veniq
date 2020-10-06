@@ -101,6 +101,30 @@ class BlockStatementGraphExamples {
         }
     }
 
+    void singleTryBlock(Exception e) {
+        try {
+            throw e;
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    void fullTryBlock(Exception e) {
+        try(Resource resource = initResource() ) {
+            throw e;
+        }
+        catch(OSException e) {
+            System.out.println(e);
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+        finally {
+            System.out.println("FINALLY!!!");
+        }
+    }
+
     void complexExample1(int x) {
         x += 1;
 

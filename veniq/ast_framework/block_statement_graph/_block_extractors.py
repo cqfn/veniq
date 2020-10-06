@@ -69,6 +69,43 @@ def _extract_blocks_from_switch_branching(statement: ASTNode) -> List[BlockInfo]
     )]
 
 
+def _extract_blocks_from_try_statement(statement: ASTNode) -> List[BlockInfo]:
+    block_infos: List[BlockInfo] = []
+
+    if statement.resources is not None:
+        block_infos.append(
+            BlockInfo(
+                reason=BlockReason.TRY_RESOURCES,
+                statements=statement.resources
+            )
+        )
+
+    block_infos.append(
+        BlockInfo(
+            reason=BlockReason.TRY_BLOCK,
+            statements=_unwrap_block_to_statements_list(statement.block)
+        )
+    )
+
+    for catch_clause in statement.catches:
+        block_infos.append(
+            BlockInfo(
+                reason=BlockReason.CATCH_BLOCK,
+                statements=_unwrap_block_to_statements_list(catch_clause.block)
+            )
+        )
+
+    if statement.finally_block is not None:
+        block_infos.append(
+            BlockInfo(
+                reason=BlockReason.FINALLY_BLOCK,
+                statements=_unwrap_block_to_statements_list(statement.finally_block)
+            )
+        )
+
+    return block_infos
+
+
 def _unwrap_block_to_statements_list(
     block_statement_or_statement_list: Union[ASTNode, List[ASTNode]]
 ) -> List[ASTNode]:
@@ -88,6 +125,7 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     ASTNodeType.STATEMENT_EXPRESSION: _extract_blocks_from_plain_statement,
     ASTNodeType.THROW_STATEMENT: _extract_blocks_from_plain_statement,
     ASTNodeType.LOCAL_VARIABLE_DECLARATION: _extract_blocks_from_plain_statement,
+    ASTNodeType.TRY_RESOURCE: _extract_blocks_from_plain_statement,
     # single block statements
     ASTNodeType.BLOCK_STATEMENT: _extract_blocks_from_single_block_statement_factory("statements"),
     ASTNodeType.DO_STATEMENT: _extract_blocks_from_single_block_statement_factory("body"),
@@ -98,4 +136,5 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     ASTNodeType.SWITCH_STATEMENT: _extract_blocks_from_switch_branching,
     # multi block statements
     ASTNodeType.IF_STATEMENT: _extract_blocks_from_if_branching,
+    ASTNodeType.TRY_STATEMENT: _extract_blocks_from_try_statement,
 }
