@@ -1,7 +1,3 @@
-from collections import namedtuple
-from itertools import islice, repeat, chain
-
-from deprecated import deprecated  # type: ignore
 from javalang.tree import Node
 from networkx import DiGraph, dfs_labeled_edges, dfs_preorder_nodes  # type: ignore
 from typing import Union, Any, Callable, Set, List, Iterator, Tuple, Dict, cast, Optional
@@ -10,11 +6,6 @@ from veniq.ast_framework.ast_node_type import ASTNodeType
 from veniq.ast_framework._auxiliary_data import javalang_to_ast_node_type, attributes_by_node_type, ASTNodeReference
 from veniq.ast_framework.ast_node import ASTNode
 
-MethodInvocationParams = namedtuple('MethodInvocationParams', ['object_name', 'method_name'])
-
-MemberReferenceParams = namedtuple('MemberReferenceParams', ('object_name', 'member_name', 'unary_operator'))
-
-BinaryOperationParams = namedtuple('BinaryOperationParams', ('operation', 'left_side', 'right_side'))
 
 TraverseCallback = Callable[[ASTNode], None]
 
@@ -105,112 +96,10 @@ class AST:
             elif edge_type == "reverse":
                 on_node_leaving(ASTNode(self.tree, destination))
 
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def children_with_type(self, node: int, child_type: ASTNodeType) -> Iterator[int]:
-        '''
-        Yields children of node with given type.
-        '''
-        for child in self.tree.succ[node]:
-            if self.tree.nodes[child]['node_type'] == child_type:
-                yield child
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def list_all_children_with_type(self, node: int, child_type: ASTNodeType) -> List[int]:
-        list_node: List[int] = []
-        for child in self.tree.succ[node]:
-            list_node = list_node + self.list_all_children_with_type(child, child_type)
-            if self.tree.nodes[child]['node_type'] == child_type:
-                list_node.append(child)
-        return sorted(list_node)
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def all_children_with_type(self, node: int, child_type: ASTNodeType) -> Iterator[int]:
-        '''
-        Yields all children of node with given type.
-        '''
-        for child in self.list_all_children_with_type(node, child_type):
-            yield child
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_first_n_children_with_type(self, node: int, child_type: ASTNodeType, quantity: int) -> List[int]:
-        '''
-        Returns first quantity of children of node with type child_type.
-        Resulted list is padded with None to length quantity.
-        '''
-        children_with_type = (child for child in self.tree.succ[node] if self.get_type(child) == child_type)
-        children_with_type_padded = chain(children_with_type, repeat(None))
-        return list(islice(children_with_type_padded, 0, quantity))
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_binary_operation_name(self, node: int) -> str:
-        assert(self.get_type(node) == ASTNodeType.BINARY_OPERATION)
-        name_node, = islice(self.children_with_type(node, ASTNodeType.STRING), 1)
-        return self.get_attr(name_node, 'string')
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_line_number_from_children(self, node: int) -> int:
-        for child in self.tree.succ[node]:
-            cur_line = self.get_attr(child, 'line')
-            if cur_line is not None:
-                return cur_line
-        return 0
-
-    @deprecated(reason='Use get_proxy_nodes instead.')
-    def get_nodes(self, type: Union[ASTNodeType, None] = None) -> Iterator[int]:
-        for node in self.tree.nodes:
-            if type is None or self.tree.nodes[node]['node_type'] == type:
-                yield node
-
     def get_proxy_nodes(self, *types: ASTNodeType) -> Iterator[ASTNode]:
         for node in self.tree.nodes:
             if len(types) == 0 or self.tree.nodes[node]['node_type'] in types:
                 yield ASTNode(self.tree, node)
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_attr(self, node: int, attr_name: str, default_value: Any = None) -> Any:
-        return self.tree.nodes[node].get(attr_name, default_value)
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_type(self, node: int) -> ASTNodeType:
-        return self.get_attr(node, 'node_type')
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_method_invocation_params(self, invocation_node: int) -> MethodInvocationParams:
-        assert(self.get_type(invocation_node) == ASTNodeType.METHOD_INVOCATION)
-        # first two STRING nodes represent object and method names
-        children = list(self.children_with_type(invocation_node, ASTNodeType.STRING))
-        if len(children) == 1:
-            return MethodInvocationParams('', self.get_attr(children[0], 'string'))
-
-        return MethodInvocationParams(self.get_attr(children[0], 'string'),
-                                      self.get_attr(children[1], 'string'))
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_member_reference_params(self, member_reference_node: int) -> MemberReferenceParams:
-        assert(self.get_type(member_reference_node) == ASTNodeType.MEMBER_REFERENCE)
-        params = [self.get_attr(child, 'string') for child in
-                  self.children_with_type(member_reference_node, ASTNodeType.STRING)]
-
-        member_reference_params: MemberReferenceParams
-        if len(params) == 1:
-            member_reference_params = MemberReferenceParams(object_name='', member_name=params[0],
-                                                            unary_operator='')
-        elif len(params) == 2:
-            member_reference_params = MemberReferenceParams(object_name=params[0], member_name=params[1],
-                                                            unary_operator='')
-        elif len(params) == 3:
-            member_reference_params = MemberReferenceParams(unary_operator=params[0], object_name=params[1],
-                                                            member_name=params[2])
-        else:
-            raise ValueError('Node has 0 or more then 3 children with type "STRING": ' + str(params))
-
-        return member_reference_params
-
-    @deprecated(reason='Use ASTNode functionality instead.')
-    def get_binary_operation_params(self, binary_operation_node: int) -> BinaryOperationParams:
-        assert(self.get_type(binary_operation_node) == ASTNodeType.BINARY_OPERATION)
-        operation_node, left_side_node, right_side_node = self.tree.succ[binary_operation_node]
-        return BinaryOperationParams(self.get_attr(operation_node, 'string'), left_side_node, right_side_node)
 
     @staticmethod
     def _add_subtree_from_javalang_node(tree: DiGraph, javalang_node: Union[Node, Set[Any], str],

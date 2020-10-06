@@ -1,10 +1,9 @@
-from unittest import TestCase, skip
+from unittest import TestCase
 from pathlib import Path
 from itertools import zip_longest
 
 from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST, ASTNodeType
-from veniq.ast_framework.ast import MemberReferenceParams, MethodInvocationParams
 
 
 class ASTTestSuite(TestCase):
@@ -33,20 +32,6 @@ class ASTTestSuite(TestCase):
         self.assertEqual([node.node_type for node in static_constructor],
                          [ASTNodeType.STATEMENT_EXPRESSION, ASTNodeType.STATEMENT_EXPRESSION])
         self.assertEqual(method_declaration.node_type, ASTNodeType.METHOD_DECLARATION)
-
-    @skip('Method "get_member_reference_params" is deprecated')
-    def test_member_reference_params(self):
-        ast = self._build_ast("MemberReferencesExample.java")
-        for node, expected_params in zip_longest(ast.get_nodes(ASTNodeType.MEMBER_REFERENCE),
-                                                 ASTTestSuite._expected_member_reference_params):
-            self.assertEqual(ast.get_member_reference_params(node), expected_params)
-
-    @skip('Method "get_method_invocation_params" is deprecated')
-    def test_method_invocation_params(self):
-        ast = self._build_ast("MethodInvokeExample.java")
-        for node, expected_params in zip_longest(ast.get_nodes(ASTNodeType.METHOD_INVOCATION),
-                                                 ASTTestSuite._expected_method_invocation_params):
-            self.assertEqual(ast.get_method_invocation_params(node), expected_params)
 
     def _build_ast(self, filename: str):
         javalang_ast = build_ast(str(Path(__file__).parent.absolute() / filename))
@@ -89,19 +74,4 @@ class ASTTestSuite(TestCase):
     _java_simple_class_basic_type_subtrees = [
         [8, 9],
         [17, 18],
-    ]
-
-    _expected_member_reference_params = [
-        MemberReferenceParams('', 'block_variable', ''),
-        MemberReferenceParams('', 'method_parameter', ''),
-        MemberReferenceParams('', 'block_variable', '++'),
-        MemberReferenceParams('', 'field', ''),
-        MemberReferenceParams('', 'block_variable', ''),
-        MemberReferenceParams('Something', 'outer_field', ''),
-        MemberReferenceParams('', 'field', ''),
-    ]
-
-    _expected_method_invocation_params = [
-        MethodInvocationParams(object_name='System.out', method_name='println'),
-        MethodInvocationParams(object_name='', method_name='method1'),
     ]
