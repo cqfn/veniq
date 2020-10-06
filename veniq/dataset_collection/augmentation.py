@@ -6,6 +6,7 @@ from functools import partial
 from typing import Tuple, Dict, Union, List, Any
 from pathlib import Path
 
+import typing
 from pebble import ProcessPool
 from tqdm import tqdm
 
@@ -80,7 +81,9 @@ def _get_method_node_of_invoked(
     return None
 
 
-def _is_match_to_the_conditions(method_invoked: ASTNode) -> bool:
+@typing.no_type_check
+def _is_match_to_the_conditions(
+        method_invoked: ASTNode) -> bool:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
         parent = method_invoked.parent.parent
         class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
