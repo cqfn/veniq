@@ -50,8 +50,9 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str) -> str:
         raise NotImplementedError("Cannot run abstract function")
 
@@ -65,8 +66,9 @@ class DoNothing(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str) -> str:
         return ""
 
@@ -79,8 +81,9 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str):
         # TODO insert code when it is ready
         print("Run InlineWithoutReturnWithoutArguments")
@@ -94,8 +97,9 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str):
         # TODO insert code when it is ready
         print("Run InlineWithReturnWithoutArguments")
