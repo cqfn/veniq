@@ -14,4 +14,5 @@ class NodeType(Enum):
 
 class BlockReason(Enum):
     SINGLE_BLOCK = "SINGLE_BLOCK"
-    # This enum is going to grow soon
+    THEN_BRANCH = "THEN_BRANCH"
+    ELSE_BRANCH = "ELSE_BRANCH"

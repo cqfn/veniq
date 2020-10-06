@@ -61,6 +61,30 @@ class BlockStatementGraphExamples {
         }
     }
 
+    void singleIfThenBranch(int x) {
+        if(x > 0) {
+            x += 1;
+        }
+    }
+
+    void singleIfTheElseBranches(int x) {
+        if(x > 0) {
+            x += 1;
+        } else {
+            x -= 1;
+        }
+    }
+
+    void severalElseIfBranches(int x) {
+        if(x > 0) {
+            x += 1;
+        } else if(x == 0) {
+            x = 0;
+        } else {
+            x -= 1;
+        }
+    }
+
     void complexExample1(int x) {
         x += 1;
 
