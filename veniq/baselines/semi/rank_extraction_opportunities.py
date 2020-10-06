@@ -32,7 +32,7 @@ class ExtractionOpportunityGroup:
         self._settings = settings
 
     def is_allowed_to_add_opportunity(self, extraction_opportunity: ExtractionOpportunity) -> bool:
-        return not self._is_similar_size(self._optimal_opportunity, extraction_opportunity) and \
+        return self._is_similar_size(self._optimal_opportunity, extraction_opportunity) and \
             self._is_significantly_overlapping(self._optimal_opportunity, extraction_opportunity)
 
     def add_extraction_opportunity(self, extraction_opportunity: ExtractionOpportunity) -> None:
