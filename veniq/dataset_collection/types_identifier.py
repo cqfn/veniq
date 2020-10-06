@@ -1,4 +1,3 @@
-from abc import ABC
 import abc
 
 
@@ -34,7 +33,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             line: int,
             src_line_inline: int,
             filename_out: str) -> str:
-        raise NotImplemented("Cannot run abstract function")
+        raise NotImplementedError("Cannot run abstract function")
 
 
 class DoNothing(IBaseInlineAlgorithm):

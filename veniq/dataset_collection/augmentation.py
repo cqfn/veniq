@@ -4,14 +4,13 @@ import os
 from collections import defaultdict
 from functools import partial
 from typing import Tuple, Dict, Union, List, Any
-import pandas as pd
 from pathlib import Path
 
 from pebble import ProcessPool
 from tqdm import tqdm
 
 from utils.encoding_detector import read_text_with_autodetected_encoding
-from veniq.dataset_collection.types_identifier import IBaseInlineAlgorithm, AlgorithmFactory
+from veniq.dataset_collection.types_identifier import AlgorithmFactory
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
 
@@ -176,14 +175,14 @@ def _create_new_files(
         method_node.name,
     ]
 
-    # algorithm_for_inlining = AlgorithmFactory().create_obj(determine_type(method_node))
+    algorithm_for_inlining = AlgorithmFactory().create_obj(determine_type(method_node))
 
-    # algorithm_for_inlining().inline_function(
-    #     file_path,
-    #     invocation_node.line - 1,
-    #     method_node.line,
-    #     new_full_filename,
-    # )
+    algorithm_for_inlining().inline_function(
+        file_path,
+        invocation_node.line - 1,
+        method_node.line,
+        new_full_filename,
+    )
 
     return line_to_csv
 
