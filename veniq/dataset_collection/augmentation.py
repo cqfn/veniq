@@ -9,7 +9,7 @@ from pathlib import Path
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from utils.encoding_detector import read_text_with_autodetected_encoding
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 from veniq.dataset_collection.types_identifier import AlgorithmFactory
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
@@ -18,7 +18,7 @@ from veniq.utils.ast_builder import build_ast
 def _get_last_line(child_statement: ASTNode) -> int:
     """
     This function is aimed to find the last line of
-    the all childrens and childerns of childrens
+    the all children and children of children
     for a chosen statement.
     Main goal is to get the last line of method.
     """
@@ -39,7 +39,7 @@ def _method_body_lines(method_node: ASTNode) -> Tuple[int, int]:
         start_line = method_node.body[0].line
         end_line = _get_last_line(method_all_children)
     else:
-        start_line = end_line = None
+        start_line = end_line = -1
     return start_line, end_line
 
 
@@ -58,7 +58,7 @@ def _get_method_lines_dict(
         for method_node in class_declaration.methods:
             lines = _method_body_lines(method_node)
             # if we have body
-            if all(lines):
+            if -1 in lines:
                 if not dictionary.get(method_node):
                     dictionary[method_node] = {f'{class_declaration.name}.{method_node.name}': lines}
                 elif not dictionary[method_node].get(class_declaration):
@@ -85,13 +85,14 @@ def _is_match_to_the_conditions(method_invoked: ASTNode) -> bool:
         parent = method_invoked.parent.parent
         class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
         member_references = [x for x in method_invoked.parent.children if hasattr(x, 'member')]
-        children = [x for x in member_references if x.member != method_invoked.member] + class_names
+        lst = [x for x in member_references if x.member != method_invoked.member] + class_names
+        no_children = not lst
     else:
         parent = method_invoked.parent
-        children = True
+        no_children = True
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
-    is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and not children
+    is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
     chains_after = [x for x in method_invoked.children if x.node_type == ASTNodeType.METHOD_INVOCATION]
     is_not_chain_after = not chains_after
     is_not_inside_if = not (parent.node_type == ASTNodeType.IF_STATEMENT)
@@ -161,7 +162,7 @@ def _create_new_files(
     """
     file_name = file_path.name
     if not os.path.exists(output_path):
-        output_path.mkdirs(parent=True)
+        output_path.mkdir(parents=True)
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
@@ -209,8 +210,6 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
             for method_invoked in method_decl.get_proxy_nodes(
                     ASTNodeType.METHOD_INVOCATION):
                 found_method_decl = method_declarations.get(method_invoked.member, [])
-                if method_invoked.member in ['await']:
-                    print(1)
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
                     is_matched = _is_match_to_the_conditions(method_invoked)
@@ -230,7 +229,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
 
 
 if __name__ == '__main__':
-    system_cores_qty = os.cpu_count()
+    system_cores_qty = os.cpu_count() or 1
     parser = ArgumentParser()
     parser.add_argument(
         "-d", "--dir", required=True, help="File path to JAVA source code for methods augmentations"
