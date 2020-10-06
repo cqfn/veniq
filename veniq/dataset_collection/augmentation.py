@@ -45,6 +45,7 @@ def _get_last_line(file_path: str, last_return_line: int) -> int:
         if len(last_case_line) == 0:
             return i - 1
 
+
 def _method_body_lines(method_node: ASTNode, file_path: str) -> Tuple[int, int]:
     """
     Ger start and end of method's body

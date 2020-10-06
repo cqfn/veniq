@@ -107,6 +107,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         for i in original_code_lines:
             f_out.write(i)
 
+
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def __init__(self):
