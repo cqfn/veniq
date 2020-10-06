@@ -210,7 +210,7 @@ def _create_new_files(
         output_path.mkdir(parents=True)
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
-    original_func = dict_original_invocations.get(invocation_node.member)[0]
+    original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = _method_body_lines(original_func)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 

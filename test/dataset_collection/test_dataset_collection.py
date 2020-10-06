@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.dataset_collection.augmentation import determine_type, analyze_file
+from veniq.dataset_collection.augmentation import determine_type
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast
@@ -10,7 +10,7 @@ from veniq.utils.ast_builder import build_ast
 class TestDatasetCollection(TestCase):
     current_directory = Path(__file__).absolute().parent
 
-    def test_determine_type_without_variables_declaration(self):
+    def test_determine_type_without_return_without_arguments(self):
         filepath = self.current_directory / "Example.java"
         ast = AST.build_from_javalang(build_ast(filepath))
         m_decl = [
