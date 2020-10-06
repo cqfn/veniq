@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from dataset_collection.augmentation import determine_type
+from dataset_collection.augmentation import determine_type, analyze_file
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast

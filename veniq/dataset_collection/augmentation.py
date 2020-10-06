@@ -177,7 +177,7 @@ def determine_type(
     else:
         original_method = original_invoked_method[0]
         if not original_method.parameters:
-            if original_method.return_type:
+            if not original_method.return_type:
                 # Find the original method declaration by the name of method invocation
                 var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
                 return check_method_without_return(
