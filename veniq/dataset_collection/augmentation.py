@@ -3,7 +3,7 @@ from argparse import ArgumentParser
 import os
 from collections import defaultdict
 from functools import partial
-from typing import Tuple, Dict, Union, List, Any
+from typing import Tuple, Dict, List, Any
 from pathlib import Path
 
 import typing
@@ -11,7 +11,7 @@ from pebble import ProcessPool
 from tqdm import tqdm
 
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
-from veniq.dataset_collection.types_identifier import AlgorithmFactory
+from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
 
@@ -65,20 +65,6 @@ def _get_method_lines_dict(
                 elif not dictionary[method_node].get(class_declaration):
                     dictionary[method_node][f'{class_declaration.name}.{method_node.name}'] = lines
     return dictionary
-
-
-def _get_method_node_of_invoked(
-        invoked_method_node: ASTNode,
-        dict_method_lines: Dict
-) -> Union[ASTNode, None]:
-    """
-    To find method node of class by
-    its invoked version in the other one method.
-    """
-    for method_node in dict_method_lines:
-        if invoked_method_node.member == method_node.name:
-            return method_node
-    return None
 
 
 @typing.no_type_check
@@ -136,17 +122,60 @@ def _is_match_to_the_conditions(
         return False
 
 
-def determine_type(method_node: ASTNode):
+def check_method_without_return(
+        original_invoked_method: ASTNode,
+        var_decls: typing.Set[str]) -> InlineTypesAlgorithms:
+    """
+    Run function to check whether Method declaration can be inlined
+    :param original_invoked_method:
+    :param var_decls: set of variables of method, where invocation occurred
+    :return: enum InlineTypesAlgorithms
+    """
+    var_decls_original = set(
+        [x.name for x in
+         original_invoked_method.get_proxy_nodes(ASTNodeType.VARIABLE_DECLARATION)
+         ])
+    intersected_names = var_decls & var_decls_original
+    # if we do ot have intersected name in target method and inlined method
+    # and if we do nto have var declarations at all
+    if not var_decls or not intersected_names:
+        return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+
+    return InlineTypesAlgorithms.DO_NOTHING
+
+
+def determine_type(
+        method_node: ASTNode,
+        invocation_node: ASTNode,
+        dict_original_nodes: Dict[str, List[ASTNode]]
+) -> InlineTypesAlgorithms:
     """
 
-    :param method_node: Method declaration
+    :param dict_original_nodes: dict with names of function as key
+    and list of ASTNode as values
+    :param method_node: Method declaration. In this method invocation occurred
+    :param invocation_node: invocation node
     :return: int - type
     """
 
-    if not method_node.parameters:
-        return 0
+    original_invoked_method = dict_original_nodes.get(invocation_node.member)
+    # ignore overridden functions
+    if len(original_invoked_method) > 1:
+        return InlineTypesAlgorithms.DO_NOTHING
     else:
-        return -1
+        original_method = original_invoked_method[0]
+        if original_method.parameters:
+            # Find the original method declaration by the name of method invocation
+            var_decls = set([x.name for x in method_node.get_proxy_nodex(ASTNodeType.VARIABLE_DECLARATION)])
+            if original_method.return_type:
+                return check_method_without_return(
+                    original_method,
+                    var_decls
+                )
+        else:
+            return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+
+    return InlineTypesAlgorithms.DO_NOTHING
 
 
 def _create_new_files(
@@ -155,7 +184,7 @@ def _create_new_files(
         invocation_node: ASTNode,
         file_path: Path,
         output_path: Path,
-        dict_method_lines: Dict
+        dict_original_invocations: Dict[str, List[ASTNode]]
 ) -> List[Any]:
     """
     If invocations of class methods were found,
@@ -179,7 +208,8 @@ def _create_new_files(
         method_node.name,
     ]
 
-    algorithm_for_inlining = AlgorithmFactory().create_obj(determine_type(method_node))
+    algorithm_for_inlining = AlgorithmFactory().create_obj(
+        determine_type(method_node, invocation_node, dict_original_invocations))
 
     algorithm_for_inlining().inline_function(
         file_path,
@@ -206,7 +236,6 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
             if not method.parameters:
                 method_declarations[method.name].append(method)
 
-        dict_method_lines = _get_method_lines_dict(classes_declaration)
         methods_list = list(class_declaration.methods) + list(class_declaration.constructors)
         for method_node in methods_list:
             method_decl = ast.get_subtree(method_node)
@@ -225,7 +254,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                                 method_invoked,
                                 file_path,
                                 output_path,
-                                dict_method_lines
+                                method_declarations
                             ))
 
     return results

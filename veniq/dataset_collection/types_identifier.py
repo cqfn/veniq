@@ -1,4 +1,11 @@
 import abc
+from enum import Enum
+
+
+class InlineTypesAlgorithms(Enum):
+    WITH_RETURN_WITHOUT_ARGUMENTS = 0
+    WITHOUT_RETURN_WITHOUT_ARGUMENTS = 1
+    DO_NOTHING = -1
 
 
 class SingletonDecorator:
@@ -12,10 +19,23 @@ class SingletonDecorator:
         return self.instance
 
 
-class AlgorithmFactory:
-    objects = {1: lambda: InlineWithoutReturnWithoutArguments,
-               0: lambda: InlineWithoutReturnWithoutArguments,
-               -1: lambda: DoNothing}
+class Singleton(type):
+    _instances = {}
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class AlgorithmFactory(metaclass=Singleton):
+    objects = {
+        InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS:
+            lambda: InlineWithReturnWithoutArguments,
+        InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS:
+            lambda: InlineWithoutReturnWithoutArguments,
+        InlineTypesAlgorithms.DO_NOTHING:
+            lambda: DoNothing}
 
     def create_obj(self, val_type):
         return self.objects.get(val_type)()
