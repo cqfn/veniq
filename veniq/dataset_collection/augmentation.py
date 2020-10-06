@@ -123,18 +123,17 @@ def _is_match_to_the_conditions(
 
 
 def check_method_without_return(
-        original_invoked_method: ASTNode,
+        method_decl: AST,
         var_decls: typing.Set[str]) -> InlineTypesAlgorithms:
     """
     Run function to check whether Method declaration can be inlined
-    :param original_invoked_method:
-    :param var_decls: set of variables of method, where invocation occurred
+    :param method_decl: method, where invocation occurred
+    :param var_decls: set of variables for found invoked method
     :return: enum InlineTypesAlgorithms
     """
-    var_decls_original = set(
-        [x.name for x in
-         original_invoked_method.get_proxy_nodes(ASTNodeType.VARIABLE_DECLARATION)
-         ])
+    names = get_variables_decl_in_node(method_decl)
+
+    var_decls_original = set(names)
     intersected_names = var_decls & var_decls_original
     # if we do ot have intersected name in target method and inlined method
     # and if we do nto have var declarations at all
@@ -144,13 +143,26 @@ def check_method_without_return(
     return InlineTypesAlgorithms.DO_NOTHING
 
 
+def get_variables_decl_in_node(
+        method_decl: AST) -> List[str]:
+    names = []
+    for x in method_decl.get_proxy_nodes(ASTNodeType.VARIABLE_DECLARATION):
+        if hasattr(x, 'name'):
+            names.append(x.name)
+        elif hasattr(x, 'names'):
+            names.extend(x.names)
+    return names
+
+
 def determine_type(
+        ast: AST,
         method_node: ASTNode,
         invocation_node: ASTNode,
         dict_original_nodes: Dict[str, List[ASTNode]]
 ) -> InlineTypesAlgorithms:
     """
 
+    :param ast: ast tree
     :param dict_original_nodes: dict with names of function as key
     and list of ASTNode as values
     :param method_node: Method declaration. In this method invocation occurred
@@ -158,28 +170,29 @@ def determine_type(
     :return: int - type
     """
 
-    original_invoked_method = dict_original_nodes.get(invocation_node.member)
+    original_invoked_method = dict_original_nodes.get(invocation_node.member, [])
     # ignore overridden functions
     if len(original_invoked_method) > 1:
         return InlineTypesAlgorithms.DO_NOTHING
     else:
         original_method = original_invoked_method[0]
-        if original_method.parameters:
-            # Find the original method declaration by the name of method invocation
-            var_decls = set([x.name for x in method_node.get_proxy_nodex(ASTNodeType.VARIABLE_DECLARATION)])
+        if not original_method.parameters:
             if original_method.return_type:
+                # Find the original method declaration by the name of method invocation
+                var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
                 return check_method_without_return(
-                    original_method,
+                    ast.get_subtree(method_node),
                     var_decls
                 )
+            else:
+                return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         else:
-            return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
-
-    return InlineTypesAlgorithms.DO_NOTHING
+            return InlineTypesAlgorithms.DO_NOTHING
 
 
 def _create_new_files(
         class_name: str,
+        ast: AST,
         method_node: ASTNode,
         invocation_node: ASTNode,
         file_path: Path,
@@ -209,7 +222,7 @@ def _create_new_files(
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
-        determine_type(method_node, invocation_node, dict_original_invocations))
+        determine_type(ast, method_node, invocation_node, dict_original_invocations))
 
     algorithm_for_inlining().inline_function(
         file_path,
@@ -250,6 +263,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                         results.append(
                             _create_new_files(
                                 class_declaration.name,
+                                ast,
                                 method_node,
                                 method_invoked,
                                 file_path,

@@ -10,7 +10,7 @@ from veniq.utils.ast_builder import build_ast
 class TestDatasetCollection(TestCase):
     current_directory = Path(__file__).absolute().parent
 
-    def test_determine_type_without_return(self):
+    def test_determine_type_without_return_without_parameters(self):
         filepath = self.current_directory / "Example.java"
         ast = AST.build_from_javalang(build_ast(filepath))
         m_decl = [
@@ -20,25 +20,62 @@ class TestDatasetCollection(TestCase):
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'closeServer_return'][0]
         m_inv = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'closeServer_return'][0]
         d = {'closeServer_return': [m_decl_original]}
-        type = determine_type(m_decl, m_inv, d)
+        type = determine_type(ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS)
 
-    def test_determine_type_without_parameters(self):
-        self.assertEqual(True, True)
-
     def test_determine_type_with_parameters(self):
-        self.assertEqual(True, True)
+        filepath = self.current_directory / "Example.java"
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'some_method'][0]
+        m_decl_original = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'method_with_parameters'][0]
+        m_inv = [
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'method_with_parameters'][0]
+        d = {'method_with_parameters': [m_decl_original]}
+        type = determine_type(ast, m_decl, m_inv, d)
+        self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
 
     def test_determine_type_with_overridden_functions(self):
-        self.assertEqual(True, True)
+        filepath = self.current_directory / "Example.java"
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'invoke_overridden'][0]
+        m_decl_original = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'overridden_func']
+        m_inv = [
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'overridden_func'][0]
+        d = {'overridden_func': m_decl_original}
+        type = determine_type(ast, m_decl, m_inv, d)
+        self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
 
-    def test_determine_type_with_not_found_functions(self):
-        """Tests if we have and invocation,
-        but we didn't find it in the list of method
+    def test_determine_type_with_invalid_functions(self):
+        """Tests if we have invocation,
+        but we didn't find it in the list of method declarations
         in current class."""
+        filepath = self.current_directory / "Example.java"
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'invoke_overridden'][0]
+        m_decl_original = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'overridden_func']
+        m_inv = [
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'overridden_func'][0]
+        d = {'overridden_func': m_decl_original}
+        type = determine_type(ast, m_decl, m_inv, d)
+        self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
         self.assertEqual(True, True)
 
     def test_determine_type_wittout_variables_declaration(self):

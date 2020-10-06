@@ -97,4 +97,25 @@ public class Example {
         System.out.println(0);
         return 0;
     }
+
+    public void method_with_parameters(int a, int b) {
+        System.out.println(a);
+    }
+    public void some_method() {
+        System.out.println(1);
+        method_with_parameters(1, 2);
+    }
+
+    public void overridden_func(int a) {
+        ++a;
+        System.out.println(a);
+    }
+
+    public void overridden_func(float b) {
+        System.out.println(b);
+    }
+
+    public void invoke_overridden() {
+        overridden_func(1);
+    }
 }
