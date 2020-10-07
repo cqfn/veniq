@@ -18,7 +18,7 @@ class ExtractStatementSemanticTestCase(TestCase):
     current_directory = Path(__file__).absolute().parent
 
     def test_semantic_extraction(self):
-        ast = AST.build_from_javalang(build_ast(self.current_directory / "SimpleMethods.java"))
+        ast = AST.build_from_javalang(build_ast(self.current_directory / "SemanticExtractionTest.java"))
         class_declaration = ast.get_root().types[0]
         assert class_declaration.name == "SimpleMethods", "Wrong java test class"
 

@@ -1,9 +1,12 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.baselines.semi.filter import filter_extraction_opportunities
-from veniq.baselines.semi._common_types import ExtractionOpportunity, Statement as ExtractionStatement
+from veniq.baselines.semi._syntactic_filter import syntactic_filter
+from veniq.baselines.semi._common_types import (
+    ExtractionOpportunity,
+    Statement as ExtractionStatement,
+)
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
@@ -32,16 +35,18 @@ class FilteringTestCase(TestCase):
         self, extraction_opportunity_statements_ids: List[int], is_opportunity_correct: bool
     ):
         method_ast = self._get_method_ast()
-        extraction_opportunity = self._create_extraction_opportunity(
+        extraction_opportunity, block_statement_graph = self._create_extraction_opportunity(
             method_ast, extraction_opportunity_statements_ids
         )
         self.assertEqual(
-            self._is_correct_extraction_opportunity(extraction_opportunity, method_ast),
+            self._is_correct_extraction_opportunity(extraction_opportunity, block_statement_graph),
             is_opportunity_correct,
         )
 
     @staticmethod
-    def _create_extraction_opportunity(method_ast: AST, statements_lines: List[int]) -> ExtractionOpportunity:
+    def _create_extraction_opportunity(
+        method_ast: AST, statements_lines: List[int]
+    ) -> Tuple[ExtractionOpportunity, Block]:
         extraction_opportunity_list: List[ExtractionStatement] = []
         block_statement_graph = build_block_statement_graph(method_ast)
 
@@ -51,21 +56,19 @@ class FilteringTestCase(TestCase):
                 extraction_opportunity_list.append(node.node)
 
         block_statement_graph.traverse(fill_extraction_opportunity)
-        return tuple(extraction_opportunity_list)
+        return tuple(extraction_opportunity_list), block_statement_graph
 
     @staticmethod
     def _is_correct_extraction_opportunity(
-        extraction_opportunity: ExtractionOpportunity, method_ast: AST
+        extraction_opportunity: ExtractionOpportunity,
+        block_statement_graph: Block,
     ) -> bool:
-        filtered_extraction_opportunities = filter_extraction_opportunities(
-            [extraction_opportunity], method_ast
-        )
-        return len(filtered_extraction_opportunities) == 1  # the given item was kept
+        return syntactic_filter(extraction_opportunity, block_statement_graph)
 
     @staticmethod
     def _get_method_ast() -> AST:
         current_directory = Path(__file__).absolute().parent
-        filepath = current_directory / "Example.java"
+        filepath = current_directory / "SynctacticFilterTest.java"
         ast = AST.build_from_javalang(build_ast(str(filepath)))
 
         try:
