@@ -1,11 +1,10 @@
 from itertools import zip_longest
-from pathlib import Path
 from unittest import TestCase
 
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import ASTNodeType
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
 from veniq.baselines.semi.cluster_statements import cluster_statements
+from .utils import get_method_ast
 
 
 def objects_semantic(*objects_names: str) -> StatementSemantic:
@@ -14,7 +13,8 @@ def objects_semantic(*objects_names: str) -> StatementSemantic:
 
 class PaperExampleTestCase(TestCase):
     def test_semantic_extraction(self):
-        semantic = extract_method_statements_semantic(self.method_ast)
+        method_ast = get_method_ast("ExampleFromPaper.java", "ExampleFromPaper", "grabManifests")
+        semantic = extract_method_statements_semantic(method_ast)
         for comparison_index, (statement, actual_semantic, expected_semantic) in enumerate(
             zip_longest(semantic.keys(), semantic.values(), self.method_semantic)
         ):
@@ -26,8 +26,8 @@ class PaperExampleTestCase(TestCase):
             )
 
     def test_statements_clustering(self):
-        self.maxDiff = None
-        semantic = extract_method_statements_semantic(self.method_ast)
+        method_ast = get_method_ast("ExampleFromPaper.java", "ExampleFromPaper", "grabManifests")
+        semantic = extract_method_statements_semantic(method_ast)
         clusters = cluster_statements(semantic)
 
         for cluster_index, (actual_cluster, expected_cluster) in enumerate(
@@ -39,29 +39,6 @@ class PaperExampleTestCase(TestCase):
                 expected_cluster,
                 f"Failed on {cluster_index}th cluster comparison",
             )
-
-    @classmethod
-    def setUpClass(cls):
-        current_directory = Path(__file__).absolute().parent
-        filepath = current_directory / "ExampleFromPaper.java"
-
-        ast = AST.build_from_javalang(build_ast(filepath))
-        try:
-            class_declaration = next(
-                node
-                for node in ast.get_root().types
-                if node.node_type == ASTNodeType.CLASS_DECLARATION and node.name == "ExampleFromPaper"
-            )
-
-            method_declaration = next(
-                node for node in class_declaration.methods if node.name == "grabManifests"
-            )
-        except StopIteration as e:
-            raise RuntimeError(
-                f"Failed to find method grabManifests in class ExampleFromPaper in file {filepath}."
-            ) from e
-
-        cls.method_ast = ast.get_subtree(method_declaration)
 
     method_semantic = [
         objects_semantic("rcs.length", "manifests"),  # line 7
