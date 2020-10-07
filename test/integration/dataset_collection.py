@@ -49,16 +49,6 @@ class IntegrationDatasetCollection(TestCase):
              'ToggleProfilingPointAction', 'ProfilingPointsSwitcher chooserFrame = getChooserFrame();', 329, 311,
              'modifierKeyStateChanged']]
 
-        df_predefined = pd.DataFrame(
-            results_predefined,
-            columns=[
-                'Filename',
-                'ClassName',
-                'String where to replace',
-                'line where to replace',
-                'line of original function',
-                'invocation function name'])
-
         results_output = []
         with tempfile.TemporaryDirectory() as tmpdirname:
             print('created temporary directory', tmpdirname)
@@ -75,29 +65,4 @@ class IntegrationDatasetCollection(TestCase):
             for x in results_output:
                 x[0] = Path(x[0]).name
                 new_results.append(x)
-
-            new_df = pd.DataFrame(
-                new_results,
-                columns=[
-                    'Filename',
-                    'ClassName',
-                    'String where to replace',
-                    'line where to replace',
-                    'line of original function',
-                    'invocation function name'])
-        import json
-        new_df = new_df.sort_values(
-            by=['Filename',
-                'ClassName',
-                'String where to replace',
-                'line where to replace',
-                'line of original function',
-                'invocation function name'])
-        df_predefined = df_predefined.sort_values(
-            by=['Filename',
-                'ClassName',
-                'String where to replace',
-                'line where to replace',
-                'line of original function',
-                'invocation function name'])
-        self.assertTrue(df_predefined.equals(new_df))
+        self.assertEqual(new_results.sort(), results_predefined.sort())
