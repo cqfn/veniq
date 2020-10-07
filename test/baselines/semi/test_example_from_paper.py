@@ -5,6 +5,7 @@ from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
+from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities
 from .utils import get_method_ast, objects_semantic
 
 
@@ -54,6 +55,24 @@ class PaperExampleTestCase(TestCase):
                 expected_opportunity,
                 f"Failed on {opportunity_index}th opportunity comparison",
             )
+
+    def test_extraction_opportunities_ranking(self):
+        method_ast = self._get_method_ast()
+        semantic = extract_method_statements_semantic(method_ast)
+        extraction_opportunities = create_extraction_opportunities(semantic)
+        filtered_extraction_opportunities = filter_extraction_opportunities(
+            extraction_opportunities, semantic, method_ast
+        )
+
+        ranked_extraction_opportunities_groups = rank_extraction_opportunities(
+            semantic, filtered_extraction_opportunities
+        )
+
+        benifits = [group.benifit for group in ranked_extraction_opportunities_groups]
+        self.assertEqual(benifits, [12, -4])
+
+        group_sizes = [len(list(group.opportunities)) for group in ranked_extraction_opportunities_groups]
+        self.assertEqual(group_sizes, [1, 1])
 
     @staticmethod
     def _get_method_ast() -> AST:
