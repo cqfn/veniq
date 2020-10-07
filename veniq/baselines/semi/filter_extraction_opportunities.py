@@ -27,12 +27,15 @@ def filter_extraction_opportunities(
 def _print_extraction_opportunities(method_ast: AST, filepath: str, class_name: str, method_name: str):
     statements_semantic = extract_method_statements_semantic(method_ast)
     statement_clusters = cluster_statements(statements_semantic)
+    filtered_extraction_opportunitites = filter_extraction_opportunities(
+        statement_clusters, statements_semantic, method_ast
+    )
     print(
-        f"{len(statement_clusters)} clusters found in method {method_name} "
+        f"{len(filtered_extraction_opportunitites)} clusters found in method {method_name} "
         f"in class {class_name} in file {filepath}:"
     )
 
-    for index, extraction_opportunity in enumerate(statement_clusters):
+    for index, extraction_opportunity in enumerate(filtered_extraction_opportunitites):
         first_statement = extraction_opportunity[0]
         last_statement = extraction_opportunity[-1]
         print(
