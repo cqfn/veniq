@@ -85,8 +85,8 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: str):
-        f_out = open(filename_out, 'w')
-        original_file = open(filename_in)
+        f_out = open(filename_out, 'w', encoding='utf-8')
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
 
         # original code before method invocation, which will be substituted
@@ -106,6 +106,9 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         original_code_lines = lines[invocation_line:]
         for i in original_code_lines:
             f_out.write(i)
+
+        f_out.close()
+        original_file.close()
 
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
@@ -147,3 +150,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         original_code_lines = lines[invocation_line:]
         for i in original_code_lines:
             f_out.write(i)
+
+        f_out.close()
+        original_file.close()

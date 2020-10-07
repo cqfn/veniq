@@ -32,19 +32,19 @@ def _get_last_return_line(child_statement: ASTNode) -> int:
 
 
 def _get_last_line(file_path: Path, last_return_line: int) -> int:
-    '''
+    """
     Here we reprocess obtained the list line of return statement
     in order to get the line of the last case '}' of method
     declaration statement. This step is crucial for the
     correct inline part!
-    '''
-    f = open(file_path)
-    lines = list(f)[last_return_line:]
-    for i, file_line in enumerate(lines, last_return_line):
-        last_case_line = file_line.replace('\n', '').replace(' ', '')
-        if len(last_case_line) == 0:
-            return i - 1
-    return -1
+    """
+    with open(file_path, encoding='utf-8') as f:
+        lines = list(f.read())[last_return_line:]
+        for i, file_line in enumerate(lines, last_return_line):
+            last_case_line = file_line.replace('\n', '').replace(' ', '')
+            if len(last_case_line) == 0:
+                return i - 1
+        return -1
 
 
 def _method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
@@ -73,6 +73,12 @@ def _is_match_to_the_conditions(
     else:
         parent = method_invoked.parent
         no_children = True
+
+    maybe_if = parent.parent
+    is_not_method_inv_single_statement_in_if = True
+    if maybe_if.node_type == ASTNodeType.IF_STATEMENT:
+        if maybe_if.then_statement.expression.node_type == ASTNodeType.METHOD_INVOCATION:
+            is_not_method_inv_single_statement_in_if = False
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
@@ -107,6 +113,7 @@ def _is_match_to_the_conditions(
         is_not_inside_for,
         is_not_enhanced_for_control,
         is_not_lambda,
+        is_not_method_inv_single_statement_in_if,
         not method_invoked.arguments])
 
     if (not method_invoked.qualifier and other_requirements) or \

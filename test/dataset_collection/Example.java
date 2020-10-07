@@ -81,6 +81,12 @@ public class Example {
         float b = 0;
     }
 
+    public void test_single_stat_in_if() {
+        int ghc = 0;
+        if(ghc = 0)
+            intersected_var();
+    }
+
     public void test_intersected_var_decl() {
         int a = 0;
         ArrayList<String> lst = new ArrayList<>();
