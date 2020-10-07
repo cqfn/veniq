@@ -8,10 +8,7 @@ from veniq.baselines.semi.extract_semantic import (
     extract_method_statements_semantic,
     StatementSemantic,
 )
-
-
-def objects_semantic(*objects_names: str) -> StatementSemantic:
-    return StatementSemantic(used_objects=set(objects_names))
+from .utils import objects_semantic
 
 
 class ExtractStatementSemanticTestCase(TestCase):

@@ -4,11 +4,7 @@ from unittest import TestCase
 from veniq.ast_framework import ASTNodeType
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
 from veniq.baselines.semi.cluster_statements import cluster_statements
-from .utils import get_method_ast
-
-
-def objects_semantic(*objects_names: str) -> StatementSemantic:
-    return StatementSemantic(used_objects=set(objects_names))
+from .utils import get_method_ast, objects_semantic
 
 
 class PaperExampleTestCase(TestCase):
