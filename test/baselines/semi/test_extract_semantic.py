@@ -73,21 +73,21 @@ class ExtractStatementSemanticTestCase(TestCase):
         "continueStatement": [StatementSemantic(), StatementSemantic()],
         "localMethodCall": [StatementSemantic(used_methods={"localMethod"})],
         "objectMethodCall": [StatementSemantic(used_objects={"o"}, used_methods={"method"})],
-        "nestedObject": [StatementSemantic(used_objects={"o", "x"})],
+        "nestedObject": [StatementSemantic(used_objects={"o.x"})],
         "nestedObjectMethodCall": [
-            StatementSemantic(used_objects={"o", "nestedObject"}, used_methods={"method"})
+            StatementSemantic(used_objects={"o.nestedObject"}, used_methods={"method"})
         ],
         "severalStatements": [
             objects_semantic("x"),
             objects_semantic("x"),
-            StatementSemantic(used_objects={"System", "out", "x"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out", "x"}, used_methods={"println"}),
             objects_semantic("x"),
         ],
         "deepNesting": [
             objects_semantic("i"),
             objects_semantic("i"),
-            StatementSemantic(used_objects={"System", "out", "i"}, used_methods={"println"}),
-            StatementSemantic(used_objects={"System", "out"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out", "i"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}),
         ],
         "complexExpressions": [
             objects_semantic("x", "y"),
