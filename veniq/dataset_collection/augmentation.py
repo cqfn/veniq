@@ -122,7 +122,7 @@ def _is_match_to_the_conditions(
         return False
 
 
-def check_method_without_return(
+def check_whether_method_has_return_type(
         method_decl: AST,
         var_decls: typing.Set[str]) -> InlineTypesAlgorithms:
     """
@@ -164,7 +164,7 @@ def get_variables_decl_in_node(
     return names
 
 
-def determine_type(
+def determine_algorithm_insertion_type(
         ast: AST,
         method_node: ASTNode,
         invocation_node: ASTNode,
@@ -177,7 +177,7 @@ def determine_type(
     and list of ASTNode as values
     :param method_node: Method declaration. In this method invocation occurred
     :param invocation_node: invocation node
-    :return: int - type
+    :return: InlineTypesAlgorithms enum
     """
 
     original_invoked_method = dict_original_nodes.get(invocation_node.member, [])
@@ -190,7 +190,7 @@ def determine_type(
             if not original_method.return_type:
                 # Find the original method declaration by the name of method invocation
                 var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
-                return check_method_without_return(
+                return check_whether_method_has_return_type(
                     ast.get_subtree(method_node),
                     var_decls
                 )
@@ -200,7 +200,7 @@ def determine_type(
             return InlineTypesAlgorithms.DO_NOTHING
 
 
-def _create_new_files(
+def insert_code_with_new_file_creation(
         class_name: str,
         ast: AST,
         method_node: ASTNode,
@@ -234,7 +234,7 @@ def _create_new_files(
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
-        determine_type(ast, method_node, invocation_node, dict_original_invocations))
+        determine_algorithm_insertion_type(ast, method_node, invocation_node, dict_original_invocations))
 
     algorithm_for_inlining().inline_function(
         file_path,
@@ -274,7 +274,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
 
                     if is_matched:
                         results.append(
-                            _create_new_files(
+                            insert_code_with_new_file_creation(
                                 class_declaration.name,
                                 ast,
                                 method_node,
