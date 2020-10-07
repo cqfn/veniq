@@ -85,8 +85,27 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: str):
-        # TODO insert code when it is ready
-        print("Run InlineWithoutReturnWithoutArguments")
+        f_out = open(filename_out, 'w')
+        original_file = open(filename_in)
+        lines = list(original_file)
+
+        # original code before method invocation, which will be substituted
+        lines_before_invoсation = lines[:invocation_line - 1]
+        for i in lines_before_invoсation:
+            f_out.write(i)
+
+        # body of the original method, which will be inserted
+        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
+        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        body_lines = lines[body_start_line - 1:body_end_line]
+        for i in body_lines:
+            f_out.write(' ' * (num_spaces_before - num_spaces_body))
+            f_out.write(i)
+
+        # original code after method invocation
+        original_code_lines = lines[invocation_line:]
+        for i in original_code_lines:
+            f_out.write(i)
 
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
@@ -101,5 +120,30 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: str):
-        # TODO insert code when it is ready
-        print("Run InlineWithReturnWithoutArguments")
+        f_out = open(filename_out, 'w')
+        original_file = open(filename_in)
+        lines = list(original_file)
+
+        # original code before method invocation, which will be substituted
+        lines_before_invoсation = lines[:invocation_line - 1]
+        for i in lines_before_invoсation:
+            f_out.write(i)
+
+        variable_declaration = lines[invocation_line - 1].split('=')[0]
+        # body of the original method, which will be inserted
+        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
+        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        body_lines = lines[body_start_line - 1:body_end_line]
+        for i in body_lines:
+            f_out.write(' ' * (num_spaces_before - num_spaces_body))
+            return_statement = i.split('return ')
+            if len(return_statement) == 2:
+                instead_of_return = variable_declaration + '= ' + return_statement[1]
+                f_out.write(instead_of_return)
+            else:
+                f_out.write(i)
+
+        # original code after method invocation
+        original_code_lines = lines[invocation_line:]
+        for i in original_code_lines:
+            f_out.write(i)

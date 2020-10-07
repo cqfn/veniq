@@ -16,55 +16,49 @@ from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
 
 
-def _get_last_line(child_statement: ASTNode) -> int:
+def _get_last_return_line(child_statement: ASTNode) -> int:
     """
     This function is aimed to find the last line of
     the all children and children of children
     for a chosen statement.
-    Main goal is to get the last line of method.
+    Main goal is to get the last line of return in method.
     """
     last_line = child_statement.line
     if hasattr(child_statement, 'children'):
         for children in child_statement.children:
             if children.line >= last_line:
-                last_line = _get_last_line(children)
+                last_line = _get_last_return_line(children)
     return last_line
 
 
-def _method_body_lines(method_node: ASTNode) -> Tuple[int, int]:
+def _get_last_line(file_path: Path, last_return_line: int) -> int:
+    '''
+    Here we reprocess obtained the list line of return statement
+    in order to get the line of the last case '}' of method
+    declaration statement. This step is crucial for the
+    correct inline part!
+    '''
+    f = open(file_path)
+    lines = list(f)[last_return_line:]
+    for i, file_line in enumerate(lines, last_return_line):
+        last_case_line = file_line.replace('\n', '').replace(' ', '')
+        if len(last_case_line) == 0:
+            return i - 1
+    return -1
+
+
+def _method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
     Ger start and end of method's body
     """
     method_all_children = list(method_node.children)[-1]
     if len(method_node.body):
         start_line = method_node.body[0].line
-        end_line = _get_last_line(method_all_children)
+        last_return_line = _get_last_return_line(method_all_children)
+        end_line = _get_last_line(file_path, last_return_line)
     else:
         start_line = end_line = -1
     return start_line, end_line
-
-
-def _get_method_lines_dict(
-        classes_declaration: List) -> \
-        Dict[ASTNode, Dict[str, Tuple[int, int]]]:
-    """
-    This method is aimed to process each class,
-    also for each class to process all it's methods.
-    Find starting and end lines of each method's body.
-    And finally to store it into dictionary.
-    """
-    dictionary: Dict[ASTNode, Dict[str, Tuple[int, int]]] = {}
-    for classes_ast in classes_declaration:
-        class_declaration = classes_ast.get_root()
-        for method_node in class_declaration.methods:
-            lines = _method_body_lines(method_node)
-            # if we have body
-            if -1 in lines:
-                if not dictionary.get(method_node):
-                    dictionary[method_node] = {f'{class_declaration.name}.{method_node.name}': lines}
-                elif not dictionary[method_node].get(class_declaration):
-                    dictionary[method_node][f'{class_declaration.name}.{method_node.name}'] = lines
-    return dictionary
 
 
 @typing.no_type_check
@@ -221,7 +215,7 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    body_start_line, body_end_line = _method_body_lines(original_func)
+    body_start_line, body_end_line = _method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
     line_to_csv = [
