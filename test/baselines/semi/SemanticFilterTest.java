@@ -23,4 +23,20 @@ class Test {
         int x = 0, y = 0;
         return x + y;
     }
+
+    void extractBreak(int x) {
+        while(x > 0) {
+            break;
+        }
+    }
+
+    void deepNestedBreak(int x) {
+        while(x > 0) {
+            if(x == 0) {
+                for(int i = 0; i < x; ++i) {
+                    break;
+                }
+            }
+        }
+    }
 }

@@ -19,6 +19,15 @@ class SemanticFilterTestCase(TestCase):
     def test_two_used_variables_variables_method(self):
         self._opportunity_test_helper("twoUsedVariables", [23], False)
 
+    def test_extract_single_break(self):
+        self._opportunity_test_helper("extractBreak", [29], False)
+
+    def test_extract_break_with_cycle(self):
+        self._opportunity_test_helper("extractBreak", [28, 29], True)
+
+    def test_extract_deep_nested_break(self):
+        self._opportunity_test_helper("deepNestedBreak", [36, 37], True)
+
     def _opportunity_test_helper(
         self,
         method_name: str,
