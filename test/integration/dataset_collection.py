@@ -3,7 +3,6 @@ from os import listdir
 from pathlib import Path
 from unittest import TestCase
 
-import pandas as pd
 from tqdm import tqdm
 
 from veniq.dataset_collection.augmentation import analyze_file
