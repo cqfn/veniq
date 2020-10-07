@@ -118,4 +118,25 @@ public class Example {
         }
         int zhmyak;
     }
+
+        public int invocation() {
+        int i = 0;
+        System.out.println(0);
+        if (i == 0) System.out.println(0);
+        while(i < -1) {
+            System.out.println(0);
+            --i;
+        }
+
+        return i;
+    }
+
+    public void method_decl() {
+        int b = 0;
+        System.out.println(b);
+        int a = invocation();
+        int c = 5;
+        ++c;
+
+    }
 }

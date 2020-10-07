@@ -125,7 +125,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out: str):
         f_out = open(filename_out, 'w')
         original_file = open(filename_in)
-        lines = list(original_file)
+        lines = original_file.readlines()
 
         # original code before method invocation, which will be substituted
         lines_before_invoсation = lines[:invocation_line - 1]

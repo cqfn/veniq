@@ -39,7 +39,7 @@ def _get_last_line(file_path: Path, last_return_line: int) -> int:
     correct inline part!
     """
     with open(file_path, encoding='utf-8') as f:
-        lines = list(f.read())[last_return_line:]
+        lines = f.readlines()[last_return_line:]
         for i, file_line in enumerate(lines, last_return_line):
             last_case_line = file_line.replace('\n', '').replace(' ', '')
             if len(last_case_line) == 0:
@@ -63,7 +63,8 @@ def _method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]
 
 @typing.no_type_check
 def _is_match_to_the_conditions(
-        method_invoked: ASTNode) -> bool:
+        method_invoked: ASTNode,
+        found_method_decl=None) -> bool:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
         parent = method_invoked.parent.parent
         class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
@@ -80,6 +81,11 @@ def _is_match_to_the_conditions(
         if maybe_if.then_statement.expression.node_type == ASTNodeType.METHOD_INVOCATION:
             is_not_method_inv_single_statement_in_if = False
 
+    if found_method_decl.return_type:
+        if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
+            is_not_assign_value_with_return_type = False
+    else:
+        is_not_assign_value_with_return_type = True
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
     chains_after = [x for x in method_invoked.children if x.node_type == ASTNodeType.METHOD_INVOCATION]
@@ -114,6 +120,7 @@ def _is_match_to_the_conditions(
         is_not_enhanced_for_control,
         is_not_lambda,
         is_not_method_inv_single_statement_in_if,
+        is_not_assign_value_with_return_type,
         not method_invoked.arguments])
 
     if (not method_invoked.qualifier and other_requirements) or \
@@ -271,7 +278,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = _is_match_to_the_conditions(method_invoked)
+                    is_matched = _is_match_to_the_conditions(method_invoked, found_method_decl)
 
                     if is_matched:
                         results.append(
