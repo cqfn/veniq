@@ -85,6 +85,7 @@ class IntegrationDatasetCollection(TestCase):
                     'line where to replace',
                     'line of original function',
                     'invocation function name'])
-
+        import json
+        print('Predefined ' + json.dumps(df_predefined.to_dict()))
+        print(new_df.to_dict())
         self.assertTrue(df_predefined.equals(new_df))
-
