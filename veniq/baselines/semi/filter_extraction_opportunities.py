@@ -1,7 +1,7 @@
 from typing import Dict, List
 
 from .extract_semantic import extract_method_statements_semantic
-from .cluster_statements import cluster_statements
+from .create_extraction_opportunities import create_extraction_opportunities
 from ._syntactic_filter import syntactic_filter
 from ._semantic_filter import semantic_filter
 from ._common_types import Statement, StatementSemantic, ExtractionOpportunity
@@ -26,16 +26,16 @@ def filter_extraction_opportunities(
 
 def _print_extraction_opportunities(method_ast: AST, filepath: str, class_name: str, method_name: str):
     statements_semantic = extract_method_statements_semantic(method_ast)
-    statement_clusters = cluster_statements(statements_semantic)
-    filtered_extraction_opportunitites = filter_extraction_opportunities(
-        statement_clusters, statements_semantic, method_ast
+    extraction_opportunities = create_extraction_opportunities(statements_semantic)
+    filtered_extraction_opportunities = filter_extraction_opportunities(
+        extraction_opportunities, statements_semantic, method_ast
     )
     print(
-        f"{len(filtered_extraction_opportunitites)} clusters found in method {method_name} "
+        f"{len(filtered_extraction_opportunities)} opportunities found in method {method_name} "
         f"in class {class_name} in file {filepath}:"
     )
 
-    for index, extraction_opportunity in enumerate(filtered_extraction_opportunitites):
+    for index, extraction_opportunity in enumerate(filtered_extraction_opportunities):
         first_statement = extraction_opportunity[0]
         last_statement = extraction_opportunity[-1]
         print(
@@ -46,4 +46,7 @@ def _print_extraction_opportunities(method_ast: AST, filepath: str, class_name: 
 
 
 if __name__ == "__main__":
-    common_cli(_print_extraction_opportunities, "Clusters statements based on their semantic.")
+    common_cli(
+        _print_extraction_opportunities,
+        "Creates extraction opportunities and filter them based on syntactic and semantic conditions",
+    )
