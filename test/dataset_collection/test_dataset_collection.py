@@ -173,7 +173,7 @@ class TestDatasetCollection(TestCase):
             InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS,
             InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS])
 
-    def test_inline_with_return_type_but_not_returining(self):
+    def test_inline_with_return_type_but_not_returning(self):
         """
         Test check whether we can inline code function with return type, but actually
         this function is not saving return value,
@@ -191,10 +191,10 @@ class TestDatasetCollection(TestCase):
         body_start_line, body_end_line = _method_body_lines(m_decl, file)
 
         algorithm.inline_function(file, 36, body_start_line, body_end_line, temp_filename)
-        # with open(temp_filename, encoding='utf-8') as actual_file, \
-        #         open(test_example, encoding='utf-8') as test_ex:
-            # self.assertEqual(actual_file.read(), test_ex.read())
-        # temp_filename.unlink()
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_example, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
 
     def test_inline_with_return_type(self):
         algorithm = InlineWithReturnWithoutArguments()
@@ -210,7 +210,7 @@ class TestDatasetCollection(TestCase):
         algorithm.inline_function(file, 76, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
                 open(test_example, encoding='utf-8') as test_ex:
-            self.assertEqual(actual_file.read(), test_ex.read())
+            self.assertEqual(test_ex.read(), actual_file.read())
         temp_filename.unlink()
 
     def test_inline_without_return_type(self):
@@ -224,7 +224,7 @@ class TestDatasetCollection(TestCase):
             if x.name == 'makeBloom'][0]
         body_start_line, body_end_line = _method_body_lines(m_decl, file)
 
-        algorithm.inline_function(file, 76, body_start_line, body_end_line, temp_filename)
+        algorithm.inline_function(file, 70, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
                 open(test_example, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())

@@ -77,6 +77,7 @@ public class ReaderHandler extends AbstractWebSocketHandler {
         if (queryParams.containsKey("receiverQueueSize")) {
             size =  Math.min(Integer.parseInt(queryParams.get("receiverQueueSize")), DEFAULT_RECEIVER_QUEUE_SIZE);
         }
+        final int receiverQueueSize = size;
 
         this.maxPendingMessages = (receiverQueueSize == 0) ? 1 : receiverQueueSize;
         this.numMsgsDelivered = new LongAdder();
