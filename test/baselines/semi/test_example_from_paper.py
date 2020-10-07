@@ -4,6 +4,7 @@ from unittest import TestCase
 from veniq.ast_framework import ASTNodeType
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
 from veniq.baselines.semi.cluster_statements import cluster_statements
+from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
 from .utils import get_method_ast, objects_semantic
 
 
@@ -28,6 +29,24 @@ class PaperExampleTestCase(TestCase):
 
         for cluster_index, (actual_cluster, expected_cluster) in enumerate(
             zip_longest(clusters, self.expected_clusters)
+        ):
+            actual_cluster_statement_types = [statement.node_type for statement in actual_cluster]
+            self.assertEqual(
+                actual_cluster_statement_types,
+                expected_cluster,
+                f"Failed on {cluster_index}th cluster comparison",
+            )
+
+    def test_extraction_opportunities_filtering(self):
+        method_ast = get_method_ast("ExampleFromPaper.java", "ExampleFromPaper", "grabManifests")
+        semantic = extract_method_statements_semantic(method_ast)
+        extraction_opportunities = cluster_statements(semantic)
+        filtered_extraction_opportunities = filter_extraction_opportunities(
+            extraction_opportunities, semantic, method_ast
+        )
+
+        for cluster_index, (actual_cluster, expected_cluster) in enumerate(
+            zip_longest(filtered_extraction_opportunities, self._filtered_extraction_opportunities)
         ):
             actual_cluster_statement_types = [statement.node_type for statement in actual_cluster]
             self.assertEqual(
@@ -130,4 +149,9 @@ class PaperExampleTestCase(TestCase):
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.IF_STATEMENT,
         ],  # lines 7-29
+    ]
+
+    _filtered_extraction_opportunities = [
+        [ASTNodeType.LOCAL_VARIABLE_DECLARATION],  # line 9
+        [ASTNodeType.STATEMENT_EXPRESSION],  # line 30
     ]
