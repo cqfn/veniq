@@ -3,7 +3,7 @@ from networkx import DiGraph, dfs_labeled_edges
 
 from .statement import Statement
 from .block import Block
-from ._constants import NodeType, NodeId
+from ._constants import NodeType, NodeId, NODE, BLOCK_REASON
 
 TraverseCallback = Callable[[Union[Block, Statement]], None]
 
@@ -19,13 +19,23 @@ class NodesFactory:
 
     @staticmethod
     def _detect_and_create_node(graph: DiGraph, id: NodeId) -> Union[Block, Statement]:
-        node_type = NodeType.detect(graph, id)
+        node_type = NodesFactory._detect_node_type(graph, id)
         if node_type == NodeType.Block:
             return NodesFactory.create_block_node(graph, id)
         elif node_type == NodeType.Statement:
             return NodesFactory.create_statement_node(graph, id)
         else:
             raise ValueError(f"Unexpected node type {node_type}.")
+
+    @staticmethod
+    def _detect_node_type(graph: DiGraph, id: NodeId) -> NodeType:
+        node_attributes = graph.nodes(data=True)[id]
+        if NODE in node_attributes:
+            return NodeType.Statement
+        elif BLOCK_REASON in node_attributes:
+            return NodeType.Block
+        else:
+            raise ValueError(f"Cannot identify node with attributes {node_attributes}")
 
     @staticmethod
     def _traverse_graph(
