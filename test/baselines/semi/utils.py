@@ -3,9 +3,12 @@ from typing import List, Tuple, Union
 
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.ast_framework.block_statement_graph import Block, Statement, build_block_statement_graph
-from veniq.baselines.semi._common_types import ExtractionOpportunity, Statement as ExtractionStatement
+from veniq.baselines.semi._common_types import (
+    ExtractionOpportunity,
+    Statement as ExtractionStatement,
+    StatementSemantic,
+)
 from veniq.utils.ast_builder import build_ast
-from ._common_types import StatementSemantic
 
 
 def objects_semantic(*objects_names: str) -> StatementSemantic:
