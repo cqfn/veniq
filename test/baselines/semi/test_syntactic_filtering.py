@@ -5,7 +5,7 @@ from veniq.baselines.semi._syntactic_filter import syntactic_filter
 from .utils import get_method_ast, create_extraction_opportunity
 
 
-class FilteringTestCase(TestCase):
+class SyntacticFilteringTestCase(TestCase):
     def test_non_continuos_statements_range(self):
         self._opportunity_test_helper([9, 15], False)
 
