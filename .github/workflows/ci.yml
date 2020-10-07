@@ -35,3 +35,7 @@ jobs:
         uses: onichandame/python-test-action@master
         with:
           deps_list: 'requirements.txt'
+      - name: Run Flake8 and mypy
+        run: |
+          pip3 install .
+          python3 -m unittest test/integration/dataset_collection.py
