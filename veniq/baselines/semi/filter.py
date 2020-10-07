@@ -1,10 +1,8 @@
 from typing import List, Optional, Union
 
-from veniq.ast_framework import AST, ASTNode
+from ._common_types import ExtractionOpportunity
+from veniq.ast_framework import AST
 from veniq.ast_framework.block_statement_graph import Block, Statement, build_block_statement_graph
-
-
-ExtractionOpportunity = List[ASTNode]
 
 
 def filter_extraction_opportunities(
