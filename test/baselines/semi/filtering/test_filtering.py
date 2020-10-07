@@ -2,7 +2,8 @@ from typing import List, Union
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.baselines.semi.filter import filter_extraction_opportunities, ExtractionOpportunity
+from veniq.baselines.semi.filter import filter_extraction_opportunities
+from veniq.baselines.semi._common_types import ExtractionOpportunity, Statement as ExtractionStatement
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
@@ -41,16 +42,16 @@ class FilteringTestCase(TestCase):
 
     @staticmethod
     def _create_extraction_opportunity(method_ast: AST, statements_lines: List[int]) -> ExtractionOpportunity:
-        extraction_opportunity: ExtractionOpportunity = []
+        extraction_opportunity_list: List[ExtractionStatement] = []
         block_statement_graph = build_block_statement_graph(method_ast)
 
         def fill_extraction_opportunity(node: Union[Block, Statement]):
-            nonlocal extraction_opportunity
+            nonlocal extraction_opportunity_list
             if isinstance(node, Statement) and node.node.line in statements_lines:
-                extraction_opportunity.append(node.node)
+                extraction_opportunity_list.append(node.node)
 
         block_statement_graph.traverse(fill_extraction_opportunity)
-        return extraction_opportunity
+        return tuple(extraction_opportunity_list)
 
     @staticmethod
     def _is_correct_extraction_opportunity(
