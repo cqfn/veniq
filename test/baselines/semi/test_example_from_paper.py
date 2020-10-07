@@ -64,8 +64,8 @@ class PaperExampleTestCase(TestCase):
         cls.method_ast = ast.get_subtree(method_declaration)
 
     method_semantic = [
-        objects_semantic("rcs", "manifests", "length"),  # line 7
-        objects_semantic("i", "length", "rcs"),  # line 8
+        objects_semantic("rcs.length", "manifests"),  # line 7
+        objects_semantic("i", "rcs.length"),  # line 8
         objects_semantic("rec"),  # line 9
         objects_semantic("i", "rcs"),  # line 10
         StatementSemantic(used_objects={"rec", "rcs", "i"}, used_methods={"grabRes"}),  # line 11
@@ -75,7 +75,7 @@ class PaperExampleTestCase(TestCase):
         objects_semantic("rcs", "i"),  # line 17
         objects_semantic("afs", "rcs", "i"),  # line 18
         StatementSemantic(used_objects={"afs"}, used_methods={"equals", "getFullpath", "getProj"}),  # line 19
-        StatementSemantic(used_objects={"name", "afs"}, used_methods={"getFullpath", "getProj"}),  # line 20
+        StatementSemantic(used_objects={"name.afs"}, used_methods={"getFullpath", "getProj"}),  # line 20
         StatementSemantic(used_objects={"afs"}, used_methods={"equals", "getPref", "getProj"}),  # line 21
         StatementSemantic(used_objects={"afs", "pr"}, used_methods={"getPref", "getProj"}),  # line 22
         StatementSemantic(used_objects={"pr"}, used_methods={"endsWith"}),  # line 23
