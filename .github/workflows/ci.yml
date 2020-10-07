@@ -37,5 +37,4 @@ jobs:
           deps_list: 'requirements.txt'
       - name: Integration Tests
         run: |
-          pip3 install .
           python3 -m unittest test/integration/dataset_collection.py

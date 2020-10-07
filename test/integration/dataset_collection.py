@@ -86,6 +86,18 @@ class IntegrationDatasetCollection(TestCase):
                     'line of original function',
                     'invocation function name'])
         import json
-        print('Predefined ' + json.dumps(df_predefined.to_dict()))
-        print(new_df.to_dict())
+        new_df = new_df.sort_values(
+            by=['Filename',
+                'ClassName',
+                'String where to replace',
+                'line where to replace',
+                'line of original function',
+                'invocation function name'])
+        df_predefined = df_predefined.sort_values(
+            by=['Filename',
+                'ClassName',
+                'String where to replace',
+                'line where to replace',
+                'line of original function',
+                'invocation function name'])
         self.assertTrue(df_predefined.equals(new_df))
