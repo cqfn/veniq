@@ -27,6 +27,16 @@ class StatementSemantic:
             for name_parts in accumulate([name_part] for name_part in object_name.split("."))
         }
 
+    @property
+    def used_based_objects(self) -> Set[str]:
+        """
+        Turns each name from "a.b.c" to "a"
+        """
+        return {
+            object_name.split(".")[0]
+            for object_name in self.used_objects
+        }
+
 
 ExtractionOpportunity = Tuple[Statement, ...]
 
