@@ -78,14 +78,15 @@ def _is_match_to_the_conditions(
     maybe_if = parent.parent
     is_not_method_inv_single_statement_in_if = True
     if maybe_if.node_type == ASTNodeType.IF_STATEMENT:
-        if maybe_if.then_statement.expression.node_type == ASTNodeType.METHOD_INVOCATION:
-            is_not_method_inv_single_statement_in_if = False
+        if hasattr(maybe_if.then_statement, 'expression'):
+            if maybe_if.then_statement.expression.node_type == ASTNodeType.METHOD_INVOCATION:
+                is_not_method_inv_single_statement_in_if = False
 
+    is_not_assign_value_with_return_type = True
     if found_method_decl.return_type:
         if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
             is_not_assign_value_with_return_type = False
-    else:
-        is_not_assign_value_with_return_type = True
+
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
     chains_after = [x for x in method_invoked.children if x.node_type == ASTNodeType.METHOD_INVOCATION]
@@ -278,7 +279,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = _is_match_to_the_conditions(method_invoked, found_method_decl)
+                    is_matched = _is_match_to_the_conditions(method_invoked, found_method_decl[0])
 
                     if is_matched:
                         results.append(

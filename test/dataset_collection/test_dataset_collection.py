@@ -173,25 +173,6 @@ class TestDatasetCollection(TestCase):
             InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS,
             InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS])
 
-    def test_determine_type_with_single_statement_in_if(self):
-        """Tests if we have invocation,
-        but we didn't find it in the list of method declarations
-        in current class."""
-        filepath = self.current_directory / "Example.java"
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'test_single_stat_in_if'][0]
-        m_decl_original = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'intersected_var']
-        m_inv = [
-            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
-            if x.member == 'intersected_var'][0]
-        d = {'intersected_var': m_decl_original}
-        type = determine_algorithm_insertion_type(ast, m_decl, m_inv, d)
-        self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
-
     def test_inline_with_return_type_but_not_returining(self):
         """
         Test check whether we can inline code function with return type, but actually
