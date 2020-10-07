@@ -1,31 +1,23 @@
-from dataclasses import dataclass
 from typing import Dict, List, Optional
 
-from veniq.ast_framework import AST, ASTNode
-from veniq.baselines.semi.extract_semantic import StatementSemantic, extract_method_statements_semantic
-from veniq.baselines.semi.common_cli import common_cli
-
-Cluster = List[ASTNode]
-
-
-@dataclass
-class Range:
-    first: int
-    last: int
+from veniq.ast_framework import AST
+from .extract_semantic import extract_method_statements_semantic
+from ._common_cli import common_cli
+from ._common_types import Statement, StatementSemantic, ExtractionOpportunity
 
 
-def cluster_statements(statements_semantic: Dict[ASTNode, StatementSemantic]) -> List[Cluster]:
-    clusters: List[Cluster] = []
+def cluster_statements(statements_semantic: Dict[Statement, StatementSemantic]) -> List[ExtractionOpportunity]:
+    clusters: List[ExtractionOpportunity] = []
     for step in range(1, len(statements_semantic) + 1):
-        for cluster in _StatementsClusterIterator(statements_semantic, step):
-            if cluster not in clusters:
-                clusters.append(cluster)
+        for extraction_opportunity in _StatementsClusterIterator(statements_semantic, step):
+            if extraction_opportunity not in clusters:
+                clusters.append(extraction_opportunity)
 
     return clusters
 
 
 class _StatementsClusterIterator:
-    def __init__(self, statements_semantic: Dict[ASTNode, StatementSemantic], step: int):
+    def __init__(self, statements_semantic: Dict[Statement, StatementSemantic], step: int):
         self._statements_semantic = statements_semantic
         self._statements = list(statements_semantic.keys())
         self._step = step
@@ -35,7 +27,7 @@ class _StatementsClusterIterator:
     def __iter__(self):
         return self
 
-    def __next__(self):
+    def __next__(self) -> ExtractionOpportunity:
         if self._statement_index >= len(self._statements_semantic):
             raise StopIteration
 
@@ -61,11 +53,11 @@ class _StatementsClusterIterator:
                     self._statement_index += 1
 
         # self._statement_index has passed over self._statements
-        # all statements after first_statement_index are goes in last cluster
-        if self._statement_index == len(self._statements):
+        # put last_statement_index to the last statement before sequence of failures
+        if last_statement_index is None:
             last_statement_index = len(self._statements) - fails_qty - 1
 
-        return [self._statements[i] for i in range(first_statement_index, last_statement_index + 1)]
+        return tuple(self._statements[i] for i in range(first_statement_index, last_statement_index + 1))
 
     def _get_statement_semantic(self, statement_index: int) -> StatementSemantic:
         current_statement = self._statements[statement_index]
@@ -80,11 +72,11 @@ def _print_clusters(method_ast: AST, filepath: str, class_name: str, method_name
         f"in class {class_name} in file {filepath}:"
     )
 
-    for index, cluster in enumerate(statement_clusters):
-        first_statement = cluster[0]
-        last_statement = cluster[-1]
+    for index, extraction_opportunity in enumerate(statement_clusters):
+        first_statement = extraction_opportunity[0]
+        last_statement = extraction_opportunity[-1]
         print(
-            f"{index}th cluster:\n"
+            f"{index}th extraction opportunity:\n"
             f"\tFirst statement: {first_statement.node_type} on line {first_statement.line}\n"
             f"\tLast statement: {last_statement.node_type} on line {last_statement.line}\n"
         )
