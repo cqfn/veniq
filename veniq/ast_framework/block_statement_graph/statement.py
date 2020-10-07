@@ -1,5 +1,5 @@
 from networkx import DiGraph
-from typing import Callable, Iterator, TYPE_CHECKING
+from typing import Callable, Iterator, Any, TYPE_CHECKING
 
 from veniq.ast_framework import ASTNode
 from ._constants import NODE, NodeId
@@ -44,3 +44,12 @@ class Statement:
         self, on_node_entering: "TraverseCallback", on_node_leaving: "TraverseCallback" = lambda _: None
     ):
         self._traverse_function(self._graph, self._id, on_node_entering, on_node_leaving)
+
+    def __eq__(self, other: Any) -> bool:
+        if other is None:
+            return False
+
+        if not isinstance(other, Statement):
+            raise NotImplementedError(f"Only Statement objects are supported, got {other}")
+
+        return self._graph == other._graph and self._id == other._id
