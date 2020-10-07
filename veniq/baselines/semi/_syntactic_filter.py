@@ -1,9 +1,7 @@
 from typing import List, Optional, Union
 
+from ._common_types import ExtractionOpportunity
 from veniq.ast_framework.block_statement_graph import Block, Statement
-from veniq.ast_framework import ASTNode
-
-ExtractionOpportunity = List[ASTNode]
 
 
 def syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:

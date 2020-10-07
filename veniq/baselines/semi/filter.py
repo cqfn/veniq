@@ -1,11 +1,9 @@
 from typing import List
 
 from ._syntactic_filter import syntactic_filter
-from veniq.ast_framework import AST, ASTNode
+from ._common_types import ExtractionOpportunity
+from veniq.ast_framework import AST
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph
-
-
-ExtractionOpportunity = List[ASTNode]
 
 
 def filter_extraction_opportunities(
