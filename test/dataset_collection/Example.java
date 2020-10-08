@@ -119,7 +119,7 @@ public class Example {
         int zhmyak;
     }
 
-        public int invocation() {
+    public int invocation() {
         int i = 0;
         System.out.println(0);
         if (i == 0) System.out.println(0);
@@ -137,6 +137,38 @@ public class Example {
         int a = invocation();
         int c = 5;
         ++c;
-
     }
+
+
+    public int severalReturns() {
+        int i = 0, j = 0;
+        if (i < 0) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    public void runSeveralReturns() {
+        int a = severalReturns();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+        return CompletableFuture.runAsync(
+            () -> {
+                try {
+                    Files.delete(this.path(1));
+                } catch (final IOException iex) {
+                    throw new UncheckedIOException(iex);
+                }
+            },
+            this.exec
+        );
+    }
+
+    public void runDelete() {
+        delete();
+    }
+
 }

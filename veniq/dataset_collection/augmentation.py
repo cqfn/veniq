@@ -64,6 +64,7 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
 
 @typing.no_type_check
 def is_match_to_the_conditions(
+        ast: AST,
         method_invoked: ASTNode,
         found_method_decl=None) -> bool:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
@@ -84,9 +85,15 @@ def is_match_to_the_conditions(
                 is_not_method_inv_single_statement_in_if = False
 
     is_not_assign_value_with_return_type = True
+    is_not_several_returns = True
     if found_method_decl.return_type:
         if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
             is_not_assign_value_with_return_type = False
+
+        ast_subtree = ast.get_subtree(found_method_decl)
+        stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
+        if len(stats) > 1:
+            is_not_several_returns = False
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
@@ -123,6 +130,7 @@ def is_match_to_the_conditions(
         is_not_lambda,
         is_not_method_inv_single_statement_in_if,
         is_not_assign_value_with_return_type,
+        is_not_several_returns,
         not method_invoked.arguments])
 
     if (not method_invoked.qualifier and other_requirements) or \
@@ -230,7 +238,7 @@ def insert_code_with_new_file_creation(
         output_path.mkdir(parents=True)
 
     id = uuid.uuid()
-    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.name}_{method_node.name.id}.java')
+    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.name}_{method_node.name}{id}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
@@ -242,6 +250,7 @@ def insert_code_with_new_file_creation(
         invocation_node.line,
         original_func.line,
         method_node.name,
+        id,
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
@@ -281,7 +290,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = is_match_to_the_conditions(method_invoked, found_method_decl[0])
+                    is_matched = is_match_to_the_conditions(ast, method_invoked, found_method_decl[0])
 
                     if is_matched:
                         results.append(
@@ -337,7 +346,8 @@ if __name__ == '__main__':
             'String where to replace',
             'line where to replace',
             'line of original function',
-            'invocation function name'])
+            'invocation function name',
+            'unique id'])
 
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
