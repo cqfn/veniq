@@ -4,7 +4,7 @@ from networkx import DiGraph, strongly_connected_components, weakly_connected_co
 
 from veniq.ast_framework import AST, ASTNodeType
 
-from veniq.patterns.classic_setter.classic_setter import ClassicSetter as setter   # type: ignore
+from veniq.patterns.classic_setter.classic_setter import ClassicSetter as setter  # type: ignore
 from veniq.patterns.classic_getter.classic_getter import ClassicGetter as getter  # type: ignore
 
 
@@ -37,10 +37,8 @@ def is_ast_pattern(class_ast: AST, Pattern) -> bool:
 
 
 def decompose_java_class(
-        class_ast: AST,
-        strength: str,
-        ignore_setters=False,
-        ignore_getters=False) -> List[AST]:
+    class_ast: AST, strength: str, ignore_setters=False, ignore_getters=False
+) -> List[AST]:
     """
     Splits java_class fields and methods by their usage and
     construct for each case an AST with only those fields and methods kept.
@@ -91,9 +89,7 @@ def decompose_java_class(
 
         filtered = _filter_class_methods_and_fields(class_ast, field_names, method_names)
 
-        class_parts.append(
-            filtered
-        )
+        class_parts.append(filtered)
 
     return class_parts
 
@@ -117,9 +113,7 @@ def _create_usage_graph(class_ast: AST) -> DiGraph:
         # overloaded methods considered as single node in usage_graph
         if method_name not in methods_ids:
             methods_ids[method_name] = len(fields_ids) + 1 + len(methods_ids)
-            usage_graph.add_node(
-                methods_ids[method_name], type="method", name=method_name
-            )
+            usage_graph.add_node(methods_ids[method_name], type="method", name=method_name)
 
     for method_declaration in class_declaration.methods:
         method_ast = class_ast.get_subtree(method_declaration)
@@ -133,9 +127,7 @@ def _create_usage_graph(class_ast: AST) -> DiGraph:
 
         for used_field_name in _find_fields_usage(method_ast):
             if used_field_name in fields_ids:
-                usage_graph.add_edge(
-                    methods_ids[method_declaration.name], fields_ids[used_field_name]
-                )
+                usage_graph.add_edge(methods_ids[method_declaration.name], fields_ids[used_field_name])
 
     return usage_graph
 
@@ -151,9 +143,7 @@ def _find_local_method_invocations(method_ast: AST) -> Set[str]:
 
 def _find_fields_usage(method_ast: AST) -> Set[str]:
     local_variables: Set[str] = set()
-    for variable_declaration in method_ast.get_proxy_nodes(
-            ASTNodeType.LOCAL_VARIABLE_DECLARATION
-    ):
+    for variable_declaration in method_ast.get_proxy_nodes(ASTNodeType.LOCAL_VARIABLE_DECLARATION):
         local_variables.update(variable_declaration.names)
 
     method_declaration = method_ast.get_root()
@@ -162,17 +152,14 @@ def _find_fields_usage(method_ast: AST) -> Set[str]:
 
     used_fields: Set[str] = set()
     for member_reference in method_ast.get_proxy_nodes(ASTNodeType.MEMBER_REFERENCE):
-        if member_reference.qualifier is None and \
-                member_reference.member not in local_variables:
+        if member_reference.qualifier is None and member_reference.member not in local_variables:
             used_fields.add(member_reference.member)
 
     return used_fields
 
 
 def _filter_class_methods_and_fields(
-        class_ast: AST,
-        allowed_fields_names: Set[str],
-        allowed_methods_names: Set[str]
+    class_ast: AST, allowed_fields_names: Set[str], allowed_methods_names: Set[str]
 ) -> AST:
     class_declaration = class_ast.get_root()
     allowed_nodes = {class_declaration.node_index}

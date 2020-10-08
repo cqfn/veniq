@@ -15,7 +15,8 @@ class BlockStatementTestCase(TestCase):
             class_declaration = next(
                 node
                 for node in ast.get_root().types
-                if node.node_type == ASTNodeType.CLASS_DECLARATION and node.name == "BlockStatementGraphExamples"
+                if node.node_type == ASTNodeType.CLASS_DECLARATION
+                and node.name == "BlockStatementGraphExamples"
             )
         except StopIteration:
             raise RuntimeError(f"Can't find class BlockStatementGraphExamples in file {filepath}")

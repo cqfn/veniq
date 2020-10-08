@@ -9,16 +9,12 @@ from veniq.metrics.ncss.ncss import NCSSMetric
 
 class JavaClassDecompositionTestCase(TestCase):
     def test_strong_decomposition(self):
-        class_ast = self._get_class_ast(
-            "MethodUseOtherMethodExample.java", "MethodUseOtherMethod"
-        )
+        class_ast = self._get_class_ast("MethodUseOtherMethodExample.java", "MethodUseOtherMethod")
         class_components = decompose_java_class(class_ast, "strong")
         self.assertEqual(len(class_components), 7)
 
     def test_weak_decomposition(self):
-        class_ast = self._get_class_ast(
-            "MethodUseOtherMethodExample.java", "MethodUseOtherMethod"
-        )
+        class_ast = self._get_class_ast("MethodUseOtherMethodExample.java", "MethodUseOtherMethod")
         class_components = decompose_java_class(class_ast, "weak")
         self.assertEqual(len(class_components), 5)
 
@@ -63,21 +59,21 @@ class JavaClassDecompositionTestCase(TestCase):
 
     def test_ignore_setters(self):
         function_names = self._decompose_with_setter_functionality(ignore_setters=True)
-        self.assertTrue('setSomething' not in function_names)
-        self.assertTrue('setBitmap' not in function_names)
+        self.assertTrue("setSomething" not in function_names)
+        self.assertTrue("setBitmap" not in function_names)
 
     def test_do_not_ignore_setters(self):
         function_names = self._decompose_with_setter_functionality(ignore_setters=False)
-        self.assertTrue('setSomething' in function_names)
-        self.assertTrue('setBitmap' in function_names)
+        self.assertTrue("setSomething" in function_names)
+        self.assertTrue("setBitmap" in function_names)
 
     def test_ignore_getters(self):
         function_names = self._decompose_with_setter_functionality(ignore_getters=True)
-        self.assertTrue('getWidth' not in function_names)
+        self.assertTrue("getWidth" not in function_names)
 
     def test_do_not_ignore_getters(self):
         function_names = self._decompose_with_setter_functionality(ignore_getters=False)
-        self.assertTrue('getWidth' in function_names)
+        self.assertTrue("getWidth" in function_names)
 
     @staticmethod
     def _get_class_ast(filename: str, class_name: str) -> AST:
@@ -92,9 +88,7 @@ class JavaClassDecompositionTestCase(TestCase):
             return package_ast.get_subtree(class_declaration)
 
         except StopIteration:
-            raise ValueError(
-                f"File '{filename}' does not have top level class '{class_name}'."
-            )
+            raise ValueError(f"File '{filename}' does not have top level class '{class_name}'.")
 
     @staticmethod
     def _decompose_with_setter_functionality(ignore_getters=False, ignore_setters=False):
@@ -104,14 +98,14 @@ class JavaClassDecompositionTestCase(TestCase):
             for node in ast.get_root().types
             if node.node_type == ASTNodeType.CLASS_DECLARATION
         ]
-        components = list(decompose_java_class(
-            classes_ast[0],
-            "strong",
-            ignore_setters=ignore_setters,
-            ignore_getters=ignore_getters))
-        function_names = flatten([
-            [x.name for x in list(c.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION))]
-            for c in components])
+        components = list(
+            decompose_java_class(
+                classes_ast[0], "strong", ignore_setters=ignore_setters, ignore_getters=ignore_getters
+            )
+        )
+        function_names = flatten(
+            [[x.name for x in list(c.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION))] for c in components]
+        )
         return function_names
 
     _current_directory = Path(__file__).absolute().parent

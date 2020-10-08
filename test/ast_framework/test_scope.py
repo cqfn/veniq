@@ -83,8 +83,10 @@ class ScopeTestCase(TestCase):
         ast = build_ast(path)
         package_declaration = ast.get_root()
 
-        assert len(package_declaration.types) == 1 and \
-            package_declaration.types[0].node_type == ASTNodeType.CLASS_DECLARATION
+        assert (
+            len(package_declaration.types) == 1
+            and package_declaration.types[0].node_type == ASTNodeType.CLASS_DECLARATION
+        )
 
         class_declaration = package_declaration.types[0]
 

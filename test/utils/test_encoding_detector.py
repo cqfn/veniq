@@ -7,8 +7,7 @@ from veniq.utils.encoding_detector import detect_encoding_of_file
 
 class TestEncodingDetector(TestCase):
     dir_path = Path(os.path.realpath(__file__)).parent
-    files_with_encoding = [('ConditionalExpressionCheck.java', 'UTF-8'),
-                           ('ExceptionDemo.java', 'GB18030')]
+    files_with_encoding = [("ConditionalExpressionCheck.java", "UTF-8"), ("ExceptionDemo.java", "GB18030")]
 
     def test_encoding_detector(self):
         for filename, excepted_encoding in TestEncodingDetector.files_with_encoding:
