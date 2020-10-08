@@ -47,7 +47,7 @@ def _get_last_line(file_path: Path, last_return_line: int) -> int:
         return -1
 
 
-def _method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
+def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
     Ger start and end of method's body
     """
@@ -62,7 +62,7 @@ def _method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]
 
 
 @typing.no_type_check
-def _is_match_to_the_conditions(
+def is_match_to_the_conditions(
         method_invoked: ASTNode,
         found_method_decl=None) -> bool:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
@@ -230,7 +230,7 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    body_start_line, body_end_line = _method_body_lines(original_func, file_path)
+    body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
     line_to_csv = [
@@ -279,7 +279,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = _is_match_to_the_conditions(method_invoked, found_method_decl[0])
+                    is_matched = is_match_to_the_conditions(method_invoked, found_method_decl[0])
 
                     if is_matched:
                         results.append(

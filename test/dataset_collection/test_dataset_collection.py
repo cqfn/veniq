@@ -1,9 +1,10 @@
-import tempfile
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.dataset_collection.augmentation import determine_algorithm_insertion_type, analyze_file, _method_body_lines, \
-    _is_match_to_the_conditions
+from veniq.dataset_collection.augmentation import (
+    determine_algorithm_insertion_type,
+    method_body_lines,
+    is_match_to_the_conditions)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms, InlineWithoutReturnWithoutArguments, InlineWithReturnWithoutArguments)
@@ -139,7 +140,7 @@ class TestDatasetCollection(TestCase):
             x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'intersected_var'][0]
 
-        self.assertFalse(_is_match_to_the_conditions(m_inv))
+        self.assertFalse(is_match_to_the_conditions(m_inv))
 
     def test_is_return_type_not_assigning_value_valid(self):
         filepath = self.current_directory / "Example.java"
@@ -153,7 +154,7 @@ class TestDatasetCollection(TestCase):
         m_decl_original = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'invocation'][0]
-        self.assertFalse(_is_match_to_the_conditions(m_inv, m_decl_original))
+        self.assertFalse(is_match_to_the_conditions(m_inv, m_decl_original))
 
     def test_determine_type_with_non_intersected_variables_declaration(self):
         filepath = self.current_directory / "Example.java"
@@ -188,7 +189,7 @@ class TestDatasetCollection(TestCase):
         m_decl = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'invocation'][0]
-        body_start_line, body_end_line = _method_body_lines(m_decl, file)
+        body_start_line, body_end_line = method_body_lines(m_decl, file)
 
         algorithm.inline_function(file, 36, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
@@ -205,7 +206,7 @@ class TestDatasetCollection(TestCase):
         m_decl = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'getReceiverQueueSize'][0]
-        body_start_line, body_end_line = _method_body_lines(m_decl, file)
+        body_start_line, body_end_line = method_body_lines(m_decl, file)
 
         algorithm.inline_function(file, 76, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
@@ -222,7 +223,7 @@ class TestDatasetCollection(TestCase):
         m_decl = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'makeBloom'][0]
-        body_start_line, body_end_line = _method_body_lines(m_decl, file)
+        body_start_line, body_end_line = method_body_lines(m_decl, file)
 
         algorithm.inline_function(file, 70, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \

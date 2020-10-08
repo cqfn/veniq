@@ -65,7 +65,7 @@ class FilteringTestCase(TestCase):
     @staticmethod
     def _get_method_ast() -> AST:
         current_directory = Path(__file__).absolute().parent
-        filepath = current_directory / "ReturnTypeUseless.java"
+        filepath = current_directory / "Example.java"
         ast = AST.build_from_javalang(build_ast(str(filepath)))
 
         try:
