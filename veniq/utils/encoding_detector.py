@@ -1,7 +1,10 @@
+from typing import Union
+from pathlib import Path
+
 from cchardet import detect  # type: ignore
 
 
-def detect_encoding_of_file(filename: str):
+def detect_encoding_of_file(filename: Union[str, Path]):
     with open(filename, 'rb') as target_file:
         return detect_encoding_of_data(target_file.read())
 
@@ -10,7 +13,7 @@ def detect_encoding_of_data(data: bytes):
     return detect(data)['encoding']
 
 
-def read_text_with_autodetected_encoding(filename: str):
+def read_text_with_autodetected_encoding(filename: Union[str, Path]):
     with open(filename, 'rb') as target_file:
         data = target_file.read()
 

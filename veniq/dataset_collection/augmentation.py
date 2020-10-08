@@ -12,8 +12,7 @@ from tqdm import tqdm
 
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 from veniq.dataset_collection.types_identifier import AlgorithmFactory
-from veniq.ast_framework import AST, ASTNodeType, ASTNode
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import ASTNodeType, ASTNode, build_ast
 
 
 def _get_last_line(child_statement: ASTNode) -> int:
@@ -192,7 +191,7 @@ def _create_new_files(
 
 
 def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
-    ast = AST.build_from_javalang(build_ast(str(file_path)))
+    ast = build_ast(file_path)
     method_declarations = defaultdict(list)
     classes_declaration = [
         ast.get_subtree(node)

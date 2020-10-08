@@ -2,9 +2,8 @@ from unittest import TestCase
 from pathlib import Path
 from typing import List, Iterator
 
-from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import AST, ASTNodeType, build_ast
 from veniq.ast_framework.scope import Scope
-from veniq.utils.ast_builder import build_ast
 
 StatementsTypes = List[ASTNodeType]
 
@@ -80,8 +79,8 @@ class ScopeTestCase(TestCase):
         self.assertEqual([statement.node_type for statement in scope.statements], statements)
 
     def _get_method_ast(self, method_name) -> AST:
-        path = str(Path(__file__).absolute().parent / "ScopeTest.java")
-        ast = AST.build_from_javalang(build_ast(path))
+        path = Path(__file__).absolute().parent / "ScopeTest.java"
+        ast = build_ast(path)
         package_declaration = ast.get_root()
 
         assert len(package_declaration.types) == 1 and \

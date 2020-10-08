@@ -2,8 +2,7 @@ from itertools import zip_longest
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import ASTNodeType, build_ast
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic, StatementSemantic
 from veniq.baselines.semi.cluster_statements import cluster_statements
 
@@ -45,7 +44,7 @@ class PaperExampleTestCase(TestCase):
         current_directory = Path(__file__).absolute().parent
         filepath = current_directory / "ExampleFromPaper.java"
 
-        ast = AST.build_from_javalang(build_ast(filepath))
+        ast = build_ast(filepath)
         try:
             class_declaration = next(
                 node

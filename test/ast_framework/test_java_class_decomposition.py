@@ -2,15 +2,12 @@ from unittest import TestCase
 from pathlib import Path
 
 from veniq.utils.utils import flatten
-from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import AST, ASTNodeType, build_ast
 from veniq.ast_framework.java_class_decomposition import decompose_java_class
-from veniq.utils.ast_builder import build_ast
 from veniq.metrics.ncss.ncss import NCSSMetric
 
 
-class JavaClassDecompositionTestSuite(TestCase):
-    cur_dir = Path(__file__).absolute().parent
-
+class JavaClassDecompositionTestCase(TestCase):
     def test_strong_decomposition(self):
         class_ast = self._get_class_ast(
             "MethodUseOtherMethodExample.java", "MethodUseOtherMethod"
@@ -25,29 +22,11 @@ class JavaClassDecompositionTestSuite(TestCase):
         class_components = decompose_java_class(class_ast, "weak")
         self.assertEqual(len(class_components), 5)
 
-    def _get_class_ast(self, filename: str, class_name: str) -> AST:
-        package_ast = AST.build_from_javalang(
-            build_ast(str(Path(__file__).parent.absolute() / filename))
-        )
-        package_declaration = package_ast.get_root()
-        try:
-            class_declaration = next(
-                class_declaration
-                for class_declaration in package_declaration.types
-                if class_declaration.name == class_name
-            )
-            return package_ast.get_subtree(class_declaration)
-
-        except StopIteration:
-            raise ValueError(
-                f"File '{filename}' does not have top level class '{class_name}'."
-            )
-
     def test_ncss(self):
-        test_data_folder = self.cur_dir / "ncss"
+        test_data_folder = self._current_directory / "ncss"
         for filepath in test_data_folder.glob("*.java"):
             with self.subTest(f"Testing decomposition of {filepath}"):
-                ast = AST.build_from_javalang(build_ast(filepath))
+                ast = build_ast(filepath)
 
                 classes_ast = [
                     ast.get_subtree(node)
@@ -82,9 +61,44 @@ class JavaClassDecompositionTestSuite(TestCase):
                 # To achieve equality we add number of components to the sum of NCSS of just methods and fields.
                 self.assertEqual(methods_ncss + fields_ncss + components_qty, components_ncss)
 
-    def __decompose_with_setter_functionality(self, ignore_getters=False, ignore_setters=False):
-        file = str(Path(self.cur_dir, 'LottieImageAsset.java'))
-        ast = AST.build_from_javalang(build_ast(file))
+    def test_ignore_setters(self):
+        function_names = self._decompose_with_setter_functionality(ignore_setters=True)
+        self.assertTrue('setSomething' not in function_names)
+        self.assertTrue('setBitmap' not in function_names)
+
+    def test_do_not_ignore_setters(self):
+        function_names = self._decompose_with_setter_functionality(ignore_setters=False)
+        self.assertTrue('setSomething' in function_names)
+        self.assertTrue('setBitmap' in function_names)
+
+    def test_ignore_getters(self):
+        function_names = self._decompose_with_setter_functionality(ignore_getters=True)
+        self.assertTrue('getWidth' not in function_names)
+
+    def test_do_not_ignore_getters(self):
+        function_names = self._decompose_with_setter_functionality(ignore_getters=False)
+        self.assertTrue('getWidth' in function_names)
+
+    @staticmethod
+    def _get_class_ast(filename: str, class_name: str) -> AST:
+        package_ast = build_ast(JavaClassDecompositionTestCase._current_directory / filename)
+        package_declaration = package_ast.get_root()
+        try:
+            class_declaration = next(
+                class_declaration
+                for class_declaration in package_declaration.types
+                if class_declaration.name == class_name
+            )
+            return package_ast.get_subtree(class_declaration)
+
+        except StopIteration:
+            raise ValueError(
+                f"File '{filename}' does not have top level class '{class_name}'."
+            )
+
+    @staticmethod
+    def _decompose_with_setter_functionality(ignore_getters=False, ignore_setters=False):
+        ast = build_ast(JavaClassDecompositionTestCase._current_directory / "LottieImageAsset.java")
         classes_ast = [
             ast.get_subtree(node)
             for node in ast.get_root().types
@@ -100,20 +114,4 @@ class JavaClassDecompositionTestSuite(TestCase):
             for c in components])
         return function_names
 
-    def test_ignore_setters(self):
-        function_names = self.__decompose_with_setter_functionality(ignore_setters=True)
-        self.assertTrue('setSomething' not in function_names)
-        self.assertTrue('setBitmap' not in function_names)
-
-    def test_do_not_ignore_setters(self):
-        function_names = self.__decompose_with_setter_functionality(ignore_setters=False)
-        self.assertTrue('setSomething' in function_names)
-        self.assertTrue('setBitmap' in function_names)
-
-    def test_ignore_getters(self):
-        function_names = self.__decompose_with_setter_functionality(ignore_getters=True)
-        self.assertTrue('getWidth' not in function_names)
-
-    def test_do_not_ignore_getters(self):
-        function_names = self.__decompose_with_setter_functionality(ignore_getters=False)
-        self.assertTrue('getWidth' in function_names)
+    _current_directory = Path(__file__).absolute().parent

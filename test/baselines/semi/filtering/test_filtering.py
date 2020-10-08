@@ -5,8 +5,7 @@ from unittest import TestCase
 from veniq.baselines.semi.filter import filter_extraction_opportunities
 from veniq.baselines.semi._common_types import ExtractionOpportunity, Statement as ExtractionStatement
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import AST, ASTNodeType, build_ast
 
 
 class FilteringTestCase(TestCase):
@@ -66,7 +65,7 @@ class FilteringTestCase(TestCase):
     def _get_method_ast() -> AST:
         current_directory = Path(__file__).absolute().parent
         filepath = current_directory / "Example.java"
-        ast = AST.build_from_javalang(build_ast(str(filepath)))
+        ast = build_ast(filepath)
 
         try:
             class_declaration = next(

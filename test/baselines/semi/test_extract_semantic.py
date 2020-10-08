@@ -2,8 +2,7 @@ from itertools import zip_longest
 from pathlib import Path
 from unittest import TestCase
 
-from veniq.ast_framework import AST
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import build_ast
 from veniq.baselines.semi.extract_semantic import (
     extract_method_statements_semantic,
     StatementSemantic,
@@ -15,10 +14,8 @@ def objects_semantic(*objects_names: str) -> StatementSemantic:
 
 
 class ExtractStatementSemanticTestCase(TestCase):
-    current_directory = Path(__file__).absolute().parent
-
     def test_semantic_extraction(self):
-        ast = AST.build_from_javalang(build_ast(self.current_directory / "SimpleMethods.java"))
+        ast = build_ast(self._current_directory / "SimpleMethods.java")
         class_declaration = ast.get_root().types[0]
         assert class_declaration.name == "SimpleMethods", "Wrong java test class"
 
@@ -41,6 +38,8 @@ class ExtractStatementSemanticTestCase(TestCase):
                         f"on line {statement.line} of method {method_declaration.name}."
                     ):
                         self.assertEqual(actual_statement_semantic, expected_statement_semantic)
+
+    _current_directory = Path(__file__).absolute().parent
 
     expected_semantic = {
         "block": [objects_semantic("x")],

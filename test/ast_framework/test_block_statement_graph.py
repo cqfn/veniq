@@ -3,16 +3,13 @@ from pathlib import Path
 from unittest import TestCase
 
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import ASTNodeType, build_ast
 
 
 class BlockStatementTestCase(TestCase):
-    current_directory = Path(__file__).absolute().parent
-
     def test_simple_examples(self):
-        filepath = self.current_directory / "BlockStatementGraphExamples.java"
-        ast = AST.build_from_javalang(build_ast(filepath))
+        filepath = self._current_directory / "BlockStatementGraphExamples.java"
+        ast = build_ast(filepath)
 
         try:
             class_declaration = next(
@@ -47,6 +44,8 @@ class BlockStatementTestCase(TestCase):
 
         root.traverse(on_node_entering)
         return flattened_graph
+
+    _current_directory = Path(__file__).absolute().parent
 
     _expected_flattened_graphs: Dict[str, List[str]] = {
         "singleAssertStatement": ["Method declaration", "BlockReason.SINGLE_BLOCK", "Assert statement"],

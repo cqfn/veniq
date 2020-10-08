@@ -1,17 +1,13 @@
 from unittest import TestCase
 from pathlib import Path
 
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import ASTNodeType, build_ast
 
 
 class ASTNodeTestSuite(TestCase):
     def test_class_computed_fields(self):
-        ast = AST.build_from_javalang(
-            build_ast(
-                Path(__file__).absolute().parent / "MethodUseOtherMethodExample.java"
-            )
-        )
+        current_directory = Path(__file__).absolute().parent
+        ast = build_ast(current_directory / "MethodUseOtherMethodExample.java")
         package = ast.get_root()
         assert len(package.types) == 1 and \
             package.types[0].node_type == ASTNodeType.CLASS_DECLARATION

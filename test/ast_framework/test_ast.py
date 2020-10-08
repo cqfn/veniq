@@ -2,19 +2,18 @@ from unittest import TestCase
 from pathlib import Path
 from itertools import zip_longest
 
-from veniq.utils.ast_builder import build_ast
-from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import ASTNodeType, build_ast
 
 
 class ASTTestSuite(TestCase):
     def test_parsing(self):
-        ast = self._build_ast("SimpleClass.java")
+        ast = build_ast(self._current_directory / "SimpleClass.java")
         actual_node_types = [node.node_type for node in ast]
         self.assertEqual(actual_node_types,
                          ASTTestSuite._java_simple_class_preordered)
 
     def test_subtrees_selection(self):
-        ast = self._build_ast("SimpleClass.java")
+        ast = build_ast(self._current_directory / "SimpleClass.java")
         subtrees = ast.get_subtrees(ASTNodeType.BASIC_TYPE)
         for actual_subtree, expected_subtree in \
                 zip_longest(subtrees, ASTTestSuite._java_simple_class_basic_type_subtrees):
@@ -23,7 +22,7 @@ class ASTTestSuite(TestCase):
                                  expected_subtree)
 
     def test_complex_fields(self):
-        ast = self._build_ast('StaticConstructor.java')
+        ast = build_ast(self._current_directory / 'StaticConstructor.java')
         class_declaration = next((declaration for declaration in ast.get_root().types if
                                  declaration.node_type == ASTNodeType.CLASS_DECLARATION), None)
         assert class_declaration is not None, "Cannot find class declaration"
@@ -33,9 +32,7 @@ class ASTTestSuite(TestCase):
                          [ASTNodeType.STATEMENT_EXPRESSION, ASTNodeType.STATEMENT_EXPRESSION])
         self.assertEqual(method_declaration.node_type, ASTNodeType.METHOD_DECLARATION)
 
-    def _build_ast(self, filename: str):
-        javalang_ast = build_ast(str(Path(__file__).parent.absolute() / filename))
-        return AST.build_from_javalang(javalang_ast)
+    _current_directory = Path(__file__).absolute().parent
 
     _java_simple_class_preordered = [
         ASTNodeType.COMPILATION_UNIT,

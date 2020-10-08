@@ -1,8 +1,7 @@
 from argparse import ArgumentParser
 from typing import Callable, NamedTuple
 
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
+from veniq.ast_framework import AST, ASTNodeType, build_ast
 
 # Main function parameters:
 #  - AST of a single method
@@ -39,7 +38,7 @@ def common_cli(main: MainFunction, description: str) -> None:
     )
     args = parser.parse_args()
 
-    ast = AST.build_from_javalang(build_ast(args.file))
+    ast = build_ast(args.file)
 
     classes_declarations = (
         node for node in ast.get_root().types if node.node_type == ASTNodeType.CLASS_DECLARATION
