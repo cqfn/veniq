@@ -1,0 +1,3 @@
+# Check out all text files in UNIX format, with LF as end of line
+
+* text=auto eol=lf
