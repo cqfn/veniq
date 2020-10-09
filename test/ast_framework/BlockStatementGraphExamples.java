@@ -61,6 +61,70 @@ class BlockStatementGraphExamples {
         }
     }
 
+    void singleIfThenBranch(int x) {
+        if(x > 0) {
+            x += 1;
+        }
+    }
+
+    void singleIfTheElseBranches(int x) {
+        if(x > 0) {
+            x += 1;
+        } else {
+            x -= 1;
+        }
+    }
+
+    void severalElseIfBranches(int x) {
+        if(x > 0) {
+            x += 1;
+        } else if(x == 0) {
+            x = 0;
+        } else {
+            x -= 1;
+        }
+    }
+
+    void switchBranches(int x) {
+        switch(x) {
+            case 0:
+                x = 1;
+                System.out.println(x);
+
+            case 1: {
+                x = 0;
+            }
+            System.out.println(x);
+
+            default:
+                x = -1;
+        }
+    }
+
+    void singleTryBlock(Exception e) {
+        try {
+            throw e;
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    void fullTryBlock(Exception e) {
+        try(Resource resource = initResource() ) {
+            throw e;
+        }
+        catch(OSException e) {
+            System.out.println(e);
+        }
+        catch(Exception e) {
+            System.out.println(e);
+        }
+        finally {
+            System.out.println("FINALLY!!!");
+        }
+    }
+
     void complexExample1(int x) {
         x += 1;
 
