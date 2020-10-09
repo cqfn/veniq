@@ -141,7 +141,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             return_statement = i.split('return ')
             if len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
-                    variable_declaration = line_with_declaration[0]
+                    variable_declaration = line_with_declaration[0].replace('{', ' ')
                     instead_of_return = variable_declaration + '= ' + return_statement[1]
                     f_out.write(instead_of_return)
                 else:
