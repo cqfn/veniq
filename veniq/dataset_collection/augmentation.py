@@ -42,7 +42,9 @@ def _get_last_line(file_path: Path, last_return_line: int) -> int:
     lines = list(f)[last_return_line:]
     for i, file_line in enumerate(lines, last_return_line):
         last_case_line = file_line.replace('\n', '').replace(' ', '')
-        if len(last_case_line) == 0:
+        is_comment = last_case_line.startswith('/**')
+        is_closed_case = '}' == lines[i-last_return_line-1].replace('\n', '').replace(' ', '')
+        if len(last_case_line) == 0 or (is_comment and is_closed_case):
             return i - 1
     return -1
 
@@ -242,6 +244,11 @@ def _create_new_files(
 
 
 def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+    try:
+        AST.build_from_javalang(build_ast(str(file_path)))
+    except Exception as e:
+        print('JavaSyntaxError while parsing ', file_path)
+
     ast = AST.build_from_javalang(build_ast(str(file_path)))
     method_declarations = defaultdict(list)
     classes_declaration = [
