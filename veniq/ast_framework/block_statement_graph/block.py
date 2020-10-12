@@ -1,7 +1,8 @@
 from networkx import DiGraph
 from typing import Any, Callable, Iterator, Optional, TYPE_CHECKING
 
-from ._constants import BLOCK_REASON, BlockReason, NodeId
+from veniq.ast_framework import ASTNode
+from .constants import BLOCK_REASON, ORIGIN_STATEMENT, NODE, BlockReason, NodeId
 
 if TYPE_CHECKING:
     from .statement import Statement  # noqa: F401
@@ -31,10 +32,13 @@ class Block:
             yield self._statement_factory(self._graph, statement_id)
 
     @property
-    def origin_statement(self) -> Optional["Statement"]:
+    def origin_statement(self) -> Optional[ASTNode]:
+        if ORIGIN_STATEMENT in self._graph.nodes[self._id]:
+            return self._graph.nodes[self._id][ORIGIN_STATEMENT]
+
         try:
             statement_id = next(self._graph.predecessors(self._id))
-            return self._statement_factory(self._graph, statement_id)
+            return self._graph.nodes[statement_id][NODE]
         except StopIteration:
             return None
 

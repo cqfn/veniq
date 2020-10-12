@@ -2,7 +2,7 @@ from typing import List, Dict, Tuple, Iterator, NamedTuple
 
 from veniq.ast_framework import AST
 from .extract_semantic import extract_method_statements_semantic
-from .cluster_statements import cluster_statements
+from .create_extraction_opportunities import create_extraction_opportunities
 from ._common_types import Statement, StatementSemantic, ExtractionOpportunity, OpportunityBenifit
 from ._common_cli import common_cli
 from ._lcom2 import LCOM2
@@ -136,7 +136,7 @@ def _print_extraction_opportunities(
     method_ast: AST, filepath: str, class_name: str, method_name: str
 ) -> None:
     statements_semantic = extract_method_statements_semantic(method_ast)
-    extraction_opportunities = cluster_statements(statements_semantic)
+    extraction_opportunities = create_extraction_opportunities(statements_semantic)
     extraction_opportunities_groups = rank_extraction_opportunities(
         statements_semantic, extraction_opportunities
     )

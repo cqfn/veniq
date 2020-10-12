@@ -5,6 +5,7 @@ NodeId = int
 # networkx field names
 NODE = "node"
 BLOCK_REASON = "block_reason"
+ORIGIN_STATEMENT = "origin_statement"
 
 
 class NodeType(Enum):

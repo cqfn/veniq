@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
 from networkx import DiGraph
 
 from veniq.ast_framework import AST, ASTNode
+from .constants import NODE, BLOCK_REASON, ORIGIN_STATEMENT, NodeId
 from ._nodes_factory import NodesFactory
 from ._block_extractors import BlockInfo, extract_blocks_from_statement
-from ._constants import NODE, BLOCK_REASON, NodeId
 
 if TYPE_CHECKING:
     from .block import Block
@@ -31,7 +31,9 @@ def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> NodeId:
 
 def _build_graph_from_block(block_info: BlockInfo, graph: DiGraph) -> NodeId:
     new_block_index = len(graph)
-    new_block_attributes = {BLOCK_REASON: block_info.reason}
+    new_block_attributes: Dict = {BLOCK_REASON: block_info.reason}
+    if block_info.origin_statement is not None:
+        new_block_attributes[ORIGIN_STATEMENT] = block_info.origin_statement
     graph.add_node(new_block_index, **new_block_attributes)
 
     for statement in block_info.statements:
