@@ -152,13 +152,14 @@ def _extract_semantic_from_ast(statement_ast: AST) -> StatementSemantic:
         ASTNodeType.MEMBER_REFERENCE, ASTNodeType.METHOD_INVOCATION, ASTNodeType.VARIABLE_DECLARATOR
     ):
         if node.node_type == ASTNodeType.MEMBER_REFERENCE:
-            statement_semantic.used_objects.add(node.member)
+            used_object_name = node.member
             if node.qualifier is not None:
-                statement_semantic.used_objects.update(node.qualifier.split("."))
+                used_object_name = node.qualifier + "." + used_object_name
+            statement_semantic.used_objects.add(used_object_name)
         elif node.node_type == ASTNodeType.METHOD_INVOCATION:
             statement_semantic.used_methods.add(node.member)
             if node.qualifier is not None:
-                statement_semantic.used_objects.update(node.qualifier.split("."))
+                statement_semantic.used_objects.add(node.qualifier)
         elif node.node_type == ASTNodeType.VARIABLE_DECLARATOR:
             statement_semantic.used_objects.add(node.name)
 

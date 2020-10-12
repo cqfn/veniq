@@ -6,17 +6,19 @@ from ._common_cli import common_cli
 from ._common_types import Statement, StatementSemantic, ExtractionOpportunity
 
 
-def cluster_statements(statements_semantic: Dict[Statement, StatementSemantic]) -> List[ExtractionOpportunity]:
-    clusters: List[ExtractionOpportunity] = []
+def create_extraction_opportunities(
+    statements_semantic: Dict[Statement, StatementSemantic]
+) -> List[ExtractionOpportunity]:
+    extraction_opportunities: List[ExtractionOpportunity] = []
     for step in range(1, len(statements_semantic) + 1):
-        for extraction_opportunity in _StatementsClusterIterator(statements_semantic, step):
-            if extraction_opportunity not in clusters:
-                clusters.append(extraction_opportunity)
+        for extraction_opportunity in _ExtractionOpportunityIterator(statements_semantic, step):
+            if extraction_opportunity not in extraction_opportunities:
+                extraction_opportunities.append(extraction_opportunity)
 
-    return clusters
+    return extraction_opportunities
 
 
-class _StatementsClusterIterator:
+class _ExtractionOpportunityIterator:
     def __init__(self, statements_semantic: Dict[Statement, StatementSemantic], step: int):
         self._statements_semantic = statements_semantic
         self._statements = list(statements_semantic.keys())
@@ -64,15 +66,15 @@ class _StatementsClusterIterator:
         return self._statements_semantic[current_statement]
 
 
-def _print_clusters(method_ast: AST, filepath: str, class_name: str, method_name: str):
+def _print_extraction_opportunities(method_ast: AST, filepath: str, class_name: str, method_name: str):
     statements_semantic = extract_method_statements_semantic(method_ast)
-    statement_clusters = cluster_statements(statements_semantic)
+    extraction_opportunities = create_extraction_opportunities(statements_semantic)
     print(
-        f"{len(statement_clusters)} clusters found in method {method_name} "
+        f"{len(extraction_opportunities)} opportunities found in method {method_name} "
         f"in class {class_name} in file {filepath}:"
     )
 
-    for index, extraction_opportunity in enumerate(statement_clusters):
+    for index, extraction_opportunity in enumerate(extraction_opportunities):
         first_statement = extraction_opportunity[0]
         last_statement = extraction_opportunity[-1]
         print(
@@ -83,4 +85,6 @@ def _print_clusters(method_ast: AST, filepath: str, class_name: str, method_name
 
 
 if __name__ == "__main__":
-    common_cli(_print_clusters, "Clusters statements based on their semantic.")
+    common_cli(
+        _print_extraction_opportunities, "Creates extraction opportunities based on statements semantic."
+    )

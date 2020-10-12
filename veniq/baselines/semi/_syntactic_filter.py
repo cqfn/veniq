@@ -1,33 +1,18 @@
 from typing import List, Optional, Union
 
 from ._common_types import ExtractionOpportunity
-from veniq.ast_framework import AST
-from veniq.ast_framework.block_statement_graph import Block, Statement, build_block_statement_graph
+from veniq.ast_framework.block_statement_graph import Block, Statement
 
 
-def filter_extraction_opportunities(
-    extraction_opportunities: List[ExtractionOpportunity],
-    method_ast: AST
-) -> List[ExtractionOpportunity]:
-    block_statement_graph = build_block_statement_graph(method_ast)
-    extraction_opportunities = list(
-        filter(
-            lambda extraction_opportunity: _syntactic_filter(extraction_opportunity, block_statement_graph),
-            extraction_opportunities,
-        )
-    )
-    return extraction_opportunities
-
-
-def _syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:
-    syntacticFilterCallbacks = SyntacticFilterCallbacks(statements, method_block_statement_graph)
+def syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:
+    syntactic_filter_callbacks = _SyntacticFilterCallbacks(statements, method_block_statement_graph)
     method_block_statement_graph.traverse(
-        syntacticFilterCallbacks.on_node_entering, syntacticFilterCallbacks.on_node_leaving
+        syntactic_filter_callbacks.on_node_entering, syntactic_filter_callbacks.on_node_leaving
     )
-    return syntacticFilterCallbacks.is_statements_extractable
+    return syntactic_filter_callbacks.is_statements_extractable
 
 
-class SyntacticFilterCallbacks:
+class _SyntacticFilterCallbacks:
     def __init__(self, statements: ExtractionOpportunity, root_block: Block):
         self._blocks_stack: List[Block] = [root_block]
         self._parent_block: Optional[Block] = None
