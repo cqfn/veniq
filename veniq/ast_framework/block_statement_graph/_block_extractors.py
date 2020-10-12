@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, NamedTuple, Union
+from typing import Callable, Dict, List, Optional, NamedTuple, Union
 
 from veniq.ast_framework import ASTNode, ASTNodeType
 from .constants import BlockReason
@@ -7,6 +7,7 @@ from .constants import BlockReason
 class BlockInfo(NamedTuple):
     reason: BlockReason
     statements: List[ASTNode]
+    origin_statement: Optional[ASTNode] = None
 
 
 def extract_blocks_from_statement(statement: ASTNode) -> List[BlockInfo]:
@@ -41,7 +42,8 @@ def _extract_blocks_from_if_branching(statement: ASTNode) -> List[BlockInfo]:
         block_infos.append(
             BlockInfo(
                 reason=BlockReason.THEN_BRANCH,
-                statements=_unwrap_block_to_statements_list(statement.then_statement)
+                statements=_unwrap_block_to_statements_list(statement.then_statement),
+                origin_statement=statement
             )
         )
 
