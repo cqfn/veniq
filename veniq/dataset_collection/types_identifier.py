@@ -113,6 +113,8 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     def __init__(self):
         super().__init__()
 
+    #def _process_var_declaration(self, lines, )
+
     def inline_function(
             self,
             filename_in: str,
@@ -123,7 +125,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         f_out = open(filename_out, 'w')
         original_file = open(filename_in)
         lines = list(original_file)
-        print(filename_out, body_start_line, body_end_line)
         # original code before method invocation, which will be substituted
         lines_before_invoсation = lines[:invocation_line - 1]
         for i in lines_before_invoсation:
@@ -136,20 +137,24 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = len(line_with_declaration) > 1
         is_direct_return = len(lines[invocation_line - 1].split('return ')) > 1
-        for i in body_lines:
+        for i, line in enumerate(body_lines):
             f_out.write(' ' * (num_spaces_before - num_spaces_body))
-            return_statement = i.split('return ')
+            return_statement = line.split('return ')
             if len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
-                    variable_declaration = line_with_declaration[0].replace('{', ' ')
-                    instead_of_return = variable_declaration + '= ' + return_statement[1]
+                    variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
+                    if '{' in body_lines[i-1]:
+                        space_for_var_decl_line = (len(body_lines[i-1]) - len(body_lines[i-1].lstrip(' ')) + 4) * ' '
+                    else:
+                        space_for_var_decl_line = (len(body_lines[i-1]) - len(body_lines[i-1].lstrip(' '))) * ' '
+                    instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     f_out.write(instead_of_return)
                 else:
                     instead_of_return = return_statement[1]
                     new_tabs = ' ' * len(return_statement[0])
                     f_out.write(new_tabs + instead_of_return)
             else:
-                f_out.write(i)
+                f_out.write(line)
 
         # original code after method invocation
         original_code_lines = lines[invocation_line:]
