@@ -1,4 +1,11 @@
 import abc
+from enum import Enum
+
+
+class InlineTypesAlgorithms(Enum):
+    WITH_RETURN_WITHOUT_ARGUMENTS = 0
+    WITHOUT_RETURN_WITHOUT_ARGUMENTS = 1
+    DO_NOTHING = -1
 
 
 class SingletonDecorator:
@@ -12,10 +19,23 @@ class SingletonDecorator:
         return self.instance
 
 
-class AlgorithmFactory:
-    objects = {1: lambda: InlineWithoutReturnWithoutArguments,
-               0: lambda: InlineWithoutReturnWithoutArguments,
-               -1: lambda: DoNothing}
+class Singleton(type):
+    _instances = {}  # type: ignore
+
+    def __call__(cls, *args, **kwargs):
+        if cls not in cls._instances:
+            cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
+        return cls._instances[cls]
+
+
+class AlgorithmFactory(metaclass=Singleton):
+    objects = {
+        InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS:
+            lambda: InlineWithReturnWithoutArguments,
+        InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS:
+            lambda: InlineWithoutReturnWithoutArguments,
+        InlineTypesAlgorithms.DO_NOTHING:
+            lambda: DoNothing}
 
     def create_obj(self, val_type):
         return self.objects.get(val_type)()
@@ -30,8 +50,9 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str) -> str:
         raise NotImplementedError("Cannot run abstract function")
 
@@ -45,8 +66,9 @@ class DoNothing(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str) -> str:
         return ""
 
@@ -59,11 +81,31 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str):
-        # TODO insert code when it is ready
-        print("Run InlineWithoutReturnWithoutArguments")
+        f_out = open(filename_out, 'w')
+        original_file = open(filename_in)
+        lines = list(original_file)
+
+        # original code before method invocation, which will be substituted
+        lines_before_invoсation = lines[:invocation_line - 1]
+        for i in lines_before_invoсation:
+            f_out.write(i)
+
+        # body of the original method, which will be inserted
+        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
+        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        body_lines = lines[body_start_line - 1:body_end_line]
+        for i in body_lines:
+            f_out.write(' ' * (num_spaces_before - num_spaces_body))
+            f_out.write(i)
+
+        # original code after method invocation
+        original_code_lines = lines[invocation_line:]
+        for i in original_code_lines:
+            f_out.write(i)
 
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
@@ -74,8 +116,42 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     def inline_function(
             self,
             filename_in: str,
-            line: int,
-            src_line_inline: int,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
             filename_out: str):
-        # TODO insert code when it is ready
-        print("Run InlineWithReturnWithoutArguments")
+        f_out = open(filename_out, 'w')
+        original_file = open(filename_in)
+        lines = list(original_file)
+        print(filename_out, body_start_line, body_end_line)
+        # original code before method invocation, which will be substituted
+        lines_before_invoсation = lines[:invocation_line - 1]
+        for i in lines_before_invoсation:
+            f_out.write(i)
+
+        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
+        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        # body of the original method, which will be inserted
+        body_lines = lines[body_start_line - 1:body_end_line]
+        line_with_declaration = lines[invocation_line - 1].split('=')
+        is_var_declaration = len(line_with_declaration) > 1
+        is_direct_return = len(lines[invocation_line - 1].split('return ')) > 1
+        for i in body_lines:
+            f_out.write(' ' * (num_spaces_before - num_spaces_body))
+            return_statement = i.split('return ')
+            if len(return_statement) == 2 and not is_direct_return:
+                if is_var_declaration:
+                    variable_declaration = line_with_declaration[0].replace('{', ' ')
+                    instead_of_return = variable_declaration + '= ' + return_statement[1]
+                    f_out.write(instead_of_return)
+                else:
+                    instead_of_return = return_statement[1]
+                    new_tabs = ' ' * len(return_statement[0])
+                    f_out.write(new_tabs + instead_of_return)
+            else:
+                f_out.write(i)
+
+        # original code after method invocation
+        original_code_lines = lines[invocation_line:]
+        for i in original_code_lines:
+            f_out.write(i)
