@@ -1,7 +1,7 @@
 from typing import Callable, Dict, List, NamedTuple, Union
 
 from veniq.ast_framework import ASTNode, ASTNodeType
-from ._constants import BlockReason
+from .constants import BlockReason
 
 
 class BlockInfo(NamedTuple):

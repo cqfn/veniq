@@ -2,9 +2,9 @@ from typing import TYPE_CHECKING
 from networkx import DiGraph
 
 from veniq.ast_framework import AST, ASTNode
+from .constants import NODE, BLOCK_REASON, NodeId
 from ._nodes_factory import NodesFactory
 from ._block_extractors import BlockInfo, extract_blocks_from_statement
-from ._constants import NODE, BLOCK_REASON, NodeId
 
 if TYPE_CHECKING:
     from .block import Block

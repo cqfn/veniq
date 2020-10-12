@@ -2,7 +2,7 @@ from networkx import DiGraph
 from typing import Callable, Iterator, Any, TYPE_CHECKING
 
 from veniq.ast_framework import ASTNode
-from ._constants import NODE, NodeId
+from .constants import NODE, NodeId
 
 if TYPE_CHECKING:
     from .block import Block

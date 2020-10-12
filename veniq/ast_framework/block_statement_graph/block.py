@@ -1,7 +1,7 @@
 from networkx import DiGraph
 from typing import Any, Callable, Iterator, Optional, TYPE_CHECKING
 
-from ._constants import BLOCK_REASON, BlockReason, NodeId
+from .constants import BLOCK_REASON, BlockReason, NodeId
 
 if TYPE_CHECKING:
     from .statement import Statement  # noqa: F401
