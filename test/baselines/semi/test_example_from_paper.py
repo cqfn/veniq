@@ -84,7 +84,9 @@ class PaperExampleTestCase(TestCase):
         objects_semantic("rec"),  # line 9
         objects_semantic("i", "rcs"),  # line 10
         StatementSemantic(used_objects={"rec", "rcs", "i"}, used_methods={"grabRes"}),  # line 11
+        objects_semantic("i", "rcs"),  # line 12
         StatementSemantic(used_objects={"rec", "rcs", "i"}, used_methods={"grabNonFileSetRes"}),  # line 13
+        StatementSemantic(),  # line 14
         objects_semantic("rec", "j", "length"),  # line 15
         StatementSemantic(used_objects={"name", "rec", "j"}, used_methods={"getName", "replace"}),  # line 16
         objects_semantic("rcs", "i"),  # line 17
@@ -95,14 +97,21 @@ class PaperExampleTestCase(TestCase):
         StatementSemantic(used_objects={"afs", "pr"}, used_methods={"getPref", "getProj"}),  # line 22
         StatementSemantic(used_objects={"pr"}, used_methods={"endsWith"}),  # line 23
         objects_semantic("pr"),  # line 24
+        StatementSemantic(),  # line 25
         objects_semantic("pr", "name"),  # line 26
+        StatementSemantic(),  # line 27
+        StatementSemantic(),  # line 28
         StatementSemantic(
             used_objects={"name", "MANIFEST_NAME"}, used_methods={"equalsIgnoreCase"}
         ),  # line 29
         objects_semantic("manifests", "i", "rec", "j"),  # line 30
         StatementSemantic(),  # line 31
+        StatementSemantic(),  # line 32
+        StatementSemantic(),  # line 33
         objects_semantic("manifests", "i"),  # line 34
         objects_semantic("manifests", "i"),  # line 35
+        StatementSemantic(),  # line 36
+        StatementSemantic(),  # line 37
         objects_semantic("manifests"),  # line 38
     ]
 
