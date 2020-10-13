@@ -1,3 +1,4 @@
+from inspect import getmembers
 from typing import Any, List, Iterator, Optional
 
 from networkx import DiGraph, dfs_preorder_nodes  # type: ignore
@@ -19,11 +20,17 @@ class ASTNode:
 
     @property
     def children(self) -> Iterator["ASTNode"]:
+        if self.is_fake:
+            return iter(())
+
         for child_index in self._graph.succ[self._node_index]:
             yield ASTNode(self._graph, child_index)
 
     @property
     def parent(self) -> Optional["ASTNode"]:
+        if self.is_fake:
+            return None
+
         try:
             parent_index = next(self._graph.predecessors(self._node_index))
             return ASTNode(self._graph, parent_index)
@@ -34,8 +41,15 @@ class ASTNode:
     def node_index(self) -> int:
         return self._node_index
 
+    @property
+    def is_fake(self) -> bool:
+        return self._node_index < 0
+
     @cached_property
     def line(self) -> int:
+        if self.is_fake:
+            return -1
+
         line = self._get_line(self._node_index)
         if line is not None:
             return line
@@ -66,6 +80,9 @@ class ASTNode:
         )
 
     def __getattr__(self, attribute_name: str):
+        if self.is_fake:
+            return None
+
         node_type = self._get_type(self._node_index)
         javalang_fields = attributes_by_node_type[node_type]
         computed_fields = computed_fields_registry.get_fields(node_type)
@@ -93,8 +110,12 @@ class ASTNode:
         return attribute
 
     def __dir__(self) -> List[str]:
+        attribute_names = self._get_public_fixed_interface()
+        if self.is_fake:
+            return attribute_names
+
         node_type = self._get_type(self._node_index)
-        return ASTNode._public_fixed_interface + \
+        return attribute_names + \
             list(common_attributes) + \
             list(attributes_by_node_type[node_type]) + \
             list(computed_fields_registry.get_fields(node_type).keys())
@@ -121,7 +142,7 @@ class ASTNode:
         return text_representation
 
     def __repr__(self) -> str:
-        return f"<ASTNode node_type: {self._get_type(self._node_index)}, node_index: {self._node_index}>"
+        return f"<ASTNode node_type: {self.node_type}, node_index: {self._node_index}>"
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ASTNode):
@@ -157,6 +178,9 @@ class ASTNode:
         return ASTNode(self._graph, reference.node_index)
 
     def _get_type(self, node_index: int) -> ASTNodeType:
+        if self.is_fake:
+            return ASTNodeType.UNKNOWN
+
         return self._graph.nodes[node_index]["node_type"]
 
     def _get_line(self, node_index: int) -> Optional[int]:
@@ -166,5 +190,10 @@ class ASTNode:
         # there is maximum one parent in a tree
         return next(self._graph.predecessors(node_index), None)
 
-    # names of methods and properties, which is not generated dynamically
-    _public_fixed_interface = ["children", "node_index", "line"]
+    @classmethod
+    def _get_public_fixed_interface(cls) -> List[str]:
+        return [
+            name
+            for name, _ in getmembers(cls)
+            if not name.startswith("_")
+        ]
