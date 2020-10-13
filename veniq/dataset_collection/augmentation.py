@@ -237,7 +237,7 @@ def insert_code_with_new_file_creation(
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
 
-    id = uuid.uuid()
+    id = uuid.uuid1()
     new_full_filename = Path(output_path, f'{file_name}_{invocation_node.name}_{method_node.name}{id}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
