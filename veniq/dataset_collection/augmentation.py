@@ -248,7 +248,6 @@ def insert_code_with_new_file_creation(
         invocation_node.line,
         original_func.line,
         method_node.name,
-        id,
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
