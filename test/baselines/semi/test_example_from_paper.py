@@ -116,15 +116,66 @@ class PaperExampleTestCase(TestCase):
     ]
 
     _expected_extraction_opportunities = [
+        # STEP = 1
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION, ASTNodeType.FOR_STATEMENT],  # lines 7-8
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION],  # line 9
         [
             ASTNodeType.IF_STATEMENT,
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 10-13
+        [
             ASTNodeType.FOR_STATEMENT,
             ASTNodeType.LOCAL_VARIABLE_DECLARATION,
-        ],  # lines 10-16
+        ],  # lines 15-16
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 17-24
+        [
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # line 26
+        [
+            ASTNodeType.IF_STATEMENT,
+        ],  # line 29
+        [ASTNodeType.STATEMENT_EXPRESSION],  # line 30
+        [ASTNodeType.BREAK_STATEMENT],  # line 31
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 34-35
+        [
+            ASTNodeType.RETURN_STATEMENT,
+        ],  # line 38
+        # STEP = 2
+        [
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.FOR_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+        ],  # lines 7-16
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 17-26
+        # STEP = 3
         [
             ASTNodeType.IF_STATEMENT,
             ASTNodeType.LOCAL_VARIABLE_DECLARATION,
@@ -137,30 +188,12 @@ class PaperExampleTestCase(TestCase):
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.IF_STATEMENT,
         ],  # lines 17-29
-        [ASTNodeType.STATEMENT_EXPRESSION],  # line 30
-        [ASTNodeType.BREAK_STATEMENT],  # line 31
         [
             ASTNodeType.IF_STATEMENT,
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.RETURN_STATEMENT,
         ],  # lines 34-38
-        [
-            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
-            ASTNodeType.FOR_STATEMENT,
-            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
-            ASTNodeType.IF_STATEMENT,
-            ASTNodeType.STATEMENT_EXPRESSION,
-            ASTNodeType.STATEMENT_EXPRESSION,
-            ASTNodeType.FOR_STATEMENT,
-            ASTNodeType.LOCAL_VARIABLE_DECLARATION,
-        ],  # lines 7-16
-        [
-            ASTNodeType.STATEMENT_EXPRESSION,
-            ASTNodeType.BREAK_STATEMENT,
-            ASTNodeType.IF_STATEMENT,
-            ASTNodeType.STATEMENT_EXPRESSION,
-            ASTNodeType.RETURN_STATEMENT,
-        ],  # lines 30-38
+        # STEP = 4
         [
             ASTNodeType.LOCAL_VARIABLE_DECLARATION,
             ASTNodeType.FOR_STATEMENT,
@@ -181,6 +214,13 @@ class PaperExampleTestCase(TestCase):
             ASTNodeType.STATEMENT_EXPRESSION,
             ASTNodeType.IF_STATEMENT,
         ],  # lines 7-29
+        [
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.BREAK_STATEMENT,
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.RETURN_STATEMENT,
+        ],  # lines 30-38
     ]
 
     _expected_filtered_extraction_opportunities = [
