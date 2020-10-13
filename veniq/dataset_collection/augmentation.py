@@ -3,8 +3,9 @@ from argparse import ArgumentParser
 import os
 from collections import defaultdict
 from functools import partial
-from typing import Tuple, Dict, List, Any
+from typing import Tuple, Dict, List, Any, Set
 from pathlib import Path
+import shutil
 
 import typing
 from pebble import ProcessPool
@@ -120,7 +121,7 @@ def _is_match_to_the_conditions(
 
 def check_method_without_return(
         method_decl: AST,
-        var_decls: typing.Set[str]) -> InlineTypesAlgorithms:
+        var_decls: Set[str]) -> InlineTypesAlgorithms:
     """
     Run function to check whether Method declaration can be inlined
     :param method_decl: method, where invocation occurred
@@ -215,13 +216,13 @@ def _create_new_files(
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
 
-    new_full_filename = Path(output_path, f'{file_name}_{method_node.name}.java')
+    new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = _method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
     line_to_csv = [
-        str(file_path),
+        file_path,
         class_name,
         text_lines[invocation_node.line - 1].strip(' '),
         invocation_node.line,
@@ -243,7 +244,7 @@ def _create_new_files(
     return line_to_csv
 
 
-def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+def _analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     try:
         AST.build_from_javalang(build_ast(str(file_path)))
     except Exception:
@@ -288,6 +289,12 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     return results
 
 
+def _save_inpit_file(input_dir: Path, filename: Path) -> None:
+    saved_path_of_original = input_dir.joinpath(filename.name)
+    if not os.path.exists(saved_path_of_original):
+        shutil.copyfile(filename, saved_path_of_original)
+    
+
 if __name__ == '__main__':
     system_cores_qty = os.cpu_count() or 1
     parser = ArgumentParser()
@@ -314,9 +321,13 @@ if __name__ == '__main__':
     not_test_files = set(Path(args.dir).glob('**/*.java'))
     files_without_tests = list(not_test_files.difference(test_files))
 
-    output_dir = Path(args.output)
+    output_dir = Path(args.output).joinpath('output_files')
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
+    
+    input_dir = Path(args.output).joinpath('input_files')
+    if not input_dir.exists():
+        input_dir.mkdir(parents=True)    
 
     with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
         writer = csv.writer(csvfile, delimiter=',',
@@ -329,7 +340,7 @@ if __name__ == '__main__':
             'line of original function',
             'invocation function name'])
 
-        p_analyze = partial(analyze_file, output_path=output_dir.absolute())
+        p_analyze = partial(_analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
@@ -339,8 +350,7 @@ if __name__ == '__main__':
                 if single_file_features:
                     for i in single_file_features:
                         writer.writerow(i)
+                        _save_inpit_file(input_dir, filename)
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
-            except Exception as e:
-                print(str(e))
