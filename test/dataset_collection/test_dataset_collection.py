@@ -1,3 +1,4 @@
+import unittest
 from pathlib import Path
 from unittest import TestCase
 
@@ -177,6 +178,7 @@ class TestDatasetCollection(TestCase):
             InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS,
             InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS])
 
+    @unittest.skip("This functionality is not implemented")
     def test_inline_with_return_type_but_not_returning(self):
         """
         Test check whether we can inline code function with return type, but actually
