@@ -92,7 +92,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         This function is aimed to obtain lines from the original
         file before invocation line, which was detected.
         """
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_before_invoсation = lines[:invocation_line - 1]
         return lines_before_invoсation
@@ -120,7 +120,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         In order to get an appropriate text view, we also need to insert
         lines according to the current number of spaced before the line
         """
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
 
         body_lines_without_spaces = lines[body_start_line - 1:body_end_line]
@@ -139,7 +139,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         file after invocation line, which was detected.
         Especially, it will be inserted after body of inlined method.
         """
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_after_invoсation = lines[invocation_line:]
         return lines_after_invoсation
@@ -179,7 +179,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         )
         lines_of_final_file += original_code_lines
 
-        f_out = open(filename_out, 'w')
+        f_out = open(filename_out, 'w', encoding='utf-8')
         for line in lines_of_final_file:
             f_out.write(line)
         f_out.close()
@@ -200,7 +200,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         This function is aimed to obtain lines from the original
         file before invocation line, which was detected.
         """
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_before_invoсation = lines[:invocation_line - 1]
         return lines_before_invoсation
@@ -230,7 +230,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         lines according to the current number of spaced before the line
         """
         body_lines = []
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
 
         # body of the original method, which will be inserted
@@ -269,7 +269,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         file after invocation line, which was detected.
         Especially, it will be inserted after body of inlined method.
         """
-        original_file = open(filename_in)
+        original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_after_invoсation = lines[invocation_line:]
         return lines_after_invoсation
@@ -308,7 +308,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         )
         lines_of_final_file += original_code_lines
 
-        f_out = open(filename_out, 'w')
+        f_out = open(filename_out, 'w', encoding='utf-8')
         for line in lines_of_final_file:
             f_out.write(line)
         f_out.close()
