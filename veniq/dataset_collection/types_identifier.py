@@ -177,6 +177,9 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         for line in lines_of_final_file:
             f_out.write(line)
 
+        f_out.close()
+        original_file.close()
+
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
@@ -194,7 +197,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out: str):
         f_out = open(filename_out, 'w')
         original_file = open(filename_in)
+<<<<<<< HEAD
         lines = list(original_file)
+=======
+        lines = original_file.readlines()
+
+>>>>>>> origin
         # original code before method invocation, which will be substituted
         lines_before_invoсation = lines[:invocation_line - 1]
         for i in lines_before_invoсation:
@@ -230,3 +238,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         original_code_lines = lines[invocation_line:]
         for i in original_code_lines:
             f_out.write(i)
+
+        f_out.close()
+        original_file.close()

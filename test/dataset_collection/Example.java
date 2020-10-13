@@ -81,6 +81,12 @@ public class Example {
         float b = 0;
     }
 
+    public void test_single_stat_in_if() {
+        int ghc = 0;
+        if(ghc = 0)
+            intersected_var();
+    }
+
     public void test_intersected_var_decl() {
         int a = 0;
         ArrayList<String> lst = new ArrayList<>();
@@ -112,4 +118,57 @@ public class Example {
         }
         int zhmyak;
     }
+
+    public int invocation() {
+        int i = 0;
+        System.out.println(0);
+        if (i == 0) System.out.println(0);
+        while(i < -1) {
+            System.out.println(0);
+            --i;
+        }
+
+        return i;
+    }
+
+    public void method_decl() {
+        int b = 0;
+        System.out.println(b);
+        int a = invocation();
+        int c = 5;
+        ++c;
+    }
+
+
+    public int severalReturns() {
+        int i = 0, j = 0;
+        if (i < 0) {
+            return 0;
+        }
+
+        return 1;
+    }
+
+    public void runSeveralReturns() {
+        int a = severalReturns();
+    }
+
+    @Override
+    public CompletableFuture<Void> delete() {
+        return CompletableFuture.runAsync(
+            () -> {
+                try {
+                    Files.delete(this.path(1));
+                } catch (final IOException iex) {
+                    throw new UncheckedIOException(iex);
+                }
+            },
+            this.exec
+        );
+    }
+
+    public void runDelete() {
+        delete();
+    }
+
 }
