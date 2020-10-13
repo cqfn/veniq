@@ -132,17 +132,25 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         for i in lines_before_invoсation:
             f_out.write(i)
 
-        variable_declaration = lines[invocation_line - 1].split('=')[0]
-        # body of the original method, which will be inserted
         num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
         num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        # body of the original method, which will be inserted
         body_lines = lines[body_start_line - 1:body_end_line]
+        line_with_declaration = lines[invocation_line - 1].split('=')
+        is_var_declaration = len(line_with_declaration) > 1
+        is_direct_return = len(lines[invocation_line - 1].split('return ')) > 1
         for i in body_lines:
             f_out.write(' ' * (num_spaces_before - num_spaces_body))
             return_statement = i.split('return ')
-            if len(return_statement) == 2:
-                instead_of_return = variable_declaration + '= ' + return_statement[1]
-                f_out.write(instead_of_return)
+            if len(return_statement) == 2 and not is_direct_return:
+                if is_var_declaration:
+                    variable_declaration = line_with_declaration[0].replace('{', ' ')
+                    instead_of_return = variable_declaration + '= ' + return_statement[1]
+                    f_out.write(instead_of_return)
+                else:
+                    instead_of_return = return_statement[1]
+                    new_tabs = ' ' * len(return_statement[0])
+                    f_out.write(new_tabs + instead_of_return)
             else:
                 f_out.write(i)
 

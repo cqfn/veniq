@@ -268,6 +268,11 @@ def insert_code_with_new_file_creation(
 
 
 def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+    try:
+        AST.build_from_javalang(build_ast(str(file_path)))
+    except Exception:
+        print('JavaSyntaxError while parsing ', file_path)
+
     ast = AST.build_from_javalang(build_ast(str(file_path)))
     method_declarations = defaultdict(list)
     classes_declaration = [
