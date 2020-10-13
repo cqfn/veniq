@@ -238,7 +238,7 @@ def insert_code_with_new_file_creation(
         output_path.mkdir(parents=True)
 
     id = uuid.uuid1()
-    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.name}_{method_node.name}{id}.java')
+    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.member}_{method_node.name}{id}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
