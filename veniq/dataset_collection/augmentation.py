@@ -1,5 +1,4 @@
 import csv
-import uuid
 from argparse import ArgumentParser
 import os
 from collections import defaultdict
@@ -237,13 +236,7 @@ def insert_code_with_new_file_creation(
     file_name = file_path.stem
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
-
-<<<<<<< HEAD
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
-=======
-    id = uuid.uuid1()
-    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.member}_{method_node.name}{id}.java')
->>>>>>> origin
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
@@ -321,7 +314,7 @@ def _save_inpit_file(input_dir: Path, filename: Path) -> None:
     saved_path_of_original = input_dir.joinpath(filename.name)
     if not os.path.exists(saved_path_of_original):
         shutil.copyfile(filename, saved_path_of_original)
-    
+
 
 if __name__ == '__main__':
     system_cores_qty = os.cpu_count() or 1
@@ -352,10 +345,10 @@ if __name__ == '__main__':
     output_dir = Path(args.output).joinpath('output_files')
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
-    
+
     input_dir = Path(args.output).joinpath('input_files')
     if not input_dir.exists():
-        input_dir.mkdir(parents=True)    
+        input_dir.mkdir(parents=True)
 
     with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
         writer = csv.writer(csvfile, delimiter=',',

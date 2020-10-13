@@ -1,8 +1,8 @@
 import abc
 from enum import Enum
-import os
 from typing import List
 import pathlib
+
 
 class InlineTypesAlgorithms(Enum):
     WITH_RETURN_WITHOUT_ARGUMENTS = 0
@@ -56,7 +56,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-) -> str:
+    ) -> str:
         raise NotImplementedError("Cannot run abstract function")
 
 
@@ -73,7 +73,7 @@ class DoNothing(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-) -> str:
+    ) -> str:
         return ""
 
 
@@ -87,7 +87,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out: pathlib.Path,
             filename_in: str,
             invocation_line: str
-) -> List[str]:
+    ) -> List[str]:
         """
         This function is aimed to obtain lines from the original
         file before invocation line, which was detected.
@@ -104,7 +104,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             invocation_line: str,
             body_start_line: int,
             body_end_line: int
-) -> List[str]:
+    ) -> List[str]:
         """
         In order to get an appropriate text view, we also need to insert
         lines according to the current number of spaced before the line
@@ -124,7 +124,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out: pathlib.Path,
             filename_in: pathlib.Path,
             invocation_line: str
-) -> List[str]:
+    ) -> List[str]:
         """
         This function is aimed to obtain lines from the original
         file after invocation line, which was detected.
@@ -142,18 +142,16 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-) -> None:
+    ) -> None:
         f_out = open(filename_out, 'w')
-        original_file = open(filename_in)
-        lines = list(original_file)
 
         lines_of_final_file = []
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(
-                    filename_out,
-                    filename_in,
-                    invocation_line
-                    )
+            filename_out,
+            filename_in,
+            invocation_line
+        )
         lines_of_final_file += lines_before_invoсation
 
         # body of the original method, which will be inserted
@@ -168,25 +166,22 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
 
         # original code after method invocation
         original_code_lines = self.get_lines_after_invocation(
-                    filename_out,
-                    filename_in,
-                    invocation_line
-                    )
+            filename_out,
+            filename_in,
+            invocation_line
+        )
         lines_of_final_file += original_code_lines
 
         for line in lines_of_final_file:
             f_out.write(line)
 
         f_out.close()
-        original_file.close()
 
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def __init__(self):
         super().__init__()
-
-    #def _process_var_declaration(self, lines, )
 
     def inline_function(
             self,
@@ -197,12 +192,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out: str):
         f_out = open(filename_out, 'w')
         original_file = open(filename_in)
-<<<<<<< HEAD
         lines = list(original_file)
-=======
-        lines = original_file.readlines()
-
->>>>>>> origin
         # original code before method invocation, which will be substituted
         lines_before_invoсation = lines[:invocation_line - 1]
         for i in lines_before_invoсation:
