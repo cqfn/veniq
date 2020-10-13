@@ -31,7 +31,11 @@ jobs:
       - uses: actions/setup-python@v2
         with:
           python-version: '3.8.5'
-      - name: Test
-        uses: onichandame/python-test-action@master
-        with:
-          deps_list: 'requirements.txt'
+      - name: Integration Tests
+        run: |
+          pip3 install .
+          python3 -m unittest test/integration/dataset_collection.py
+      - name: Run unittests
+        run: |
+          pip3 install .
+          python3 -m unittest discover
