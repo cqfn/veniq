@@ -273,5 +273,5 @@ class TestDatasetCollection(TestCase):
         m_inv = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'severalReturns'][0]
-        is_matched = is_match_to_the_conditions(m_decl_original, m_inv)
+        is_matched = is_match_to_the_conditions(ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, False)
