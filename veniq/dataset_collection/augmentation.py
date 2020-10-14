@@ -1,4 +1,5 @@
 import csv
+import hashlib
 from argparse import ArgumentParser
 import os
 from collections import defaultdict
@@ -10,6 +11,7 @@ import uuid
 import typing
 from pebble import ProcessPool
 from tqdm import tqdm
+from hashlib import sha256
 
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
@@ -238,6 +240,8 @@ def insert_code_with_new_file_creation(
         output_path.mkdir(parents=True)
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
+    if original_func.name == 'getDefaultReplication':
+        print(1)
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
@@ -248,6 +252,9 @@ def insert_code_with_new_file_creation(
         invocation_node.line,
         original_func.line,
         method_node.name,
+        new_full_filename,
+        body_start_line,
+        body_end_line
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
@@ -264,7 +271,7 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
-def _analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     try:
         AST.build_from_javalang(build_ast(str(file_path)))
     except Exception:
@@ -309,10 +316,15 @@ def _analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     return results
 
 
-def _save_inpit_file(input_dir: Path, filename: Path) -> None:
-    saved_path_of_original = input_dir.joinpath(filename.name)
-    if not os.path.exists(saved_path_of_original):
-        shutil.copyfile(filename, saved_path_of_original)
+def save_input_file(input_dir: Path, filename: Path) -> Path:
+    # need to avoid situation when filenames are the same
+    hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
+    dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
+    if not dst_filename.parent.exists():
+        dst_filename.parent.mkdir(parents=True)
+    if not dst_filename.exists():
+        shutil.copyfile(filename, dst_filename)
+    return dst_filename
 
 
 if __name__ == '__main__':
@@ -349,19 +361,22 @@ if __name__ == '__main__':
     if not input_dir.exists():
         input_dir.mkdir(parents=True)
 
-    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
+    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
         writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
-            'Filename',
-            'ClassName',
-            'String where to replace',
+            'input filename',
+            'className',
+            'string where to replace',
             'line where to replace',
             'line of original function',
             'invocation function name',
-            'unique id'])
+            'output_filename',
+            'start_line',
+            'end_line'
+        ])
 
-        p_analyze = partial(_analyze_file, output_path=output_dir.absolute())
+        p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
@@ -370,8 +385,13 @@ if __name__ == '__main__':
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
+                        dst_filename = save_input_file(input_dir, filename)
+                        # change source filename, since it will be chahged
+                        i[0] = str(dst_filename.as_posix())
+                        #  get local path for inlined filename
+                        i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
                         writer.writerow(i)
-                        _save_inpit_file(input_dir, filename)
+
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
