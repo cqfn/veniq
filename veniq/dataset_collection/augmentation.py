@@ -240,8 +240,6 @@ def insert_code_with_new_file_creation(
         output_path.mkdir(parents=True)
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    if original_func.name == 'getDefaultReplication':
-        print(1)
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
@@ -361,7 +359,7 @@ if __name__ == '__main__':
     if not input_dir.exists():
         input_dir.mkdir(parents=True)
 
-    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
+    with open(Path(args.output, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
         writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
@@ -395,3 +393,18 @@ if __name__ == '__main__':
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
+
+    import tarfile
+    import os.path
+
+    with tarfile.open(Path(args.output) / 'inline_dataset.tar.gz', "w:gz") as tar:
+        tar.add(input_dir, arcname=os.path.basename(input_dir))
+
+    with tarfile.open(Path(args.output) / 'src_dataset.tar.gz', "w:gz") as tar:
+        tar.add(output_dir, arcname=os.path.basename(output_dir))
+
+    if output_dir.exists():
+        shutil.rmtree(output_dir)
+
+    if input_dir.exists():
+        shutil.rmtree(input_dir)
