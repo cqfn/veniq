@@ -1,6 +1,6 @@
 import abc
 from enum import Enum
-from typing import List
+from typing import List, Union
 import pathlib
 
 
@@ -75,7 +75,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def get_lines_before_invocation(
             self,
             filename_out: pathlib.Path,
-            filename_in: str,
+            filename_in: pathlib.Path,
             invocation_line: int
     ) -> List[str]:
         """
@@ -111,7 +111,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-    ) -> str:
+    ) -> Union[None, str]:
         raise NotImplementedError("Cannot run abstract function")
 
 
@@ -270,11 +270,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def inline_function(
             self,
-            filename_in: str,
+            filename_in: pathlib.Path,
             invocation_line: int,
             body_start_line: int,
             body_end_line: int,
-            filename_out: str):
+            filename_out: pathlib.Path
+        ) -> None:
         lines_of_final_file = []
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(
