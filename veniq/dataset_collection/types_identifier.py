@@ -56,7 +56,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         line = line.replace('\t', ' ' * 4)
         diff = len(line) - len(line.lstrip())
         return diff
-        
+
     def complement_spaces(
             self,
             body_start_line: int,
