@@ -49,16 +49,24 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         pass
 
     def get_spaces_diff(self, line: str) -> int:
+        """
+        Here we can get num of spaces in the
+        line begining.
+        """
         line = line.replace('\t', ' ' * 4)
         diff = len(line) - len(line.lstrip())
         return diff
         
-    def get_suitable_spaces(
+    def complement_spaces(
             self,
             body_start_line: int,
             invocation_line: int,
             lines: List[str]
     ) -> str:
+        """
+        In this function we obtain suitable line of spaces
+        at the beginning of new inserted lines.
+        """
         num_spaces_before = self.get_spaces_diff(lines[invocation_line - 1])
         num_spaces_body = self.get_spaces_diff(lines[body_start_line - 1])
         spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
@@ -145,7 +153,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         lines = list(original_file)
 
         body_lines_without_spaces = lines[body_start_line - 1:body_end_line - 1]
-        spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
+        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
         body_lines = [spaces_in_body + i for i in body_lines_without_spaces]
         return body_lines
 
@@ -238,7 +246,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
+        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
 
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
