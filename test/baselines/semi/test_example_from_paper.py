@@ -225,5 +225,32 @@ class PaperExampleTestCase(TestCase):
 
     _expected_filtered_extraction_opportunities = [
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION],  # line 9
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 10-13
+        [
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # line 26
         [ASTNodeType.STATEMENT_EXPRESSION],  # line 30
+        [
+            ASTNodeType.IF_STATEMENT,
+            ASTNodeType.STATEMENT_EXPRESSION,
+        ],  # lines 34-35
+        [
+            ASTNodeType.RETURN_STATEMENT,
+        ],  # line 38
+        # TODO: issue 58
+        # [
+        #     ASTNodeType.IF_STATEMENT,
+        #     ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+        #     ASTNodeType.IF_STATEMENT,
+        #     ASTNodeType.STATEMENT_EXPRESSION,
+        #     ASTNodeType.IF_STATEMENT,
+        #     ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+        #     ASTNodeType.IF_STATEMENT,
+        #     ASTNodeType.STATEMENT_EXPRESSION,
+        #     ASTNodeType.STATEMENT_EXPRESSION,
+        # ],  # lines 17-26
     ]
