@@ -264,7 +264,7 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
-def _analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     try:
         AST.build_from_javalang(build_ast(str(file_path)))
     except Exception:
@@ -311,6 +311,7 @@ def _analyze_file(file_path: Path, output_path: Path) -> List[Any]:
 
 def _save_inpit_file(input_dir: Path, filename: Path) -> None:
     saved_path_of_original = input_dir.joinpath(filename.name)
+    print(input_dir.joinpath(str(filename)))
     if not os.path.exists(saved_path_of_original):
         shutil.copyfile(filename, saved_path_of_original)
 
@@ -361,7 +362,7 @@ if __name__ == '__main__':
             'invocation function name',
             'unique id'])
 
-        p_analyze = partial(_analyze_file, output_path=output_dir.absolute())
+        p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
