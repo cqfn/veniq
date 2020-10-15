@@ -52,7 +52,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             self,
             filename_out: pathlib.Path,
             filename_in: str,
-            invocation_line: str
+            invocation_line: int
     ) -> List[str]:
         """
         This function is aimed to obtain lines from the original
@@ -67,7 +67,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             self,
             filename_out: pathlib.Path,
             filename_in: pathlib.Path,
-            invocation_line: str
+            invocation_line: int
     ) -> List[str]:
         """
         This function is aimed to obtain lines from the original
@@ -116,7 +116,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
     def get_suitable_spaces(
             self,
             body_start_line: int,
-            invocation_line: str,
+            invocation_line: int,
             lines: List[str]
     ) -> str:
         num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
@@ -128,7 +128,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             self,
             filename_out: pathlib.Path,
             filename_in: pathlib.Path,
-            invocation_line: str,
+            invocation_line: int,
             body_start_line: int,
             body_end_line: int
     ) -> List[str]:
@@ -193,7 +193,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     def get_suitable_spaces(
             self,
             body_start_line: int,
-            invocation_line: str,
+            invocation_line: int,
             lines: List[str]
     ) -> str:
         num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
@@ -201,12 +201,11 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
         return spaces_in_body
 
-
     def get_lines_of_method_body(
             self,
             filename_out: pathlib.Path,
             filename_in: pathlib.Path,
-            invocation_line: str,
+            invocation_line: int,
             body_start_line: int,
             body_end_line: int
     ) -> List[str]:
@@ -229,10 +228,15 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             if len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
-                    if '{' in body_lines_without_spaces[i-1]:
-                        space_for_var_decl_line = (len(body_lines_without_spaces[i-1]) - len(body_lines_without_spaces[i-1].lstrip(' ')) + 4) * ' '
+                    if '{' in body_lines_without_spaces[i - 1]:
+                        space_for_var_decl_line = len(body_lines_without_spaces[i - 1])
+                        space_for_var_decl_line -= len(body_lines_without_spaces[i - 1].lstrip(' '))
+                        space_for_var_decl_line += 4
+                        space_for_var_decl_line *= ' '
                     else:
-                        space_for_var_decl_line = (len(body_lines_without_spaces[i-1]) - len(body_lines_without_spaces[i-1].lstrip(' '))) * ' '
+                        space_for_var_decl_line = len(body_lines_without_spaces[i - 1])
+                        space_for_var_decl_line -= len(body_lines_without_spaces[i - 1].lstrip(' '))
+                        space_for_var_decl_line *= ' '
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     body_lines.append(spaces_in_body + instead_of_return)
                 else:

@@ -323,7 +323,7 @@ def save_input_file(input_dir: Path, filename: Path) -> Path:
     return dst_filename
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # noqa: C901
     system_cores_qty = os.cpu_count() or 1
     parser = ArgumentParser()
     parser.add_argument(
