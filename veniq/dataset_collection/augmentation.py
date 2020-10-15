@@ -266,7 +266,7 @@ def insert_code_with_new_file_creation(
 
         algorithm_for_inlining = AlgorithmFactory().create_obj(
             determine_algorithm_insertion_type(ast, method_node, invocation_node, dict_original_invocations))
-        
+
         algorithm_for_inlining().inline_function(
             file_path,
             invocation_node.line,
@@ -308,19 +308,16 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 if len(found_method_decl) == 1:
                     is_matched = is_match_to_the_conditions(ast, method_invoked, found_method_decl[0])
                     log_of_inline = insert_code_with_new_file_creation(
-                                class_declaration.name,
-                                ast,
-                                method_node,
-                                method_invoked,
-                                file_path,
-                                output_path,
-                                method_declarations
-                            )
-                    if is_matched and log_of_inline:
-                        results.append(
-                            log_of_inline
-                            )
+                        class_declaration.name,
+                        ast,
+                        method_node,
+                        method_invoked,
+                        file_path,
+                        output_path,
+                        method_declarations)
 
+                    if is_matched and log_of_inline:
+                        results.append(log_of_inline)
     return results
 
 
@@ -407,7 +404,6 @@ if __name__ == '__main__':  # noqa: C901
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
-
 
     if args.zip:
         import tarfile

@@ -4,6 +4,7 @@ from typing import List, Union
 import pathlib
 import re
 
+
 class InlineTypesAlgorithms(Enum):
     WITH_RETURN_WITHOUT_ARGUMENTS = 0
     WITHOUT_RETURN_WITHOUT_ARGUMENTS = 1
@@ -230,10 +231,10 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             line: str
     ) -> str:
         before_case = line.replace('\t', ' ' * 4)
-        before_case = re.match("(.*?){", line)
+        before_case = re.match("(.*?){", line)  # type: ignore
+        print(before_case)
         if before_case:
-            before_case = before_case.group()[:-1]
-            before_case_spaces = before_case.replace(' ', '')
+            before_case = before_case.group()[:-1]  # type: ignore
             return line
         else:
             before_case_line = line.replace('{', ' ')
@@ -295,7 +296,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-    ) -> None: 
+    ) -> None:
         lines_of_final_file = []
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(
