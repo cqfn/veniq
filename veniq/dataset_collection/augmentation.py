@@ -251,7 +251,7 @@ def insert_code_with_new_file_creation(
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
 
     line_to_csv = [
-        file_path,
+        str(file_path),
         class_name,
         text_lines[invocation_node.line - 1].lstrip(),
         invocation_node.line,
