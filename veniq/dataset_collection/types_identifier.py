@@ -2,7 +2,7 @@ import abc
 from enum import Enum
 from typing import List, Union
 import pathlib
-
+import re
 
 class InlineTypesAlgorithms(Enum):
     WITH_RETURN_WITHOUT_ARGUMENTS = 0
@@ -211,8 +211,8 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         """
         Check the line contains variable declaration
         """
-        line_with_declaration = len(lines[invocation_line - 1].split('='))
-        return line_with_declaration > 1
+        line_with_declaration = lines[invocation_line - 1].split('=')
+        return len(line_with_declaration) > 1
 
     def is_direct_return(
             self,
@@ -222,8 +222,22 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         """
         Check the line return method invocation.
         """
-        line_with_return = len(lines[invocation_line - 1].split('return '))
-        return line_with_return > 1
+        line_with_return = lines[invocation_line - 1].split('return ')
+        return len(line_with_return) > 1
+
+    def eluminate_cases_before(
+            self,
+            line: str
+    ) -> str:
+        before_case = line.replace('\t', ' ' * 4)
+        before_case = re.match("(.*?){", line)
+        if before_case:
+            before_case = before_case.group()[:-1]
+            before_case_spaces = before_case.replace(' ', '')
+            return line
+        else:
+            before_case_line = line.replace('{', ' ')
+            return before_case_line
 
     def get_lines_of_method_body(
             self,
@@ -237,6 +251,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         In order to get an appropriate text view, we also need to insert
         lines according to the current number of spaced before the line
         """
+
         body_lines = []
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
@@ -250,6 +265,11 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
+            if i == 0:
+                line_after_declaration = self.eluminate_cases_before(line)
+                body_lines.append(spaces_in_body + line_after_declaration)
+                continue
+
             if len(return_statement) == 2 and not is_direct_return:
                 if var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
@@ -275,7 +295,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-    ) -> None:
+    ) -> None: 
         lines_of_final_file = []
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(

@@ -242,36 +242,38 @@ def insert_code_with_new_file_creation(
     substitution opportunity by method's body,
     we create new file.
     """
+    line_to_csv = []
     file_name = file_path.stem
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
+
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+    if body_start_line != body_end_line:  # do not process one-line defined methods
+        line_to_csv = [
+            str(file_path),
+            class_name,
+            text_lines[invocation_node.line - 1].lstrip(),
+            invocation_node.line,
+            original_func.line,
+            method_node.name,
+            new_full_filename,
+            body_start_line,
+            body_end_line
+        ]
 
-    line_to_csv = [
-        str(file_path),
-        class_name,
-        text_lines[invocation_node.line - 1].lstrip(),
-        invocation_node.line,
-        original_func.line,
-        method_node.name,
-        new_full_filename,
-        body_start_line,
-        body_end_line
-    ]
-
-    algorithm_for_inlining = AlgorithmFactory().create_obj(
-        determine_algorithm_insertion_type(ast, method_node, invocation_node, dict_original_invocations))
-
-    algorithm_for_inlining().inline_function(
-        file_path,
-        invocation_node.line,
-        body_start_line,
-        body_end_line,
-        new_full_filename,
-    )
+        algorithm_for_inlining = AlgorithmFactory().create_obj(
+            determine_algorithm_insertion_type(ast, method_node, invocation_node, dict_original_invocations))
+        
+        algorithm_for_inlining().inline_function(
+            file_path,
+            invocation_node.line,
+            body_start_line,
+            body_end_line,
+            new_full_filename,
+        )
 
     return line_to_csv
 
@@ -305,9 +307,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
                     is_matched = is_match_to_the_conditions(ast, method_invoked, found_method_decl[0])
-                    if is_matched:
-                        results.append(
-                            insert_code_with_new_file_creation(
+                    log_of_inline = insert_code_with_new_file_creation(
                                 class_declaration.name,
                                 ast,
                                 method_node,
@@ -315,7 +315,11 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                                 file_path,
                                 output_path,
                                 method_declarations
-                            ))
+                            )
+                    if is_matched and log_of_inline:
+                        results.append(
+                            log_of_inline
+                            )
 
     return results
 
@@ -403,8 +407,7 @@ if __name__ == '__main__':  # noqa: C901
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
-            except Exception as e:
-                print(str(e))
+
 
     if args.zip:
         import tarfile
