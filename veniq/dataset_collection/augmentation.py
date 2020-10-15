@@ -46,15 +46,16 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
         # to start counting opening brackets
         difference_cases = 0
         for line in file_lines[start_line - 2:start_line]:
-            difference_cases += line.count('{')
-            difference_cases -= line.count('}')
-
+            line_without_comments = line.split('//')[0]
+            difference_cases += line_without_comments.count('{')
+            difference_cases -= line_without_comments.count('}')
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
-                difference_cases += line.count('{')
-                difference_cases -= line.count('}')
+                line_without_comments = line.split('//')[0]
+                difference_cases += line_without_comments.count('{')
+                difference_cases -= line_without_comments.count('}')
             else:
-                return i - 1
+                return i
         return -1
 
 
@@ -304,7 +305,6 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
                     is_matched = is_match_to_the_conditions(ast, method_invoked, found_method_decl[0])
-
                     if is_matched:
                         results.append(
                             insert_code_with_new_file_creation(
@@ -403,6 +403,8 @@ if __name__ == '__main__':  # noqa: C901
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
+            except Exception as e:
+                print(str(e))
 
     if args.zip:
         import tarfile
