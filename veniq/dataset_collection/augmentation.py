@@ -32,18 +32,30 @@ def _get_last_return_line(child_statement: ASTNode) -> int:
     return last_line
 
 
-def _get_last_line(file_path: Path, last_return_line: int) -> int:
+def _get_last_line(file_path: Path, start_line: int) -> int:
     """
-    Here we reprocess obtained the list line of return statement
-    in order to get the line of the last case '}' of method
-    declaration statement. This step is crucial for the
-    correct inline part!
+    This function is aimed to find the last body line of
+    considered method. It work by counting the difference
+    in number of openning brackets '{' and closing brackets
+    '}'. It's start with the method declaration line and going
+    to the line where the difference is equal to 0. Which means
+    that we found closind bracket of method declaration.
     """
     with open(file_path, encoding='utf-8') as f:
-        lines = f.readlines()[last_return_line:]
-        for i, file_line in enumerate(lines, last_return_line):
-            last_case_line = file_line.replace('\n', '').replace(' ', '')
-            if len(last_case_line) == 0:
+        file_lines = list(f)
+        # to start counting opening brackets
+        difference_cases = 0
+        for line in file_lines[start_line - 2:start_line]:
+            if '{' in line:
+                difference_cases += 1
+
+        for i, line in enumerate(file_lines[start_line:], start_line):
+            if difference_cases:
+                if '{' in line:
+                    difference_cases += 1
+                if '}' in line:
+                    difference_cases -= 1
+            else:
                 return i - 1
         return -1
 
@@ -52,11 +64,9 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
     Ger start and end of method's body
     """
-    method_all_children = list(method_node.children)[-1]
     if len(method_node.body):
         start_line = method_node.body[0].line
-        last_return_line = _get_last_return_line(method_all_children)
-        end_line = _get_last_line(file_path, last_return_line)
+        end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
     return start_line, end_line

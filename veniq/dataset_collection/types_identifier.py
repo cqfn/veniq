@@ -48,6 +48,17 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def __init__(self):
         pass
 
+    def get_suitable_spaces(
+            self,
+            body_start_line: int,
+            invocation_line: int,
+            lines: List[str]
+    ) -> str:
+        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
+        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
+        return spaces_in_body
+
     def get_lines_before_invocation(
             self,
             filename_out: pathlib.Path,
@@ -112,17 +123,6 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def __init__(self):
         super().__init__()
-
-    def get_suitable_spaces(
-            self,
-            body_start_line: int,
-            invocation_line: int,
-            lines: List[str]
-    ) -> str:
-        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
-        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
-        spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
-        return spaces_in_body
 
     def get_lines_of_method_body(
             self,
@@ -190,16 +190,27 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     def __init__(self):
         super().__init__()
 
-    def get_suitable_spaces(
+    def is_var_declaration(
             self,
-            body_start_line: int,
-            invocation_line: int,
-            lines: List[str]
-    ) -> str:
-        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
-        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
-        spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
-        return spaces_in_body
+            lines: List[str],
+            invocation_line: int
+    ) -> bool:
+        """
+        Check the line contains variable declaration
+        """
+        line_with_declaration = len(lines[invocation_line - 1].split('='))
+        return line_with_declaration > 1
+
+    def is_direct_return(
+            self,
+            lines: List[str],
+            invocation_line: int
+    ) -> bool:
+        """
+        Check the line return method invocation.
+        """
+        line_with_return = len(lines[invocation_line - 1].split('return '))
+        return line_with_return > 1
 
     def get_lines_of_method_body(
             self,
@@ -220,13 +231,13 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         # body of the original method, which will be inserted
         body_lines_without_spaces = lines[body_start_line - 1:body_end_line]
         line_with_declaration = lines[invocation_line - 1].split('=')
-        is_var_declaration = len(line_with_declaration) > 1
-        is_direct_return = len(lines[invocation_line - 1].split('return ')) > 1
+        var_declaration = self.is_var_declaration(lines, invocation_line)
+        is_direct_return = self.is_direct_return(lines, invocation_line)
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
             spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
             if len(return_statement) == 2 and not is_direct_return:
-                if is_var_declaration:
+                if var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
                     if '{' in body_lines_without_spaces[i - 1]:
                         space_for_var_decl_line = len(body_lines_without_spaces[i - 1])
