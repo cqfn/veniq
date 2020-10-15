@@ -252,13 +252,13 @@ def insert_code_with_new_file_creation(
     line_to_csv = [
         file_path,
         class_name,
-        text_lines[invocation_node.line - 1].strip(' '),
+        text_lines[invocation_node.line - 1].lstrip(),
         invocation_node.line,
         original_func.line,
         method_node.name,
         new_full_filename,
         body_start_line,
-        body_end_line + 1
+        body_end_line
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(

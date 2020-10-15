@@ -48,14 +48,19 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def __init__(self):
         pass
 
+    def get_spaces_diff(self, line: str) -> int:
+        line = line.replace('\t', ' ' * 4)
+        diff = len(line) - len(line.lstrip())
+        return diff
+        
     def get_suitable_spaces(
             self,
             body_start_line: int,
             invocation_line: int,
             lines: List[str]
     ) -> str:
-        num_spaces_before = len(lines[invocation_line - 1]) - len(lines[invocation_line - 1].lstrip(' '))
-        num_spaces_body = len(lines[body_start_line - 1]) - len(lines[body_start_line - 1].lstrip(' '))
+        num_spaces_before = self.get_spaces_diff(lines[invocation_line - 1])
+        num_spaces_body = self.get_spaces_diff(lines[body_start_line - 1])
         spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
         return spaces_in_body
 
@@ -139,7 +144,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
 
-        body_lines_without_spaces = lines[body_start_line - 1:body_end_line]
+        body_lines_without_spaces = lines[body_start_line - 1:body_end_line - 1]
         spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
         body_lines = [spaces_in_body + i for i in body_lines_without_spaces]
         return body_lines
@@ -233,21 +238,18 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
+        spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
+
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
-            spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
             if len(return_statement) == 2 and not is_direct_return:
                 if var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
-                    if '{' in body_lines_without_spaces[i - 1]:
-                        space_for_var_decl_line = len(body_lines_without_spaces[i - 1])
-                        space_for_var_decl_line -= len(body_lines_without_spaces[i - 1].lstrip(' '))
-                        space_for_var_decl_line += 4
-                        space_for_var_decl_line *= ' '
+                    current_line = body_lines_without_spaces[i - 1]
+                    if '{' in current_line:
+                        space_for_var_decl_line = (self.get_spaces_diff(current_line) + 4) * ' '
                     else:
-                        space_for_var_decl_line = len(body_lines_without_spaces[i - 1])
-                        space_for_var_decl_line -= len(body_lines_without_spaces[i - 1].lstrip(' '))
-                        space_for_var_decl_line *= ' '
+                        space_for_var_decl_line = (self.get_spaces_diff(current_line)) * ' '
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     body_lines.append(spaces_in_body + instead_of_return)
                 else:
@@ -255,7 +257,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                     new_tabs = ' ' * len(return_statement[0])
                     body_lines.append(spaces_in_body + new_tabs + instead_of_return)
             else:
-                body_lines.append(line)
+                body_lines.append(spaces_in_body + line)
         return body_lines
 
     def inline_function(
@@ -280,7 +282,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_in,
             invocation_line,
             body_start_line,
-            body_end_line
+            body_end_line - 1
         )
         lines_of_final_file += body_lines
 
