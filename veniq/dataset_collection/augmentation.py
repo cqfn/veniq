@@ -391,17 +391,17 @@ if __name__ == '__main__':
                         writer.writerow(i)
 
                 csvfile.flush()
-            except TimeoutError:
-                print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
+            except Exception as e:
+                print(f"Processing {filename} is aborted by {str(e)}.")
 
     import tarfile
     import os.path
 
     with tarfile.open(Path(args.output) / 'inline_dataset.tar.gz', "w:gz") as tar:
-        tar.add(input_dir, arcname=os.path.basename(input_dir))
+        tar.add(input_dir, arcname=str(input_dir))
 
     with tarfile.open(Path(args.output) / 'src_dataset.tar.gz', "w:gz") as tar:
-        tar.add(output_dir, arcname=os.path.basename(output_dir))
+        tar.add(output_dir, arcname=str(output_dir))
 
     if output_dir.exists():
         shutil.rmtree(output_dir)
