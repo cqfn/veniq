@@ -46,15 +46,13 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
         # to start counting opening brackets
         difference_cases = 0
         for line in file_lines[start_line - 2:start_line]:
-            if '{' in line:
-                difference_cases += 1
+            difference_cases += line.count('{')
+            difference_cases -= line.count('}')
 
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
-                if '{' in line:
-                    difference_cases += 1
-                if '}' in line:
-                    difference_cases -= 1
+                difference_cases += line.count('{')
+                difference_cases -= line.count('}')
             else:
                 return i - 1
         return -1
@@ -260,7 +258,7 @@ def insert_code_with_new_file_creation(
         method_node.name,
         new_full_filename,
         body_start_line,
-        body_end_line
+        body_end_line + 1
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
