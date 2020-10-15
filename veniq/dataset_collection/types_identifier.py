@@ -48,6 +48,37 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def __init__(self):
         pass
 
+    def get_lines_before_invocation(
+            self,
+            filename_out: pathlib.Path,
+            filename_in: str,
+            invocation_line: str
+    ) -> List[str]:
+        """
+        This function is aimed to obtain lines from the original
+        file before invocation line, which was detected.
+        """
+        original_file = open(filename_in, encoding='utf-8')
+        lines = list(original_file)
+        lines_before_invoсation = lines[:invocation_line - 1]
+        return lines_before_invoсation
+
+    def get_lines_after_invocation(
+            self,
+            filename_out: pathlib.Path,
+            filename_in: pathlib.Path,
+            invocation_line: str
+    ) -> List[str]:
+        """
+        This function is aimed to obtain lines from the original
+        file after invocation line, which was detected.
+        Especially, it will be inserted after body of inlined method.
+        """
+        original_file = open(filename_in, encoding='utf-8')
+        lines = list(original_file)
+        lines_after_invoсation = lines[invocation_line:]
+        return lines_after_invoсation
+
     @abc.abstractmethod
     def inline_function(
             self,
@@ -82,21 +113,6 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
     def __init__(self):
         super().__init__()
 
-    def get_lines_before_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: str,
-            invocation_line: str
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file before invocation line, which was detected.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_before_invoсation = lines[:invocation_line - 1]
-        return lines_before_invoсation
-
     def get_suitable_spaces(
             self,
             body_start_line: int,
@@ -127,22 +143,6 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         spaces_in_body = self.get_suitable_spaces(body_start_line, invocation_line, lines)
         body_lines = [spaces_in_body + i for i in body_lines_without_spaces]
         return body_lines
-
-    def get_lines_after_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
-            invocation_line: str
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file after invocation line, which was detected.
-        Especially, it will be inserted after body of inlined method.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_after_invoсation = lines[invocation_line:]
-        return lines_after_invoсation
 
     def inline_function(
             self,
@@ -189,21 +189,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def __init__(self):
         super().__init__()
-
-    def get_lines_before_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: str,
-            invocation_line: str
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file before invocation line, which was detected.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_before_invoсation = lines[:invocation_line - 1]
-        return lines_before_invoсation
 
     def get_suitable_spaces(
             self,
@@ -257,22 +242,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             else:
                 body_lines.append(line)
         return body_lines
-
-    def get_lines_after_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
-            invocation_line: str
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file after invocation line, which was detected.
-        Especially, it will be inserted after body of inlined method.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_after_invoсation = lines[invocation_line:]
-        return lines_after_invoсation
 
     def inline_function(
             self,

@@ -6,7 +6,7 @@ from functools import partial
 from typing import Tuple, Dict, List, Any, Set
 from pathlib import Path
 import shutil
-import uuid
+import hashlib
 import typing
 from pebble import ProcessPool
 from tqdm import tqdm
@@ -248,6 +248,9 @@ def insert_code_with_new_file_creation(
         invocation_node.line,
         original_func.line,
         method_node.name,
+        new_full_filename,
+        body_start_line,
+        body_end_line
     ]
 
     algorithm_for_inlining = AlgorithmFactory().create_obj(
@@ -309,11 +312,15 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     return results
 
 
-def _save_inpit_file(input_dir: Path, filename: Path) -> None:
-    saved_path_of_original = input_dir.joinpath(filename.name)
-    print(input_dir.joinpath(str(filename)))
-    if not os.path.exists(saved_path_of_original):
-        shutil.copyfile(filename, saved_path_of_original)
+def save_input_file(input_dir: Path, filename: Path) -> Path:
+    # need to avoid situation when filenames are the same
+    hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
+    dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
+    if not dst_filename.parent.exists():
+        dst_filename.parent.mkdir(parents=True)
+    if not dst_filename.exists():
+        shutil.copyfile(filename, dst_filename)
+    return dst_filename
 
 
 if __name__ == '__main__':
@@ -336,6 +343,11 @@ if __name__ == '__main__':
              "By default one less than number of cores. "
              "Be careful to raise it above, machine may stop responding while creating dataset.",
     )
+    parser.add_argument(
+        "-z", "--zip",
+        action='store_true',
+        help="To zip input and output files."
+    )
     args = parser.parse_args()
 
     test_files = set(Path(args.dir).glob('**/*Test*.java'))
@@ -350,17 +362,20 @@ if __name__ == '__main__':
     if not input_dir.exists():
         input_dir.mkdir(parents=True)
 
-    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
+    with open(Path(args.output, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
         writer = csv.writer(csvfile, delimiter=',',
                             quotechar='"', quoting=csv.QUOTE_MINIMAL)
         writer.writerow([
-            'Filename',
-            'ClassName',
-            'String where to replace',
+            'input filename',
+            'className',
+            'string where to replace',
             'line where to replace',
             'line of original function',
             'invocation function name',
-            'unique id'])
+            'output_filename',
+            'start_line',
+            'end_line'
+        ])
 
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
@@ -371,8 +386,28 @@ if __name__ == '__main__':
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
+                        dst_filename = save_input_file(input_dir, filename)
+                        # change source filename, since it will be chahged
+                        i[0] = str(dst_filename.as_posix())
+                        #  get local path for inlined filename
+                        i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
                         writer.writerow(i)
-                        _save_inpit_file(input_dir, filename)
                 csvfile.flush()
             except TimeoutError:
                 print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
+
+    if args.zip:
+        import tarfile
+        import os.path
+
+        with tarfile.open(Path(args.output) / 'inline_dataset.tar.gz', "w:gz") as tar:
+            tar.add(input_dir, arcname=str(input_dir))
+
+        with tarfile.open(Path(args.output) / 'src_dataset.tar.gz', "w:gz") as tar:
+            tar.add(output_dir, arcname=str(output_dir))
+
+        if output_dir.exists():
+            shutil.rmtree(output_dir)
+
+        if input_dir.exists():
+            shutil.rmtree(input_dir)
