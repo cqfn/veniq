@@ -69,10 +69,10 @@ class PaperExampleTestCase(TestCase):
         )
 
         benifits = [group.benifit for group in ranked_extraction_opportunities_groups]
-        self.assertEqual(benifits, [12, -4])
+        self.assertEqual(benifits, [24, 23, 21, 19, 19, 3])
 
         group_sizes = [len(list(group.opportunities)) for group in ranked_extraction_opportunities_groups]
-        self.assertEqual(group_sizes, [1, 1])
+        self.assertEqual(group_sizes, [1, 1, 1, 1, 1, 1])
 
     @staticmethod
     def _get_method_ast() -> AST:
