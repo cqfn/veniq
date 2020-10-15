@@ -275,7 +275,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-        ) -> None:
+    ) -> None:
         lines_of_final_file = []
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(
