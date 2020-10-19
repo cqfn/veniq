@@ -1,5 +1,5 @@
-class Example {
-    int exampleMethod(int x, int y, Object o) {
+class Test {
+    int testMethod(int x, int y, Object o) {
         System.out.println(o);
 
         while(x > 0) {

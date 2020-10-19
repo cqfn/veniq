@@ -2,7 +2,7 @@ from typing import List, Dict, Tuple, Iterator, NamedTuple
 
 from veniq.ast_framework import AST
 from .extract_semantic import extract_method_statements_semantic
-from .cluster_statements import cluster_statements
+from .create_extraction_opportunities import create_extraction_opportunities
 from ._common_types import Statement, StatementSemantic, ExtractionOpportunity, OpportunityBenifit
 from ._common_cli import common_cli
 from ._lcom2 import LCOM2
@@ -32,8 +32,9 @@ class ExtractionOpportunityGroup:
         self._settings = settings
 
     def is_allowed_to_add_opportunity(self, extraction_opportunity: ExtractionOpportunity) -> bool:
-        return self._is_similar_size(self._optimal_opportunity, extraction_opportunity) and \
-            self._is_significantly_overlapping(self._optimal_opportunity, extraction_opportunity)
+        return self._is_similar_size(
+            self._optimal_opportunity, extraction_opportunity
+        ) and self._is_significantly_overlapping(self._optimal_opportunity, extraction_opportunity)
 
     def add_extraction_opportunity(self, extraction_opportunity: ExtractionOpportunity) -> None:
         new_opportunity_benifit = self._calculate_benifit(extraction_opportunity)
@@ -42,7 +43,10 @@ class ExtractionOpportunityGroup:
         benifit_difference = abs(new_opportunity_benifit - self.benifit)
         max_benifit = max(new_opportunity_benifit, self.benifit)
         is_new_opportunity_optimal: bool
-        if max_benifit > 0 and benifit_difference / max_benifit >= self._settings.significant_difference_treshold:
+        if (
+            max_benifit > 0
+            and benifit_difference / max_benifit >= self._settings.significant_difference_treshold
+        ):
             is_new_opportunity_optimal = new_opportunity_benifit > self.benifit
         else:
             is_new_opportunity_optimal = len(extraction_opportunity) > len(self._optimal_opportunity)
@@ -136,7 +140,7 @@ def _print_extraction_opportunities(
     method_ast: AST, filepath: str, class_name: str, method_name: str
 ) -> None:
     statements_semantic = extract_method_statements_semantic(method_ast)
-    extraction_opportunities = cluster_statements(statements_semantic)
+    extraction_opportunities = create_extraction_opportunities(statements_semantic)
     extraction_opportunities_groups = rank_extraction_opportunities(
         statements_semantic, extraction_opportunities
     )

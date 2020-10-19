@@ -8,17 +8,14 @@ from veniq.baselines.semi.extract_semantic import (
     extract_method_statements_semantic,
     StatementSemantic,
 )
-
-
-def objects_semantic(*objects_names: str) -> StatementSemantic:
-    return StatementSemantic(used_objects=set(objects_names))
+from .utils import objects_semantic
 
 
 class ExtractStatementSemanticTestCase(TestCase):
     current_directory = Path(__file__).absolute().parent
 
     def test_semantic_extraction(self):
-        ast = AST.build_from_javalang(build_ast(self.current_directory / "SimpleMethods.java"))
+        ast = AST.build_from_javalang(build_ast(self.current_directory / "SemanticExtractionTest.java"))
         class_declaration = ast.get_root().types[0]
         assert class_declaration.name == "SimpleMethods", "Wrong java test class"
 
@@ -76,21 +73,21 @@ class ExtractStatementSemanticTestCase(TestCase):
         "continueStatement": [StatementSemantic(), StatementSemantic()],
         "localMethodCall": [StatementSemantic(used_methods={"localMethod"})],
         "objectMethodCall": [StatementSemantic(used_objects={"o"}, used_methods={"method"})],
-        "nestedObject": [StatementSemantic(used_objects={"o", "x"})],
+        "nestedObject": [StatementSemantic(used_objects={"o.x"})],
         "nestedObjectMethodCall": [
-            StatementSemantic(used_objects={"o", "nestedObject"}, used_methods={"method"})
+            StatementSemantic(used_objects={"o.nestedObject"}, used_methods={"method"})
         ],
         "severalStatements": [
             objects_semantic("x"),
             objects_semantic("x"),
-            StatementSemantic(used_objects={"System", "out", "x"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out", "x"}, used_methods={"println"}),
             objects_semantic("x"),
         ],
         "deepNesting": [
             objects_semantic("i"),
             objects_semantic("i"),
-            StatementSemantic(used_objects={"System", "out", "i"}, used_methods={"println"}),
-            StatementSemantic(used_objects={"System", "out"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out", "i"}, used_methods={"println"}),
+            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}),
         ],
         "complexExpressions": [
             objects_semantic("x", "y"),
