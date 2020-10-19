@@ -49,8 +49,10 @@ class _SyntacticFilterCallbacks:
         self._blocks_stack.append(block)
 
     def _on_statement_entering(self, statement: Statement) -> None:
-        if not self._is_all_statements_found() and \
-           statement.node == self._statements[self._next_statement_index]:
+        if (
+            not self._is_all_statements_found()
+            and statement.node == self._statements[self._next_statement_index]
+        ):
             if self._is_none_statements_found():
                 self._parent_block = self._current_block
 
