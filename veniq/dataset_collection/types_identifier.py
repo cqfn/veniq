@@ -58,7 +58,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         diff = len(line) - len(line.lstrip())
         return diff
 
-    def get_spaces_var_decl(self, line: str) -> int:
+    def get_spaces_var_decl(self, line: str) -> str:
         """
         Here we can get num of spaces form the original method
         in the line where method invocation inside variable

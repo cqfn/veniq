@@ -246,7 +246,6 @@ def insert_code_with_new_file_creation(
     substitution opportunity by method's body,
     we create new file.
     """
-    line_to_csv = []
     file_name = file_path.stem
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
