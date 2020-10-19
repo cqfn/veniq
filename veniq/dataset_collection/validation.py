@@ -82,10 +82,17 @@ if __name__ == '__main__':
                         print(class_decl.name, method_decl.name)
 
                 except Exception as e:
+                    import traceback
+                    traceback.print_exc()
                     failed_cases_in_SEMI_algorithm += 1
 
                 break
 
+    print(f'Failed SEMI algorithm errors: {failed_cases_in_SEMI_algorithm}')
+    print(f'Failed examples of synth dataset: {failed_cases_in_validation_examples}')
+    print(f'matched_cases: {matched_cases}')
+    print(f'No opportunity chosen: {no_opportunity_chosen} times')
+    print(f'Total number of cases: {total_number}')
     matched = (failed_cases_in_SEMI_algorithm + failed_cases_in_validation_examples
                + matched_cases + no_opportunity_chosen)
     print(float(matched) / total_number)
