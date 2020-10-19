@@ -3,7 +3,7 @@ from networkx import DiGraph, dfs_labeled_edges
 
 from .statement import Statement
 from .block import Block
-from ._constants import NodeType, NodeId, NODE, BLOCK_REASON
+from .constants import NodeType, NodeId, NODE, BLOCK_REASON
 
 TraverseCallback = Callable[[Union[Block, Statement]], None]
 
