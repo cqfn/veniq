@@ -43,7 +43,9 @@ class ExtractionOpportunitiesCreationTestCase(TestCase):
         self.assertEqual(expected_statement_indexes, actual_statements_indexes)
 
     @staticmethod
-    def _get_opportunity_nodes_indexes(statements_semantic: Dict[ASTNode, StatementSemantic]) -> List[List[int]]:
+    def _get_opportunity_nodes_indexes(
+        statements_semantic: Dict[ASTNode, StatementSemantic]
+    ) -> List[List[int]]:
         extraction_opportunities = create_extraction_opportunities(statements_semantic)
         return [[node.node_index for node in opportunity] for opportunity in extraction_opportunities]
 

@@ -13,8 +13,10 @@ class StatementSemantic:
     used_methods: Set[str] = field(default_factory=set)
 
     def is_similar(self, other: "StatementSemantic") -> bool:
-        return len(self.used_objects_unwrapped & other.used_objects_unwrapped) != 0 or \
-            len(self.used_methods & other.used_methods) != 0
+        return (
+            len(self.used_objects_unwrapped & other.used_objects_unwrapped) != 0
+            or len(self.used_methods & other.used_methods) != 0
+        )
 
     @property
     def used_objects_unwrapped(self) -> Set[str]:
@@ -32,10 +34,7 @@ class StatementSemantic:
         """
         Turns each name from "a.b.c" to "a"
         """
-        return {
-            object_name.split(".")[0]
-            for object_name in self.used_objects
-        }
+        return {object_name.split(".")[0] for object_name in self.used_objects}
 
 
 ExtractionOpportunity = Tuple[Statement, ...]
