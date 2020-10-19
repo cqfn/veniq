@@ -232,7 +232,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
     ) -> str:
         before_case = line.replace('\t', ' ' * 4)
         before_case = re.match("(.*?){", line)  # type: ignore
-        print(before_case)
         if before_case:
             before_case = before_case.group()[:-1]  # type: ignore
             return line
