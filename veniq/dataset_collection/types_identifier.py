@@ -58,6 +58,18 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         diff = len(line) - len(line.lstrip())
         return diff
 
+    def get_spaces_var_decl(self, line: str) -> int:
+        """
+        Here we can get num of spaces form the original method
+        in the line where method invocation inside variable
+        declaration.
+        """
+        if '{' in line:
+            space_for_var_decl_line = (self.get_spaces_diff(line) + 4) * ' '
+        else:
+            space_for_var_decl_line = (self.get_spaces_diff(line)) * ' '
+        return space_for_var_decl_line
+
     def complement_spaces(
             self,
             body_start_line: int,
@@ -262,10 +274,9 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
         spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
-
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
-            if i == 0:
+            if i == 0 and len(body_lines_without_spaces) > 1:
                 line_after_declaration = self.eluminate_cases_before(line)
                 body_lines.append(spaces_in_body + line_after_declaration)
                 continue
@@ -274,10 +285,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                 if var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
                     current_line = body_lines_without_spaces[i - 1]
-                    if '{' in current_line:
-                        space_for_var_decl_line = (self.get_spaces_diff(current_line) + 4) * ' '
-                    else:
-                        space_for_var_decl_line = (self.get_spaces_diff(current_line)) * ' '
+                    space_for_var_decl_line = self.get_spaces_var_decl(current_line)
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     body_lines.append(spaces_in_body + instead_of_return)
                 else:
