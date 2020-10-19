@@ -86,9 +86,11 @@ class ASTNode:
         node_type = self._get_type(self._node_index)
         javalang_fields = attributes_by_node_type[node_type]
         computed_fields = computed_fields_registry.get_fields(node_type)
-        if attribute_name not in common_attributes and \
-           attribute_name not in javalang_fields and \
-           attribute_name not in computed_fields:
+        if (
+            attribute_name not in common_attributes
+            and attribute_name not in javalang_fields
+            and attribute_name not in computed_fields
+        ):
             raise AttributeError(
                 "Failed to retrieve property. "
                 f"'{node_type}' node does not have '{attribute_name}' attribute."
@@ -115,25 +117,23 @@ class ASTNode:
             return attribute_names
 
         node_type = self._get_type(self._node_index)
-        return attribute_names + \
-            list(common_attributes) + \
-            list(attributes_by_node_type[node_type]) + \
-            list(computed_fields_registry.get_fields(node_type).keys())
+        return (
+            attribute_names
+            + list(common_attributes)
+            + list(attributes_by_node_type[node_type])
+            + list(computed_fields_registry.get_fields(node_type).keys())
+        )
 
     def __str__(self) -> str:
         text_representation = f"node index: {self._node_index}"
         node_type = self._get_type(self._node_index)
-        for attribute_name in sorted(
-            common_attributes | attributes_by_node_type[node_type]
-        ):
+        for attribute_name in sorted(common_attributes | attributes_by_node_type[node_type]):
             attribute_value = self.__getattr__(attribute_name)
 
             if isinstance(attribute_value, ASTNode):
                 attribute_representation = repr(attribute_value)
             elif isinstance(attribute_value, str) and "\n" in attribute_value:
-                attribute_representation = "\n\t" + attribute_value.replace(
-                    "\n", "\n\t"
-                )
+                attribute_representation = "\n\t" + attribute_value.replace("\n", "\n\t")
             else:
                 attribute_representation = str(attribute_value)
 
@@ -154,9 +154,7 @@ class ASTNode:
     def __hash__(self):
         return hash(self._node_index)
 
-    def _replace_references_with_nodes(
-        self, list_with_references: List[Any]
-    ) -> List[Any]:
+    def _replace_references_with_nodes(self, list_with_references: List[Any]) -> List[Any]:
         list_with_nodes: List[Any] = []
         for item in list_with_references:
             if isinstance(item, ASTNodeReference):
@@ -192,8 +190,4 @@ class ASTNode:
 
     @classmethod
     def _get_public_fixed_interface(cls) -> List[str]:
-        return [
-            name
-            for name, _ in getmembers(cls)
-            if not name.startswith("_")
-        ]
+        return [name for name, _ in getmembers(cls) if not name.startswith("_")]
