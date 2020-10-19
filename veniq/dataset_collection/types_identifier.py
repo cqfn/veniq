@@ -290,8 +290,8 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                     body_lines.append(spaces_in_body + instead_of_return)
                 else:
                     instead_of_return = return_statement[1]
-                    new_tabs = ' ' * len(return_statement[0])
-                    body_lines.append(spaces_in_body + new_tabs + instead_of_return)
+                    tabs_before_return = return_statement[0]
+                    body_lines.append(spaces_in_body + tabs_before_return + instead_of_return)
             else:
                 body_lines.append(spaces_in_body + line)
         return body_lines
