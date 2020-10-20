@@ -54,7 +54,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         Here we can get num of spaces in the
         line begining.
         """
-        # line = line.replace('\t', ' ' * 4)
+        line = line.replace('\t', ' ' * 4)
         diff = len(line) - len(line.lstrip())
         return diff
 
@@ -75,15 +75,14 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_start_line: int,
             invocation_line: int,
             lines: List[str]
-    ) -> str:
+    ) -> int:
         """
         In this function we obtain suitable number of spaces
         at the beginning of new inserted lines.
         """
         num_spaces_before = self.get_spaces_diff(lines[invocation_line - 1])
         num_spaces_body = self.get_spaces_diff(lines[body_start_line - 1])
-        spaces_in_body = ' ' * (num_spaces_before - num_spaces_body)
-        return spaces_in_body
+        return num_spaces_before - num_spaces_body
 
     def get_lines_before_invocation(
             self,
@@ -167,8 +166,11 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
 
         body_lines_without_spaces = lines[body_start_line - 1:body_end_line - 1]
         num_spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
-        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
-        body_lines = [spaces_in_body + i for i in body_lines_without_spaces]
+        body_lines = []
+        for i in body_lines_without_spaces:
+            line_without_spaces = i.lstrip()
+            spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body)  * ' ' 
+            body_lines.append(spaces_in_line+ line_without_spaces)
         return body_lines
 
     def inline_function(
@@ -274,7 +276,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
+        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines) * ' '
         for i, line in enumerate(body_lines_without_spaces):
             return_statement = line.split('return ')
             if i == 0 and len(body_lines_without_spaces) > 1:
@@ -290,7 +292,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     body_lines.append(spaces_in_body + instead_of_return)
                 else:
-                    instead_of_return = return_statement[1]
+                    instead_of_return = return_statement[1].replace('\t', ' ' * 4)
                     tabs_before_return = return_statement[0]
                     body_lines.append(spaces_in_body + tabs_before_return + instead_of_return)
             else:
