@@ -246,7 +246,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             self,
             line: str
     ) -> str:
-        before_case = line.replace('\t', ' ' * 4)
+        line = line.replace('\t', ' ' * 4)
         before_case = re.match("(.*?){", line)  # type: ignore
         if before_case:
             before_case = before_case.group()[:-1]  # type: ignore
@@ -275,10 +275,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         # body of the original method, which will be inserted
         body_lines_without_spaces = lines[body_start_line - 1:body_end_line]
         line_with_declaration = lines[invocation_line - 1].split('=')
-        var_declaration = self.is_var_declaration(lines, invocation_line)
+        is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
         spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines) * ' '
+
         for i, line in enumerate(body_lines_without_spaces):
+            line = line.replace('\t', ' ' * 4)
             return_statement = line.split('return ')
             if i == 0 and len(body_lines_without_spaces) > 1:
                 line_after_declaration = self.eluminate_cases_before(line)
@@ -286,7 +288,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                 continue
 
             if len(return_statement) == 2 and not is_direct_return:
-                if var_declaration:
+                if is_var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
                     current_line = body_lines_without_spaces[i - 1]
                     space_for_var_decl_line = self.get_spaces_var_decl(current_line)
