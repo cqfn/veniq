@@ -49,6 +49,30 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
     def __init__(self):
         pass
 
+    def get_line_for_body(
+            self,
+            to_insert_line: str,
+            before_body_line: str
+    ) -> str:
+        space_or_tab = self.spaces_or_tab(before_body_line)
+        new_line = (to_insert_line).replace(' ' * 4, space_or_tab)
+        return new_line
+
+    def spaces_or_tab(self, line: str) -> str:
+        """
+        To insert lines correctly, you need
+        to know whether to use spaces or tabs.
+        Here is we check it.
+        """
+        len_spaces = self.get_spaces_diff(line)
+        line_of_spaces_or_tabs = line[:len_spaces]
+        num_spaces = line_of_spaces_or_tabs.count(' ' * 4)
+        num_tabs = line_of_spaces_or_tabs.count('\t')
+        if num_tabs > num_spaces:
+            return '\t'
+        else:
+            return ' ' * 4
+
     def get_spaces_diff(self, line: str) -> int:
         """
         Here we can get num of spaces in the
@@ -170,7 +194,11 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         for i in body_lines_without_spaces:
             line_without_spaces = i.lstrip()
             spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body) * ' '
-            body_lines.append(spaces_in_line + line_without_spaces)
+            new_line = self.get_line_for_body(
+                spaces_in_line + line_without_spaces,
+                lines[invocation_line - 2]
+            )
+            body_lines.append(new_line)
         return body_lines
 
     def inline_function(
@@ -270,35 +298,34 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         body_lines = []
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
-
         # body of the original method, which will be inserted
-        body_lines_without_spaces = lines[body_start_line - 1:body_end_line]
+        body_lines_original = lines[body_start_line - 1:body_end_line]
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
         spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines) * ' '
 
-        for i, line in enumerate(body_lines_without_spaces):
+        for i, line in enumerate(body_lines_original):
             line = line.replace('\t', ' ' * 4)
             return_statement = line.split('return ')
-            if i == 0 and len(body_lines_without_spaces) > 1:
+            if i == 0 and len(body_lines_original) > 1:
                 line_after_declaration = self.eluminate_cases_before(line)
-                body_lines.append(spaces_in_body + line_after_declaration)
-                continue
+                new_body_line = spaces_in_body + line_after_declaration
 
-            if len(return_statement) == 2 and not is_direct_return:
+            elif len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
-                    current_line = body_lines_without_spaces[i - 1]
+                    current_line = body_lines_original[i - 1]
                     space_for_var_decl_line = self.get_spaces_var_decl(current_line)
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
-                    body_lines.append(spaces_in_body + instead_of_return)
+                    new_body_line = spaces_in_body + instead_of_return
                 else:
                     instead_of_return = return_statement[1].replace('\t', ' ' * 4)
                     tabs_before_return = return_statement[0]
-                    body_lines.append(spaces_in_body + tabs_before_return + instead_of_return)
+                    new_body_line = spaces_in_body + tabs_before_return + instead_of_return
             else:
-                body_lines.append(spaces_in_body + line)
+                new_body_line = spaces_in_body + line
+            body_lines.append(self.get_line_for_body(new_body_line, lines[invocation_line - 2]))
         return body_lines
 
     def inline_function(
