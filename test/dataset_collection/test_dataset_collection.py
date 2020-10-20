@@ -12,8 +12,6 @@ from veniq.dataset_collection.types_identifier import (
     InlineWithoutReturnWithoutArguments,
     InlineWithReturnWithoutArguments,
     AlgorithmFactory)
-
-from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 from veniq.utils.ast_builder import build_ast
 
 
