@@ -11,7 +11,7 @@ public abstract class AbstractMarshaller implements Marshaller, Unmarshaller {
         }
         _removeChildQuietly(component, _getChildren());
         firePropertyChange(propertyName, component, null);
-			getModel().fireComponentChangedEvent(new ComponentEvent(this,
+		getModel().fireComponentChangedEvent(new ComponentEvent(this,
 					ComponentEvent.EventType.CHILD_REMOVED));
     }
 

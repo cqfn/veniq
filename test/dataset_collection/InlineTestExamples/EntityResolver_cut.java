@@ -23,7 +23,7 @@ public abstract class Test {
             		factory.setValidating(false);
             		factory.setNamespaceAware(true);
             		factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", !isSupportDtd());
-            		factory.setFeature("http://xml.org/sax/features/external-general-entities", isProcessExternalEntities());
+					factory.setFeature("http://xml.org/sax/features/external-general-entities", isProcessExternalEntities());
                     this.documentBuilderFactory = factory;
 				}
 				documentBuilder = createDocumentBuilder(this.documentBuilderFactory);

@@ -424,8 +424,7 @@ if __name__ == '__main__':  # noqa: C901
                 csvfile.flush()
             except StopIteration:
                 continue
-            except Exception as e:
-                print(f"Processing {filename} is aborted due to {str(e)}")
+
 
     if args.zip:
         samples = pd.read_csv(csv_output).sample(args.small_dataset_size, random_state=41)
