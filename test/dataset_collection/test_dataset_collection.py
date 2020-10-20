@@ -284,35 +284,25 @@ class TestDatasetCollection(TestCase):
         self.assertEqual(is_matched, False)
 
     def test_inline_invocation_inside_var_declaration(self):
-        filepath = self.current_directory / "Test_var_declaration.java"
-        new_full_filename = self.current_directory / 'temp.java'
+        filepath = self.current_directory / 'InlineExamples' / 'EntityResolver_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'EntityResolver_cut.java'
+        temp_filename = self.current_directory / 'temp.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        algorithm_for_inlining().inline_function(filepath, 22, 34, 40, new_full_filename)
-        good_inlined_text = [
-            '            \t\tDocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();\r',
-            '            \t\tfactory.setValidating(false);\r',
-            '            \t\tfactory.setNamespaceAware(true);\r',
-            '            \t\tfactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", \
-            !isSupportDtd());\r',
-            '            \t\tfactory.setFeature("http://xml.org/sax/features/external-general-entities", \
-            isProcessExternalEntities());\r',
-            '                    this.documentBuilderFactory = factory;\r'
-        ]
-        text_lines = read_text_with_autodetected_encoding(str(new_full_filename)).split('\n')[21:27]
-        self.assertEqual(text_lines, good_inlined_text)
-        new_full_filename.unlink()
+        algorithm_for_inlining().inline_function(filepath, 22, 34, 40, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
 
     def test_inline_inside_invokation_several_lines(self):
-        filepath = self.current_directory / "Test_after_comment_inline.java"
-        new_full_filename = self.current_directory / 'temp.java'
+        filepath = self.current_directory / 'InlineExamples' / 'AbstractMarshaller_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'AbstractMarshaller_cut.java'
+        temp_filename = self.current_directory / 'temp.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        algorithm_for_inlining().inline_function(filepath, 14, 18, 20, new_full_filename)
-        good_inlined_text = [
-            '\t\t\tgetModel().fireComponentChangedEvent(new ComponentEvent(this,\r',
-            '\t\t\t\t\tComponentEvent.EventType.CHILD_REMOVED));\r'
-        ]
-        text_lines = read_text_with_autodetected_encoding(str(new_full_filename)).split('\n')[13:15]
-        self.assertEqual(text_lines, good_inlined_text)
-        new_full_filename.unlink()
+        algorithm_for_inlining().inline_function(filepath, 14, 18, 20, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
