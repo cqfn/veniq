@@ -42,7 +42,7 @@ class ExtractStatementSemanticTestCase(TestCase):
 
     def test_try_block_method(self):
         self._test_helper("tryBlock", [
-            objects_semantic("x"),
+            objects_semantic("x", "resource"),
             objects_semantic("x"),
             objects_semantic("x"),
             objects_semantic("x"),
