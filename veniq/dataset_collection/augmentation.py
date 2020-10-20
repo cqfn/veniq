@@ -425,7 +425,6 @@ if __name__ == '__main__':  # noqa: C901
             except StopIteration:
                 continue
 
-
     if args.zip:
         samples = pd.read_csv(csv_output).sample(args.small_dataset_size, random_state=41)
         small_dataset_folder = Path(args.output) / 'small_dataset'

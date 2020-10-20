@@ -1,4 +1,3 @@
-from pprint import pprint
 import abc
 from enum import Enum
 from typing import List, Union
@@ -170,8 +169,8 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         body_lines = []
         for i in body_lines_without_spaces:
             line_without_spaces = i.lstrip()
-            spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body)  * ' ' 
-            body_lines.append(spaces_in_line+ line_without_spaces)
+            spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body) * ' '
+            body_lines.append(spaces_in_line + line_without_spaces)
         return body_lines
 
     def inline_function(
