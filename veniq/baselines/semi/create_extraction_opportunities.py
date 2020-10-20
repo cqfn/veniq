@@ -12,7 +12,7 @@ def create_extraction_opportunities(
     extraction_opportunities: List[ExtractionOpportunity] = []
     for step in range(1, len(statements_semantic) + 1):
         for extraction_opportunity in _ExtractionOpportunityIterator(statements_semantic, step):
-            if len(extraction_opportunity) > 0 and extraction_opportunity not in extraction_opportunities:
+            if extraction_opportunity and extraction_opportunity not in extraction_opportunities:
                 extraction_opportunities.append(extraction_opportunity)
 
     return extraction_opportunities
