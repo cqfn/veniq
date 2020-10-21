@@ -28,6 +28,9 @@ class SemanticFilterTestCase(TestCase):
     def test_extract_deep_nested_break(self):
         self._opportunity_test_helper("deepNestedBreak", [36, 37], True)
 
+    def test_try_statement(self):
+        self._opportunity_test_helper("tryStatement", [44], True)
+
     def _opportunity_test_helper(
         self,
         method_name: str,
