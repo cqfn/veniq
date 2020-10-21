@@ -59,7 +59,7 @@ class ExtractStatementSemanticTestCase(TestCase):
             "tryBlock",
             [
                 StatementSemantic(),
-                objects_semantic("x"),
+                objects_semantic("x", "resource"),
                 StatementSemantic(),
                 StatementSemantic(),
                 objects_semantic("x"),
