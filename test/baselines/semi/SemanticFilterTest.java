@@ -39,4 +39,16 @@ class Test {
             }
         }
     }
+
+    void tryStatement() {
+        int x = 0;
+        // there will be no pure try statement in extracted semantic dictionary
+        // try statement brings no semantic, but brings blocks, such as main block, catches, etc.
+        try {
+            x /= 0;
+        }
+        catch(ArithmeticException e) {
+
+        }
+    }
 }
