@@ -8,7 +8,10 @@ from veniq.dataset_collection.augmentation import (
     is_match_to_the_conditions)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
-    InlineTypesAlgorithms, InlineWithoutReturnWithoutArguments, InlineWithReturnWithoutArguments)
+    InlineTypesAlgorithms,
+    InlineWithoutReturnWithoutArguments,
+    InlineWithReturnWithoutArguments,
+    AlgorithmFactory)
 from veniq.utils.ast_builder import build_ast
 
 
@@ -277,3 +280,27 @@ class TestDatasetCollection(TestCase):
             if x.member == 'severalReturns'][0]
         is_matched = is_match_to_the_conditions(ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, False)
+
+    def test_inline_invocation_inside_var_declaration(self):
+        filepath = self.current_directory / 'InlineExamples' / 'EntityResolver_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'EntityResolver_cut.java'
+        temp_filename = self.current_directory / 'temp.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        algorithm_for_inlining().inline_function(filepath, 22, 34, 40, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
+
+    def test_inline_inside_invokation_several_lines(self):
+        filepath = self.current_directory / 'InlineExamples' / 'AbstractMarshaller_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'AbstractMarshaller_cut.java'
+        temp_filename = self.current_directory / 'temp.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        algorithm_for_inlining().inline_function(filepath, 14, 18, 20, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
