@@ -77,7 +77,7 @@ class _SymanticFilterCallbacks:
             ):
                 self._is_control_flow_breaking_statement_out_of_cycle = True
 
-        elif self._is_all_statements_has_been_visited:
+        elif self._is_all_statements_has_been_visited and statement.node in self._statements_semantic:
             statement_semantic = self._statements_semantic[statement.node]
             used_based_objects = statement_semantic.used_based_objects
             self._variable_needed_to_return.update(used_based_objects & self._variables_names_in_statements)
