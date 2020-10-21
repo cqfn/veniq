@@ -144,6 +144,7 @@ class BlockStatementTestCase(TestCase):
             "If statement",
             "BlockReason.THEN_BRANCH",
             "Return statement",
+            "BlockReason.ELSE_BRANCH",
             "Return statement",
         ],
         "switchBranches": [
