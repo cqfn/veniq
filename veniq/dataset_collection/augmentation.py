@@ -440,8 +440,8 @@ if __name__ == '__main__':  # noqa: C901
                         i[0] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
                         i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
-                        final_line = [str(element).encode('utf8') for element in i]
-                        writer.writerow(final_line)
+                        i[2] = str(i[2]).encode('utf8')
+                        writer.writerow(i)
                 csvfile.flush()
             except StopIteration:
                 continue
