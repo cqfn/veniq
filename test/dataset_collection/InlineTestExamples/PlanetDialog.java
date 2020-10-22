@@ -71,7 +71,8 @@ public class PlanetDialog extends FloatingDialog{
             bloom.dispose();
             bloom = null;
         }
-         bloom = new Bloom(Core.graphics.getWidth()/4, Core.graphics.getHeight()/4, true, false, true){{
+ 
+        bloom = new Bloom(Core.graphics.getWidth()/4, Core.graphics.getHeight()/4, true, false, true){{
             setClearColor(0, 0, 0, 0);
             setThreshold(0.8f);
             blurPasses = 6;

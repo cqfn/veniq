@@ -192,7 +192,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         num_spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
         body_lines = []
         for i in body_lines_without_spaces:
-            line_without_spaces = i.lstrip()
+            line_without_spaces = i.lstrip(' ')
             spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body) * ' '
             new_line = self.get_line_for_body(
                 spaces_in_line + line_without_spaces,

@@ -21,21 +21,6 @@ from veniq.utils.ast_builder import build_ast
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
-def _get_last_return_line(child_statement: ASTNode) -> int:
-    """
-    This function is aimed to find the last line of
-    the all children and children of children
-    for a chosen statement.
-    Main goal is to get the last line of return in method.
-    """
-    last_line = child_statement.line
-    if hasattr(child_statement, 'children'):
-        for children in child_statement.children:
-            if children.line >= last_line:
-                last_line = _get_last_return_line(children)
-    return last_line
-
-
 def _get_last_line(file_path: Path, start_line: int) -> int:
     """
     This function is aimed to find the last body line of
