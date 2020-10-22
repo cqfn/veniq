@@ -105,7 +105,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         at the beginning of new inserted lines.
         """
         num_spaces_before = self.get_spaces_diff(lines[invocation_line - 1])
-        num_spaces_body = self.get_spaces_diff(lines[body_start_line])
+        num_spaces_body = self.get_spaces_diff(lines[body_start_line - 1])
         return num_spaces_before - num_spaces_body
 
     def get_lines_before_invocation(
@@ -188,7 +188,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
 
-        body_lines_without_spaces = lines[body_start_line:body_end_line - 1]
+        body_lines_without_spaces = lines[body_start_line - 1:body_end_line - 1]
         num_spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
         body_lines = []
         for i in body_lines_without_spaces:
@@ -196,7 +196,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body) * ' '
             new_line = self.get_line_for_body(
                 spaces_in_line + line_without_spaces,
-                lines[invocation_line - 1]
+                lines[invocation_line - 2]
             )
             body_lines.append(new_line)
         return body_lines
