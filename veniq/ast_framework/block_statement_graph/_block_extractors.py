@@ -112,8 +112,10 @@ def _unwrap_block_to_statements_list(
     block_statement_or_statement_list: Union[ASTNode, List[ASTNode]]
 ) -> List[ASTNode]:
     if isinstance(block_statement_or_statement_list, ASTNode):
-        assert block_statement_or_statement_list.node_type == ASTNodeType.BLOCK_STATEMENT
-        return block_statement_or_statement_list.statements
+        if block_statement_or_statement_list.node_type == ASTNodeType.BLOCK_STATEMENT:
+            return block_statement_or_statement_list.statements
+        else:
+            return [block_statement_or_statement_list]
 
     return block_statement_or_statement_list
 

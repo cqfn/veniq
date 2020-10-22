@@ -1,20 +1,24 @@
 import csv
-import uuid
-from argparse import ArgumentParser
+import hashlib
 import os
+import os.path
+import shutil
+import tarfile
+import typing
+from argparse import ArgumentParser
 from collections import defaultdict
 from functools import partial
-from typing import Tuple, Dict, List, Any
 from pathlib import Path
+from typing import Tuple, Dict, List, Any, Set, Optional
 
-import typing
+import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
-from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
+from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
 def _get_last_return_line(child_statement: ASTNode) -> int:
@@ -32,19 +36,30 @@ def _get_last_return_line(child_statement: ASTNode) -> int:
     return last_line
 
 
-def _get_last_line(file_path: Path, last_return_line: int) -> int:
+def _get_last_line(file_path: Path, start_line: int) -> int:
     """
-    Here we reprocess obtained the list line of return statement
-    in order to get the line of the last case '}' of method
-    declaration statement. This step is crucial for the
-    correct inline part!
+    This function is aimed to find the last body line of
+    considered method. It work by counting the difference
+    in number of openning brackets '{' and closing brackets
+    '}'. It's start with the method declaration line and going
+    to the line where the difference is equal to 0. Which means
+    that we found closind bracket of method declaration.
     """
     with open(file_path, encoding='utf-8') as f:
-        lines = f.readlines()[last_return_line:]
-        for i, file_line in enumerate(lines, last_return_line):
-            last_case_line = file_line.replace('\n', '').replace(' ', '')
-            if len(last_case_line) == 0:
-                return i - 1
+        file_lines = list(f)
+        # to start counting opening brackets
+        difference_cases = 0
+        for line in file_lines[start_line - 2:start_line]:
+            line_without_comments = line.split('//')[0]
+            difference_cases += line_without_comments.count('{')
+            difference_cases -= line_without_comments.count('}')
+        for i, line in enumerate(file_lines[start_line:], start_line):
+            if difference_cases:
+                line_without_comments = line.split('//')[0]
+                difference_cases += line_without_comments.count('{')
+                difference_cases -= line_without_comments.count('}')
+            else:
+                return i
         return -1
 
 
@@ -52,11 +67,9 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
     Ger start and end of method's body
     """
-    method_all_children = list(method_node.children)[-1]
     if len(method_node.body):
         start_line = method_node.body[0].line
-        last_return_line = _get_last_return_line(method_all_children)
-        end_line = _get_last_line(file_path, last_return_line)
+        end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
     return start_line, end_line
@@ -142,7 +155,7 @@ def is_match_to_the_conditions(
 
 def check_whether_method_has_return_type(
         method_decl: AST,
-        var_decls: typing.Set[str]) -> InlineTypesAlgorithms:
+        var_decls: Set[str]) -> InlineTypesAlgorithms:
     """
     Run function to check whether Method declaration can be inlined
     :param method_decl: method, where invocation occurred
@@ -237,50 +250,72 @@ def insert_code_with_new_file_creation(
     if not os.path.exists(output_path):
         output_path.mkdir(parents=True)
 
-    id = uuid.uuid1()
-    new_full_filename = Path(output_path, f'{file_name}_{invocation_node.member}_{method_node.name}{id}.java')
+    new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
-
-    line_to_csv = [
-        str(file_path),
-        class_name,
-        text_lines[invocation_node.line - 1].strip(' '),
-        invocation_node.line,
-        original_func.line,
-        method_node.name,
-        id,
-    ]
-
-    algorithm_for_inlining = AlgorithmFactory().create_obj(
-        determine_algorithm_insertion_type(ast, method_node, invocation_node, dict_original_invocations))
-
-    algorithm_for_inlining().inline_function(
-        file_path,
-        invocation_node.line,
-        body_start_line,
-        body_end_line,
-        new_full_filename,
-    )
+    line_to_csv = []
+    if body_start_line != body_end_line:
+        algorithm_type = determine_algorithm_insertion_type(
+            ast,
+            method_node,
+            invocation_node,
+            dict_original_invocations
+        )
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
+            line_to_csv = [
+                file_path,
+                class_name,
+                text_lines[invocation_node.line - 1].lstrip(),
+                invocation_node.line,
+                original_func.line,
+                method_node.name,
+                new_full_filename,
+                body_start_line,
+                body_end_line
+            ]
+            algorithm_for_inlining().inline_function(
+                file_path,
+                invocation_node.line,
+                body_start_line,
+                body_end_line,
+                new_full_filename,
+            )
 
     return line_to_csv
 
 
-def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+def get_ast_if_possibe(file_path: Path) -> Optional[AST]:
+    """
+    Processing file in order to check
+    that its original version can be parsed
+    """
+    ast = None
     try:
-        AST.build_from_javalang(build_ast(str(file_path)))
+        ast = AST.build_from_javalang(build_ast(str(file_path)))
     except Exception:
-        print('JavaSyntaxError while parsing ', file_path)
+        print(f"Processing {file_path} is aborted due to parsing")
+    return ast
 
-    ast = AST.build_from_javalang(build_ast(str(file_path)))
+
+def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+    """
+    In this function we process each file.
+    For each file we find each invocation inside,
+    which can be inlined.
+    """
+    results: List[Any] = []
+    ast = get_ast_if_possibe(file_path)
+    if ast is None:
+        return results
+
     method_declarations = defaultdict(list)
     classes_declaration = [
         ast.get_subtree(node)
         for node in ast.get_root().types
         if node.node_type == ASTNodeType.CLASS_DECLARATION
     ]
-    results = []
     for class_ast in classes_declaration:
         class_declaration = class_ast.get_root()
         for method in class_declaration.methods:
@@ -295,24 +330,37 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = is_match_to_the_conditions(ast, method_invoked, found_method_decl[0])
-
+                    is_matched = is_match_to_the_conditions(
+                        ast,
+                        method_invoked,
+                        found_method_decl[0]
+                    )
                     if is_matched:
-                        results.append(
-                            insert_code_with_new_file_creation(
-                                class_declaration.name,
-                                ast,
-                                method_node,
-                                method_invoked,
-                                file_path,
-                                output_path,
-                                method_declarations
-                            ))
-
+                        log_of_inline = insert_code_with_new_file_creation(
+                            class_declaration.name,
+                            ast,
+                            method_node,
+                            method_invoked,
+                            file_path,
+                            output_path,
+                            method_declarations)
+                        if log_of_inline:
+                            results.append(log_of_inline)
     return results
 
 
-if __name__ == '__main__':
+def save_input_file(input_dir: Path, filename: Path) -> Path:
+    # need to avoid situation when filenames are the same
+    hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
+    dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
+    if not dst_filename.parent.exists():
+        dst_filename.parent.mkdir(parents=True)
+    if not dst_filename.exists():
+        shutil.copyfile(filename, dst_filename)
+    return dst_filename
+
+
+if __name__ == '__main__':  # noqa: C901
     system_cores_qty = os.cpu_count() or 1
     parser = ArgumentParser()
     parser.add_argument(
@@ -332,27 +380,51 @@ if __name__ == '__main__':
              "By default one less than number of cores. "
              "Be careful to raise it above, machine may stop responding while creating dataset.",
     )
+    parser.add_argument(
+        "-z", "--zip",
+        action='store_true',
+        help="To zip input and output files."
+    )
+    parser.add_argument(
+        "-s", "--small_dataset_size",
+        help="Number of files in small dataset",
+        default=100,
+        type=int,
+    )
+
     args = parser.parse_args()
 
     test_files = set(Path(args.dir).glob('**/*Test*.java'))
     not_test_files = set(Path(args.dir).glob('**/*.java'))
     files_without_tests = list(not_test_files.difference(test_files))
 
-    output_dir = Path(args.output)
+    full_dataset_folder = Path(args.output) / 'full_dataset'
+    output_dir = full_dataset_folder / 'output_files'
     if not output_dir.exists():
         output_dir.mkdir(parents=True)
 
-    with open(Path(output_dir, 'out.csv'), 'w', newline='\n') as csvfile, ProcessPool(1) as executor:
-        writer = csv.writer(csvfile, delimiter=',',
-                            quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    input_dir = full_dataset_folder / 'input_files'
+    if not input_dir.exists():
+        input_dir.mkdir(parents=True)
+    csv_output = Path(full_dataset_folder, 'out.csv')
+
+    with open(csv_output, 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
+        writer = csv.writer(
+            csvfile, delimiter=',',
+            quotechar='"',
+            quoting=csv.QUOTE_MINIMAL
+        )
         writer.writerow([
-            'Filename',
-            'ClassName',
-            'String where to replace',
+            'input filename',
+            'className',
+            'string where to replace',
             'line where to replace',
             'line of original function',
             'invocation function name',
-            'unique id'])
+            'output_filename',
+            'start_line',
+            'end_line'
+        ])
 
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
@@ -363,9 +435,48 @@ if __name__ == '__main__':
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
+                        dst_filename = save_input_file(input_dir, filename)
+                        # change source filename, since it will be chahged
+                        i[0] = str(dst_filename.as_posix())
+                        #  get local path for inlined filename
+                        i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
+                        i[2] = str(i[2]).encode('utf8')
                         writer.writerow(i)
                 csvfile.flush()
-            except TimeoutError:
-                print(f"Processing {filename} is aborted due to timeout in {args.timeout} seconds.")
-            except Exception as e:
-                print(str(e))
+            except StopIteration:
+                continue
+
+    if args.zip:
+        samples = pd.read_csv(csv_output).sample(args.small_dataset_size, random_state=41)
+        small_dataset_folder = Path(args.output) / 'small_dataset'
+        if not small_dataset_folder.exists():
+            small_dataset_folder.mkdir(parents=True)
+        small_input_dir = small_dataset_folder / 'input_files'
+        if not small_input_dir.exists():
+            small_input_dir.mkdir(parents=True)
+        small_output_dir = small_dataset_folder / 'output_files'
+        if not small_output_dir.exists():
+            small_output_dir.mkdir(parents=True)
+
+        samples.to_csv(small_dataset_folder / 'out.csv')
+        for i in samples.iterrows():
+            input_filename = i[1]['input filename']
+            dst_filename = small_input_dir / Path(input_filename).name
+            # print(f"Copy from {input_filename}, to {dst_filename}")
+            shutil.copyfile(input_filename, dst_filename)
+            output_filename = i[1]['output_filename']
+            dst_filename = small_output_dir / Path(output_filename).name
+            # print(f"Copy from {output_filename}, to {dst_filename}")
+            shutil.copyfile(output_filename, dst_filename)
+
+        with tarfile.open(Path(args.output) / 'small_dataset.tar.gz', "w:gz") as tar:
+            tar.add(str(small_dataset_folder), arcname=str(small_dataset_folder))
+
+        with tarfile.open(Path(args.output) / 'full_dataset.tar.gz', "w:gz") as tar:
+            tar.add(str(full_dataset_folder), arcname=str(full_dataset_folder))
+
+        if input_dir.exists():
+            shutil.rmtree(full_dataset_folder)
+
+        if small_dataset_folder.exists():
+            shutil.rmtree(small_dataset_folder)

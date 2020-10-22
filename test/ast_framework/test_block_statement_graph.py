@@ -138,6 +138,15 @@ class BlockStatementTestCase(TestCase):
             "BlockReason.ELSE_BRANCH",
             "Statement expression",
         ],
+        "ifBranchingWithoutCurlyBraces": [
+            "Method declaration",
+            "BlockReason.SINGLE_BLOCK",
+            "If statement",
+            "BlockReason.THEN_BRANCH",
+            "Return statement",
+            "BlockReason.ELSE_BRANCH",
+            "Return statement",
+        ],
         "switchBranches": [
             "Method declaration",
             "BlockReason.SINGLE_BLOCK",

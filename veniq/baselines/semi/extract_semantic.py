@@ -31,7 +31,7 @@ class _SemanticExtractor:
             ASTNodeType.RETURN_STATEMENT: self._extract_semantic_from_ast,
             ASTNodeType.STATEMENT_EXPRESSION: self._extract_semantic_from_ast,
             ASTNodeType.THROW_STATEMENT: self._extract_semantic_from_ast,
-            ASTNodeType.TRY_RESOURCE: self._extract_semantic_from_ast,
+            ASTNodeType.TRY_RESOURCE: self._extract_semantic_from_try_resource,
             ASTNodeType.LOCAL_VARIABLE_DECLARATION: self._extract_semantic_from_ast,
             # Single keyword statement has no semantic
             ASTNodeType.BREAK_STATEMENT: lambda _: StatementSemantic(),
@@ -91,6 +91,11 @@ class _SemanticExtractor:
             elif node.node_type == ASTNodeType.VARIABLE_DECLARATOR:
                 statement_semantic.used_objects.add(node.name)
 
+        return statement_semantic
+
+    def _extract_semantic_from_try_resource(self, try_resource: ASTNode) -> StatementSemantic:
+        statement_semantic = self._extract_semantic_from_ast(try_resource)
+        statement_semantic.used_objects.add(try_resource.name)
         return statement_semantic
 
     def _extract_semantic_from_field_factory(self, field_name) -> Callable[[ASTNode], StatementSemantic]:
