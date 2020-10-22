@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from typing import Tuple, Dict, List, Any, Set
+from typing import Tuple, Dict, List, Any, Set, Optional
 
 import pandas as pd
 from pebble import ProcessPool
@@ -286,15 +286,36 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
+def get_ast_if_possibe(file_path: Path) -> Optional[AST]:
+    """
+    Processing file in order to check
+    that its original version can be parsed
+    """
+    ast = None
+    try:
+        ast = AST.build_from_javalang(build_ast(str(file_path)))
+    except Exception:
+        print(f"Processing {file_path} is aborted due to parsing")
+    return ast
+
+
 def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
-    ast = AST.build_from_javalang(build_ast(str(file_path)))
+    """
+    In this function we process each file.
+    For each file we find each invocation inside,
+    which can be inlined.
+    """
+    results: List[Any] = []
+    ast = get_ast_if_possibe(file_path)
+    if ast is None:
+        return results
+
     method_declarations = defaultdict(list)
     classes_declaration = [
         ast.get_subtree(node)
         for node in ast.get_root().types
         if node.node_type == ASTNodeType.CLASS_DECLARATION
     ]
-    results = []
     for class_ast in classes_declaration:
         class_declaration = class_ast.get_root()
         for method in class_declaration.methods:
@@ -419,8 +440,8 @@ if __name__ == '__main__':  # noqa: C901
                         i[0] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
                         i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
+                        i[2] = str(i[2]).encode('utf8')
                         writer.writerow(i)
-
                 csvfile.flush()
             except StopIteration:
                 continue
