@@ -53,7 +53,7 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     Ger start and end of method's body
     """
     if len(method_node.body):
-        start_line = method_node.body[0].line
+        start_line = method_node.line + 1
         end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
