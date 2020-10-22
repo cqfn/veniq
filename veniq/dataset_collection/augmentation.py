@@ -286,15 +286,36 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
+def get_ast_if_possibe(file_path: Path) -> AST:
+    """
+    Processing file in order to check
+    that its original version can be parsed
+    """
+    try:
+        ast = AST.build_from_javalang(build_ast(str(file_path)))
+    except Exception:
+        ast = None
+        print(f"Processing {file_path} is aborted due to parsing")
+    return ast
+
+
 def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
-    ast = AST.build_from_javalang(build_ast(str(file_path)))
+    """
+    In this function we process each file.
+    For each file we find each invocation inside,
+    which can be inlined.
+    """
+    results: List[Any] = []
+    ast = get_ast_if_possibe(file_path)
+    if ast is None:
+        return results
+
     method_declarations = defaultdict(list)
     classes_declaration = [
         ast.get_subtree(node)
         for node in ast.get_root().types
         if node.node_type == ASTNodeType.CLASS_DECLARATION
     ]
-    results = []
     for class_ast in classes_declaration:
         class_declaration = class_ast.get_root()
         for method in class_declaration.methods:
@@ -419,8 +440,8 @@ if __name__ == '__main__':  # noqa: C901
                         i[0] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
                         i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
-                        writer.writerow(i)
-
+                        final_line = [str(element).encode('utf8') for element in i]
+                        writer.writerow(final_line)
                 csvfile.flush()
             except StopIteration:
                 continue
