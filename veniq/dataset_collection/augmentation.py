@@ -9,7 +9,7 @@ from argparse import ArgumentParser
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from typing import Tuple, Dict, List, Any, Set
+from typing import Tuple, Dict, List, Any, Set, Optional
 
 import pandas as pd
 from pebble import ProcessPool
@@ -286,15 +286,15 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
-def get_ast_if_possibe(file_path: Path) -> AST:
+def get_ast_if_possibe(file_path: Path) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
     """
+    ast = None
     try:
         ast = AST.build_from_javalang(build_ast(str(file_path)))
     except Exception:
-        ast = None
         print(f"Processing {file_path} is aborted due to parsing")
     return ast
 
