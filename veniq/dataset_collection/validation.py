@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from pathlib import Path
 
 import pandas as pd
@@ -6,6 +7,7 @@ from baselines.semi.create_extraction_opportunities import create_extraction_opp
 from baselines.semi.extract_semantic import extract_method_statements_semantic
 from baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
 from baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities
+from dataset_collection.augmentation import method_body_lines
 from utils.ast_builder import build_ast
 from veniq.ast_framework import AST, ASTNodeType
 from random import choice
@@ -36,63 +38,89 @@ def _print_extraction_opportunities(
 
 
 if __name__ == '__main__':
-    dir_with_dataset = Path(r'D:\temp\dataset_colelction_refactoring\small_dataset')
-    df = pd.read_csv(Path(dir_with_dataset) / r'out.csv')
+    parser = ArgumentParser()
+    parser.add_argument(
+        "-d", "--dataset_dir",
+        help="Path for file with output results",
+        required=True
+    )
+    parser.add_argument(
+        "-i", "--csv_input",
+        help="Path for csv"
+    )
+    args = parser.parse_args()
+    dataset_dir = Path(args.dataset_dir)
+    csv_dataset_filename = Path(args.csv_input)
+    df = pd.read_csv(csv_dataset_filename)
     failed_cases_in_SEMI_algorithm = 0
     failed_cases_in_validation_examples = 0
     matched_cases = 0
     no_opportunity_chosen = 0
     total_number = df.shape[0]
+    matched_percent = 0
+    # f = r'D:\temp\dataset_colelction_refactoring\small_dataset\output_files\SecurityConstraintPanel_setValue_192.java'
+    # ast = AST.build_from_javalang(build_ast(f))
+    # class_t = [x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION) if x.name == 'SecurityConstraintPanel'][0]
+    # method_decl = [x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION) if x.name == 'refillUserDataConstraint'][0]
+    # body_start_line, body_end_line = method_body_lines(method_decl, f)
+    # print(body_start_line, body_end_line)
+    iteration_number = 0
+
     for row in df.iterrows():
+        iteration_number += 1
         start_line = row[1]['start_line']
         end_line = row[1]['end_line']
         src_filename = row[1]['output_filename']
         class_name = row[1]['className']
-
-        print(class_name)
         try:
-            ast = AST.build_from_javalang(build_ast(dir_with_dataset / src_filename))
+            ast = AST.build_from_javalang(build_ast(dataset_dir / src_filename))
+            function_to_analyze = row[1]['invocation function name']
+            for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
+                # class_ast = ast.get_subtree(class_decl)
+                if class_decl.name != class_name:
+                    continue
+                elif class_decl.name == class_name:
+                    for method_decl in class_decl.methods:
+                        if method_decl.name != function_to_analyze:
+                            continue
+                        try:
+                            print(
+                                f'Trying analyze {class_decl.name} {method_decl.name} {iteration_number}/{total_number}')
+                            opport = _print_extraction_opportunities(
+                                ast.get_subtree(method_decl)
+                            )
+                            if opport:
+                                best_group = opport[0]
+                                lines = [node.line for node in best_group._optimal_opportunity]
+                                start_line_opportunity = min(lines)
+                                end_line_opportunity = max(lines)
+                                lines_intersected = set(range(start_line, end_line)) & set(lines)
+
+                                if (start_line == start_line_opportunity) and (end_line == end_line_opportunity):
+                                    matched_cases += 1
+                                matched_percent += float(len(lines_intersected)) / len(lines)
+                            else:
+                                no_opportunity_chosen += 0
+                                print(class_decl.name, method_decl.name)
+
+                        except Exception as e:
+                            import traceback
+
+                            traceback.print_exc()
+                            failed_cases_in_SEMI_algorithm += 1
+
+                        break
+                    break
+
         except Exception as e:
             failed_cases_in_validation_examples += 1
-
-        function_to_analyze = row[1]['invocation function name']
-        for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
-            class_ast = ast.get_subtree(class_decl)
-            if class_decl.name != class_name:
-                continue
-
-            for method_decl in class_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION):
-                if method_decl.name != function_to_analyze:
-                    continue
-
-                try:
-                    opport = _print_extraction_opportunities(
-                        ast.get_subtree(method_decl)
-                    )
-                    if opport:
-                        best_group = opport[0]
-                        best_opportunity, benefit = choice(list(best_group.opportunities))
-                        lines = [node.line for node in best_opportunity]
-                        start_line_opportunity = min(lines)
-                        end_line_opportunity = max(lines)
-                        if (start_line == start_line_opportunity) and (end_line == end_line_opportunity):
-                            matched_cases += 1
-                    else:
-                        no_opportunity_chosen += 0
-                        print(class_decl.name, method_decl.name)
-
-                except Exception as e:
-                    import traceback
-                    traceback.print_exc()
-                    failed_cases_in_SEMI_algorithm += 1
-
-                break
 
     print(f'Failed SEMI algorithm errors: {failed_cases_in_SEMI_algorithm}')
     print(f'Failed examples of synth dataset: {failed_cases_in_validation_examples}')
     print(f'matched_cases: {matched_cases}')
     print(f'No opportunity chosen: {no_opportunity_chosen} times')
     print(f'Total number of cases: {total_number}')
-    matched = (failed_cases_in_SEMI_algorithm + failed_cases_in_validation_examples
-               + matched_cases + no_opportunity_chosen)
+    print(f'Total number of matched lines: {matched_percent}')
+    matched = (matched_cases + no_opportunity_chosen)
+    total_number = total_number - failed_cases_in_SEMI_algorithm - failed_cases_in_validation_examples
     print(float(matched) / total_number)
