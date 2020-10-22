@@ -38,6 +38,7 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
             line_without_comments = line.split('//')[0]
             difference_cases += line_without_comments.count('{')
             difference_cases -= line_without_comments.count('}')
+
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
                 line_without_comments = line.split('//')[0]
