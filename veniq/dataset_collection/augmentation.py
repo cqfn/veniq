@@ -34,7 +34,7 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
         file_lines = list(f)
         # to start counting opening brackets
         difference_cases = 0
-        for line in file_lines[start_line - 2:start_line]:
+        for line in file_lines[start_line - 1:start_line]:
             line_without_comments = line.split('//')[0]
             difference_cases += line_without_comments.count('{')
             difference_cases -= line_without_comments.count('}')
@@ -53,7 +53,7 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     Ger start and end of method's body
     """
     if len(method_node.body):
-        start_line = method_node.body[0].line
+        start_line = method_node.line
         end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
