@@ -6,7 +6,7 @@ import shutil
 import tarfile
 import typing
 from argparse import ArgumentParser
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
@@ -50,8 +50,8 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
 
 
 def get_line_with_first_open_bracket(
-    file_path: Path,
-    method_decl_start_line: int
+        file_path: Path,
+        method_decl_start_line: int
 ) -> int:
     f = open(file_path, encoding='utf-8')
     file_lines = list(f)
@@ -238,7 +238,7 @@ def insert_code_with_new_file_creation(
         file_path: Path,
         output_path: Path,
         dict_original_invocations: Dict[str, List[ASTNode]]
-) -> List[Any]:
+) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
     we process through all of them and for each
@@ -253,7 +253,7 @@ def insert_code_with_new_file_creation(
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
     text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
-    line_to_csv = []
+    line_to_csv = {}
     if body_start_line != body_end_line:
         algorithm_type = determine_algorithm_insertion_type(
             ast,
@@ -263,17 +263,17 @@ def insert_code_with_new_file_creation(
         )
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
         if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-            line_to_csv = [
-                file_path,
-                class_name,
-                text_lines[invocation_node.line - 1].lstrip(),
-                invocation_node.line,
-                original_func.line,
-                method_node.name,
-                new_full_filename,
-                body_start_line,
-                body_end_line
-            ]
+            line_to_csv = {
+                'filepath': file_path,
+                'class_name': class_name,
+                'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
+                'method_where_invocation_occurred': method_node.name,
+                'start_line_of_function_where_invocation_occurred': method_node.line,
+                'invocation_method_name': original_func.name,
+                'invocation_method_start_line': body_start_line,
+                'invocation_method_end_line': body_end_line,
+                'new_filename': new_full_filename,
+            }
 
             algorithm_for_inlining().inline_function(
                 file_path,
@@ -283,10 +283,18 @@ def insert_code_with_new_file_creation(
                 new_full_filename,
             )
 
+            # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
+            if get_ast_if_possible(Path(new_full_filename)):
+                can_be_parsed = True
+            else:
+                can_be_parsed = False
+
+            line_to_csv['can_be_parsed'] = can_be_parsed
+
     return line_to_csv
 
 
-def get_ast_if_possibe(file_path: Path) -> Optional[AST]:
+def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
@@ -305,8 +313,9 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     For each file we find each invocation inside,
     which can be inlined.
     """
+    # print(file_path)
     results: List[Any] = []
-    ast = get_ast_if_possibe(file_path)
+    ast = get_ast_if_possible(file_path)
     if ast is None:
         return results
 
@@ -414,17 +423,18 @@ if __name__ == '__main__':  # noqa: C901
             quotechar='"',
             quoting=csv.QUOTE_MINIMAL
         )
-        writer.writerow([
-            'input filename',
-            'className',
-            'string where to replace',
-            'line where to replace',
-            'line of original function',
-            'invocation function name',
-            'output_filename',
-            'start_line',
-            'end_line'
-        ])
+        title = sorted([
+            'filepath',
+            'class_name',
+            'invocation_text_string',
+            'method_where_invocation_occurred',
+            'start_line_of_function_where_invocation_occurred',
+            'invocation_method_name',
+            'invocation_method_start_line',
+            'invocation_method_end_line',
+            'new_filename']
+        )
+        writer.writerow(title)
 
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
@@ -437,11 +447,13 @@ if __name__ == '__main__':  # noqa: C901
                     for i in single_file_features:
                         dst_filename = save_input_file(input_dir, filename)
                         # change source filename, since it will be chahged
-                        i[0] = str(dst_filename.as_posix())
+                        i['filepath'] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
-                        i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
-                        i[2] = str(i[2]).encode('utf8')
-                        writer.writerow(i)
+                        i['new_filename'] = i[-3].relative_to(os.getcwd()).as_posix()
+                        i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
+                        writer.writerow(
+                            OrderedDict(sorted(i.items(), lambda x: x[0])).values()
+                        )
                 csvfile.flush()
             except StopIteration:
                 continue
