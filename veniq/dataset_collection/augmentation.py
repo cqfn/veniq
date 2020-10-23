@@ -1,4 +1,3 @@
-import csv
 import hashlib
 import os
 import os.path
@@ -6,7 +5,7 @@ import shutil
 import tarfile
 import typing
 from argparse import ArgumentParser
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
@@ -15,7 +14,7 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from metrics.ncss.ncss import NCSSMetric
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast
