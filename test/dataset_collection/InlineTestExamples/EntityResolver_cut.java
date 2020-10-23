@@ -19,7 +19,6 @@ public abstract class Test {
 			DocumentBuilder documentBuilder;
 			synchronized (this.documentBuilderFactoryMonitor) {
 				if (this.documentBuilderFactory == null) {
-					DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
 					factory.setValidating(false);
 					factory.setNamespaceAware(true);
 					factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", !isSupportDtd());
