@@ -299,7 +299,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         # body of the original method, which will be inserted
-        body_lines_original = lines[body_start_line:body_end_line]
+        body_lines_original = lines[body_start_line - 1:body_end_line]
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
@@ -344,13 +344,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             invocation_line
         )
         lines_of_final_file += lines_before_invoсation
-
         # body of the original method, which will be inserted
         body_lines = self.get_lines_of_method_body(
             filename_out,
             filename_in,
             invocation_line,
-            body_start_line,
+            body_start_line + 1,
             body_end_line - 1
         )
         lines_of_final_file += body_lines
