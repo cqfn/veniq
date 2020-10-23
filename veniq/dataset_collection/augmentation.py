@@ -274,6 +274,7 @@ def insert_code_with_new_file_creation(
                 body_start_line,
                 body_end_line
             ]
+
             algorithm_for_inlining().inline_function(
                 file_path,
                 invocation_node.line,
