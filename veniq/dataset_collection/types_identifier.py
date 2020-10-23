@@ -73,7 +73,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         else:
             body_lines_original = lines[body_start_line - 1:body_end_line]
         return body_lines_original
-    
+
     def spaces_or_tab(self, line: str) -> str:
         """
         To insert lines correctly, you need
