@@ -33,11 +33,7 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
     with open(file_path, encoding='utf-8') as f:
         file_lines = list(f)
         # to start counting opening brackets
-        difference_cases = 0
-        for line in file_lines[start_line - 2:start_line]:
-            line_without_comments = line.split('//')[0]
-            difference_cases += line_without_comments.count('{')
-            difference_cases -= line_without_comments.count('}')
+        difference_cases = 1
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
                 line_without_comments = line.split('//')[0]
@@ -48,12 +44,23 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
         return -1
 
 
+def get_line_with_first_open_bracket(
+    file_path: Path,
+    method_decl_start_line: int) -> int:
+    f = open(file_path, encoding='utf-8')
+    file_lines = list(f)
+    for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
+        if '{' in line:
+            return i + 1
+
+
 def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
-    Ger start and end of method's body
+    Get start and end of method's body
     """
     if len(method_node.body):
-        start_line = method_node.line + 1
+        m_decl_start_line = start_line = method_node.line + 1
+        start_line = get_line_with_first_open_bracket(file_path, m_decl_start_line)
         end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
@@ -263,7 +270,7 @@ def insert_code_with_new_file_creation(
             algorithm_for_inlining().inline_function(
                 file_path,
                 invocation_node.line,
-                body_start_line,
+                body_start_line + 1,
                 body_end_line,
                 new_full_filename,
             )
