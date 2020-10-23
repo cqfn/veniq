@@ -15,6 +15,7 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
+from metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast
@@ -251,45 +252,47 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    body_start_line, body_end_line = method_body_lines(original_func, file_path)
-    text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+    ncss = NCSSMetric().value(ast.get_subtree(original_func))
     line_to_csv = {}
-    if body_start_line != body_end_line:
-        algorithm_type = determine_algorithm_insertion_type(
-            ast,
-            method_node,
-            invocation_node,
-            dict_original_invocations
-        )
-        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-            line_to_csv = {
-                'filepath': file_path,
-                'class_name': class_name,
-                'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
-                'method_where_invocation_occurred': method_node.name,
-                'start_line_of_function_where_invocation_occurred': method_node.line,
-                'invocation_method_name': original_func.name,
-                'invocation_method_start_line': body_start_line,
-                'invocation_method_end_line': body_end_line,
-                'new_filename': new_full_filename,
-            }
-
-            algorithm_for_inlining().inline_function(
-                file_path,
-                invocation_node.line,
-                body_start_line,
-                body_end_line,
-                new_full_filename,
+    if ncss > 3:
+        body_start_line, body_end_line = method_body_lines(original_func, file_path)
+        text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+        if body_start_line != body_end_line:
+            algorithm_type = determine_algorithm_insertion_type(
+                ast,
+                method_node,
+                invocation_node,
+                dict_original_invocations
             )
+            algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+            if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
+                line_to_csv = {
+                    'input_filename': file_path,
+                    'class_name': class_name,
+                    'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
+                    'method_where_invocation_occurred': method_node.name,
+                    'start_line_of_function_where_invocation_occurred': method_node.line,
+                    'invocation_method_name': original_func.name,
+                    'invocation_method_start_line': body_start_line,
+                    'invocation_method_end_line': body_end_line,
+                    'output_filename': new_full_filename,
+                }
 
-            # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
-            if get_ast_if_possible(Path(new_full_filename)):
-                can_be_parsed = True
-            else:
-                can_be_parsed = False
+                algorithm_for_inlining().inline_function(
+                    file_path,
+                    invocation_node.line,
+                    body_start_line,
+                    body_end_line,
+                    new_full_filename,
+                )
 
-            line_to_csv['can_be_parsed'] = can_be_parsed
+                # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
+                if get_ast_if_possible(Path(new_full_filename)):
+                    can_be_parsed = True
+                else:
+                    can_be_parsed = False
+
+                line_to_csv['can_be_parsed'] = can_be_parsed
 
     return line_to_csv
 
@@ -417,14 +420,9 @@ if __name__ == '__main__':  # noqa: C901
         input_dir.mkdir(parents=True)
     csv_output = Path(full_dataset_folder, 'out.csv')
 
-    with open(csv_output, 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
-        writer = csv.writer(
-            csvfile, delimiter=',',
-            quotechar='"',
-            quoting=csv.QUOTE_MINIMAL
-        )
-        title = sorted([
-            'filepath',
+    df = pd.DataFrame(
+        columns=[
+            'input_filename',
             'class_name',
             'invocation_text_string',
             'method_where_invocation_occurred',
@@ -432,32 +430,39 @@ if __name__ == '__main__':  # noqa: C901
             'invocation_method_name',
             'invocation_method_start_line',
             'invocation_method_end_line',
-            'new_filename']
-        )
-        writer.writerow(title)
+            'output_filename',
+            'can_be_parsed'
+        ])
 
+    with ProcessPool(system_cores_qty) as executor:
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
+        # each 100 cycles we dump the results
+        iteration_cycle = 100
+        iteration_number = 0
         for filename in tqdm(files_without_tests):
             try:
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
                         dst_filename = save_input_file(input_dir, filename)
-                        # change source filename, since it will be chahged
-                        i['filepath'] = str(dst_filename.as_posix())
+                        # change source filename, since it will be changed
+                        i['input_filename'] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
-                        i['new_filename'] = i[-3].relative_to(os.getcwd()).as_posix()
+                        i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
                         i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
-                        writer.writerow(
-                            OrderedDict(sorted(i.items(), lambda x: x[0])).values()
-                        )
-                csvfile.flush()
+                        df = df.append(i, ignore_index=True)
+
+                if (iteration_number % iteration_cycle) == 0:
+                    df.to_csv(csv_output)
+                    print(iteration_number)
+                iteration_number += 1
             except StopIteration:
                 continue
 
+    df.to_csv(csv_output)
     if args.zip:
         samples = pd.read_csv(csv_output).sample(args.small_dataset_size, random_state=41)
         small_dataset_folder = Path(args.output) / 'small_dataset'
@@ -472,7 +477,7 @@ if __name__ == '__main__':  # noqa: C901
 
         samples.to_csv(small_dataset_folder / 'out.csv')
         for i in samples.iterrows():
-            input_filename = i[1]['input filename']
+            input_filename = i[1]['input_filename']
             dst_filename = small_input_dir / Path(input_filename).name
             # print(f"Copy from {input_filename}, to {dst_filename}")
             shutil.copyfile(input_filename, dst_filename)
