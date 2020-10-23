@@ -33,7 +33,11 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
     with open(file_path, encoding='utf-8') as f:
         file_lines = list(f)
         # to start counting opening brackets
-        difference_cases = 1
+        difference_cases = 0
+        processed_declaration_line = file_lines[start_line - 1].split('//')[0]
+        difference_cases += processed_declaration_line.count('{')
+        difference_cases -= processed_declaration_line.count('}')
+
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
                 line_without_comments = line.split('//')[0]
@@ -41,6 +45,7 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
                 difference_cases -= line_without_comments.count('}')
             else:
                 return i
+
         return -1
 
 
@@ -267,7 +272,7 @@ def insert_code_with_new_file_creation(
                 method_node.name,
                 new_full_filename,
                 body_start_line,
-                body_end_line
+                body_end_line + 1
             ]
             algorithm_for_inlining().inline_function(
                 file_path,
