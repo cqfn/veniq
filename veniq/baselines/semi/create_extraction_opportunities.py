@@ -12,7 +12,7 @@ def create_extraction_opportunities(
     extraction_opportunities: List[ExtractionOpportunity] = []
     for step in range(1, len(statements_semantic) + 1):
         for extraction_opportunity in _ExtractionOpportunityIterator(statements_semantic, step):
-            if extraction_opportunity not in extraction_opportunities:
+            if extraction_opportunity and extraction_opportunity not in extraction_opportunities:
                 extraction_opportunities.append(extraction_opportunity)
 
     return extraction_opportunities
@@ -59,7 +59,11 @@ class _ExtractionOpportunityIterator:
         if last_statement_index is None:
             last_statement_index = len(self._statements) - fails_qty - 1
 
-        return tuple(self._statements[i] for i in range(first_statement_index, last_statement_index + 1))
+        return tuple(
+            self._statements[i]
+            for i in range(first_statement_index, last_statement_index + 1)
+            if not self._statements[i].is_fake
+        )
 
     def _get_statement_semantic(self, statement_index: int) -> StatementSemantic:
         current_statement = self._statements[statement_index]

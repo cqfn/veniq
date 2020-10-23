@@ -11,7 +11,7 @@ from ._common_types import Statement as ExtractionStatement, StatementSemantic
 def extract_method_statements_semantic(method_ast: AST) -> Dict[ExtractionStatement, StatementSemantic]:
     block_statement_graph = build_block_statement_graph(method_ast)
     semantic_extractor = _SemanticExtractor(method_ast)
-    block_statement_graph.traverse(semantic_extractor.on_node_entering)
+    block_statement_graph.traverse(semantic_extractor.on_node_entering, semantic_extractor.on_node_leaving)
     return semantic_extractor.statements_semantic
 
 
@@ -48,6 +48,14 @@ class _SemanticExtractor:
         else:
             raise ValueError(f"Unexpected node type {type(node)}.")
 
+    def on_node_leaving(self, node: Union[Block, Statement]) -> None:
+        if isinstance(node, Block):
+            self._on_block_leaving(node)
+        elif isinstance(node, Statement):
+            pass
+        else:
+            raise ValueError(f"Unexpected node type {type(node)}.")
+
     def _on_statement_entering(self, statement: Statement) -> None:
         extraction_statement: ExtractionStatement = statement.node
 
@@ -69,10 +77,49 @@ class _SemanticExtractor:
         self.statements_semantic[extraction_statement] = semantic_extractor(extraction_statement)
 
     def _on_block_entering(self, block: Block) -> None:
+        statement = block.origin_statement
+        assert statement is not None
         if block.reason == BlockReason.THEN_BRANCH:
-            if_statement = block.origin_statement
-            assert if_statement is not None
-            self.statements_semantic[if_statement] = self._extract_semantic_from_ast(if_statement.condition)
+            self.statements_semantic[statement] = self._extract_semantic_from_ast(statement.condition)
+        elif block.reason == BlockReason.ELSE_BRANCH:
+            parent_if_statement = self._get_parent_if_statement(statement)
+            self.statements_semantic[self._ast.create_fake_node()] = self._extract_semantic_from_ast(
+                parent_if_statement.condition
+            )
+        elif block.reason in {
+            BlockReason.TRY_BLOCK,
+            BlockReason.TRY_RESOURCES,
+        }:
+            self.statements_semantic[self._ast.create_fake_node()] = StatementSemantic()
+        elif statement.node_type in {
+            ASTNodeType.BLOCK_STATEMENT,
+        }:
+            self.statements_semantic[statement] = StatementSemantic()
+
+    def _on_block_leaving(self, block: Block) -> None:
+        statement = block.origin_statement
+        assert statement is not None
+        if (
+            statement.node_type
+            in {
+                ASTNodeType.BLOCK_STATEMENT,
+                ASTNodeType.DO_STATEMENT,
+                ASTNodeType.FOR_STATEMENT,
+                ASTNodeType.SYNCHRONIZED_STATEMENT,
+                ASTNodeType.WHILE_STATEMENT,
+                ASTNodeType.SWITCH_STATEMENT,
+            }
+            or block.reason
+            in {
+                BlockReason.TRY_BLOCK,
+                BlockReason.TRY_RESOURCES,
+                BlockReason.CATCH_BLOCK,
+                BlockReason.FINALLY_BLOCK,
+                BlockReason.ELSE_BRANCH,
+            }
+            or (statement.node_type == ASTNodeType.IF_STATEMENT and statement.else_statement is None)
+        ):
+            self.statements_semantic[self._ast.create_fake_node()] = StatementSemantic()
 
     def _extract_semantic_from_ast(self, ast_root: ASTNode) -> StatementSemantic:
         statement_semantic = StatementSemantic()
@@ -100,6 +147,16 @@ class _SemanticExtractor:
 
     def _extract_semantic_from_field_factory(self, field_name) -> Callable[[ASTNode], StatementSemantic]:
         return lambda node: self._extract_semantic_from_ast(getattr(node, field_name))
+
+    @staticmethod
+    def _get_parent_if_statement(node: ASTNode) -> ASTNode:
+        while node.node_type != ASTNodeType.IF_STATEMENT and node.parent is not None:
+            node = node.parent
+
+        if node.node_type == ASTNodeType.IF_STATEMENT:
+            return node
+
+        raise RuntimeError(f"There is no If statement above given node {node}.")
 
 
 def _print_semantic(method_ast: AST, filepath: str, class_name: str, method_name: str) -> None:
