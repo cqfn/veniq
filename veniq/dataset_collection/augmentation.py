@@ -46,7 +46,8 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
 
 def get_line_with_first_open_bracket(
     file_path: Path,
-    method_decl_start_line: int) -> int:
+    method_decl_start_line: int
+) -> int:
     f = open(file_path, encoding='utf-8')
     file_lines = list(f)
     for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
