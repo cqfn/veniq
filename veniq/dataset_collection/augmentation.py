@@ -55,6 +55,7 @@ def get_line_with_first_open_bracket(
             return i + 1
     return method_decl_start_line + 1
 
+
 def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
     Get start and end of method's body
