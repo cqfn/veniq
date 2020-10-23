@@ -341,22 +341,25 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = is_match_to_the_conditions(
-                        ast,
-                        method_invoked,
-                        found_method_decl[0]
-                    )
-                    if is_matched:
-                        log_of_inline = insert_code_with_new_file_creation(
-                            class_declaration.name,
+                    try:
+                        is_matched = is_match_to_the_conditions(
                             ast,
-                            method_node,
                             method_invoked,
-                            file_path,
-                            output_path,
-                            method_declarations)
-                        if log_of_inline:
-                            results.append(log_of_inline)
+                            found_method_decl[0]
+                        )
+                        if is_matched:
+                            log_of_inline = insert_code_with_new_file_creation(
+                                class_declaration.name,
+                                ast,
+                                method_node,
+                                method_invoked,
+                                file_path,
+                                output_path,
+                                method_declarations)
+                            if log_of_inline:
+                                results.append(log_of_inline)
+                    except Exception as e:
+                        print('Error has happened during file analyze: ' + str(e))
     return results
 
 
