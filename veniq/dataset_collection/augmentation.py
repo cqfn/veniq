@@ -439,7 +439,7 @@ if __name__ == '__main__':  # noqa: C901
         result = future.result()
 
         # each 100 cycles we dump the results
-        iteration_cycle = 100
+        iteration_cycle = 1000
         iteration_number = 0
         for filename in tqdm(files_without_tests):
             try:
@@ -456,7 +456,6 @@ if __name__ == '__main__':  # noqa: C901
 
                 if (iteration_number % iteration_cycle) == 0:
                     df.to_csv(csv_output)
-                    print(iteration_number)
                 iteration_number += 1
             except StopIteration:
                 continue
