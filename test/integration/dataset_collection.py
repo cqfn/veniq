@@ -114,11 +114,11 @@ class IntegrationDatasetCollection(TestCase):
                 new_results = new_results.append(x, ignore_index=True)
 
         df = pd.DataFrame(new_results)
-        df = df.sort_values(by=df.columns.to_list())
-        new_results = df.T.to_dict().values()
+        new_results = df.sort_values(by=df.columns.to_list())
 
         df = pd.DataFrame(results_predefined)
-        df = df.sort_values(by=df.columns.to_list())
-        results_predefined = df.T.to_dict().values()
+        results_predefined = df.sort_values(by=df.columns.to_list())
 
-        self.assertEqual(json.dumps(new_results), json.dumps(results_predefined))
+        df_diff = pd.concat([new_results, results_predefined]).drop_duplicates(keep=False)
+        print('Difference in dataframes: {df_diff.shape[0]} rows')
+        self.assertEqual(df_diff.shape[0], 0)
