@@ -254,6 +254,20 @@ class BlockStatementTestCase(TestCase):
             ],
         )
 
+    def test_try_without_catch(self):
+        block_statement_graph = self._get_block_statement_graph("tryWithoutCatch")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.TRY_STATEMENT,
+                BlockReason.TRY_BLOCK,
+                ASTNodeType.THROW_STATEMENT,
+                BlockReason.FINALLY_BLOCK,
+            ],
+        )
+
     def test_complex_example1(self):
         block_statement_graph = self._get_block_statement_graph("complexExample1")
         self.assertEqual(

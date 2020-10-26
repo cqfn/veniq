@@ -132,6 +132,14 @@ class BlockStatementGraphExamples {
         }
     }
 
+    void tryWithoutCatch(Exception e) {
+        try {
+            throw e;
+        }
+        finally {
+        }
+    }
+
     void complexExample1(int x) {
         x += 1;
 
