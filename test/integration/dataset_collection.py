@@ -115,10 +115,10 @@ class IntegrationDatasetCollection(TestCase):
 
         df = pd.DataFrame(new_results)
         df = df.sort_values(by=df.columns.to_list())
-        new_results = df.T.to_dict()
+        new_results = df.T.to_dict().values()
 
         df = pd.DataFrame(results_predefined)
         df = df.sort_values(by=df.columns.to_list())
-        results_predefined = df.T.to_dict()
+        results_predefined = df.T.to_dict().values()
 
         self.assertEqual(json.dumps(new_results), json.dumps(results_predefined))
