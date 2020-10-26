@@ -69,13 +69,19 @@ if __name__ == '__main__':
 
     for row in df_is_parsed.iterrows():
         iteration_number += 1
-        start_line = row[1]['start_line']
-        end_line = row[1]['end_line']
+        start_line_of_invocation_occurred = row[1]['start_line_of_function_where_invocation_occurred']
+        start_line_of_invoked_function = row[1]['invocation_method_start_line']
+        end_line_of_invoked_function = row[1]['invocation_method_end_line']
+        end_line_of_invocation_occurred = end_line_of_invoked_function - start_line_of_invoked_function
+        lines_inserted = end_line_of_invocation_occurred - start_line_of_invocation_occurred
+        if lines_inserted >= 1:
+            continue
+
         src_filename = row[1]['output_filename']
-        class_name = row[1]['className']
+        class_name = row[1]['class_name']
         try:
             ast = AST.build_from_javalang(build_ast(dataset_dir / src_filename))
-            function_to_analyze = row[1]['invocation function name']
+            function_to_analyze = row[1]['invocation_method_name']
             for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
                 # class_ast = ast.get_subtree(class_decl)
                 if class_decl.name != class_name:
@@ -85,8 +91,9 @@ if __name__ == '__main__':
                         if method_decl.name != function_to_analyze:
                             continue
                         try:
-                            print(
-                                f'Trying analyze {class_decl.name} {method_decl.name} {iteration_number}/{total_number}')
+                            # print(
+                            #     f'Trying analyze {class_decl.name} {method_decl.name} '
+                            #     f'{iteration_number}/{total_number}')
                             opport = _print_extraction_opportunities(
                                 ast.get_subtree(method_decl)
                             )
@@ -95,18 +102,21 @@ if __name__ == '__main__':
                                 lines = [node.line for node in best_group._optimal_opportunity]
                                 start_line_opportunity = min(lines)
                                 end_line_opportunity = max(lines)
-                                lines_intersected = set(range(start_line, end_line)) & set(lines)
+                                lines_intersected = set(
+                                    range(end_line_of_invocation_occurred, end_line_of_invocation_occurred)) \
+                                                    & set(lines)
 
-                                if (start_line == start_line_opportunity) and (end_line == end_line_opportunity):
+                                if (start_line_of_invocation_occurred == start_line_opportunity) \
+                                        and (end_line_of_invocation_occurred == end_line_opportunity):
                                     matched_cases += 1
                                 matched_percent += float(len(lines_intersected)) / len(lines)
                             else:
                                 no_opportunity_chosen += 0
-                                print(class_decl.name, method_decl.name)
+                                # print(class_decl.name, method_decl.name)
 
                         except Exception as e:
                             import traceback
-
+                            print(src_filename)
                             traceback.print_exc()
                             failed_cases_in_SEMI_algorithm += 1
 
