@@ -67,7 +67,7 @@ class BlockStatementGraphExamples {
         }
     }
 
-    void singleIfTheElseBranches(int x) {
+    void singleIfThenElseBranches(int x) {
         if(x > 0) {
             x += 1;
         } else {
