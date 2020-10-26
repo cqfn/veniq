@@ -6,7 +6,7 @@ from typing import Dict, List
 from unittest import TestCase
 
 from tqdm import tqdm
-
+import pandas as pd
 from veniq.dataset_collection.augmentation import analyze_file
 
 
@@ -102,5 +102,13 @@ class IntegrationDatasetCollection(TestCase):
                 x['input_filename'] = str(Path(x['input_filename']).name)
                 del x['output_filename']
                 new_results.append(x)
+
+        df = pd.DataFrame(new_results)
+        df = df.sort_values(by=df.columns.to_list())
+        new_results = df.T.to_dict()
+
+        df = pd.DataFrame(results_predefined)
+        df = df.sort_values(by=df.columns.to_list())
+        results_predefined = df.T.to_dict()
 
         self.assertEqual(json.dumps(new_results), json.dumps(results_predefined))
