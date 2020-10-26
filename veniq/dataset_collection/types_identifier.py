@@ -58,6 +58,22 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         new_line = (to_insert_line).replace(' ' * 4, space_or_tab)
         return new_line
 
+    def form_body_for_inline(
+        self,
+        lines: List[str],
+        body_start_line: int,
+        body_end_line: int
+    ) -> List[str]:
+
+        if lines[body_start_line - 2].lstrip().startswith('{'):
+            body_lines_original = lines[body_start_line - 2:body_end_line]
+            body_lines_original[0] = body_lines_original[0].replace('{', ' ')
+            if body_lines_original[0].lstrip() == '':
+                body_lines_original = body_lines_original[1:]
+        else:
+            body_lines_original = lines[body_start_line - 1:body_end_line]
+        return body_lines_original
+
     def spaces_or_tab(self, line: str) -> str:
         """
         To insert lines correctly, you need
@@ -187,12 +203,11 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
         """
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
-
-        body_lines_without_spaces = lines[body_start_line - 1:body_end_line - 1]
+        body_lines_original = self.form_body_for_inline(lines, body_start_line, body_end_line)
         num_spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
         body_lines = []
-        for i in body_lines_without_spaces:
-            line_without_spaces = i.lstrip()
+        for i in body_lines_original:
+            line_without_spaces = i.replace('\t', ' ').lstrip(' ')
             spaces_in_line = (self.get_spaces_diff(i) + num_spaces_in_body) * ' '
             new_line = self.get_line_for_body(
                 spaces_in_line + line_without_spaces,
@@ -223,8 +238,8 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             filename_out,
             filename_in,
             invocation_line,
-            body_start_line,
-            body_end_line
+            body_start_line + 1,
+            body_end_line - 1
         )
         lines_of_final_file += body_lines
 
@@ -299,11 +314,11 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         # body of the original method, which will be inserted
-        body_lines_original = lines[body_start_line - 1:body_end_line]
+        body_lines_original = self.form_body_for_inline(lines, body_start_line, body_end_line)
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines) * ' '
+        spaces_in_body = self.complement_spaces(body_start_line + 1, invocation_line, lines) * ' '
 
         for i, line in enumerate(body_lines_original):
             line = line.replace('\t', ' ' * 4)
@@ -344,13 +359,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             invocation_line
         )
         lines_of_final_file += lines_before_invoсation
-
         # body of the original method, which will be inserted
         body_lines = self.get_lines_of_method_body(
             filename_out,
             filename_in,
             invocation_line,
-            body_start_line,
+            body_start_line + 1,
             body_end_line - 1
         )
         lines_of_final_file += body_lines

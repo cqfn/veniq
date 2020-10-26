@@ -287,7 +287,13 @@ class TestDatasetCollection(TestCase):
         temp_filename = self.current_directory / 'temp.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        algorithm_for_inlining().inline_function(filepath, 22, 34, 40, temp_filename)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'createDocumentBuilderFactory'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 33, body_end_line == 40)
+        algorithm_for_inlining().inline_function(filepath, 22, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
@@ -299,7 +305,49 @@ class TestDatasetCollection(TestCase):
         temp_filename = self.current_directory / 'temp.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        algorithm_for_inlining().inline_function(filepath, 14, 18, 20, temp_filename)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'fireChildRemoved'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 17, body_end_line == 20)
+
+        algorithm_for_inlining().inline_function(filepath, 14, body_start_line, body_end_line, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
+
+    def test_inline_strange_body1(self):
+        filepath = self.current_directory / 'InlineExamples' / 'SkipString.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'SkipString.java'
+        temp_filename = self.current_directory / 'temp.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'getString'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 10, body_end_line == 16)
+        algorithm_for_inlining().inline_function(filepath, 5, body_start_line, body_end_line, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
+
+    def test_inline_strange_body2(self):
+        filepath = self.current_directory / 'InlineExamples' / 'cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'cut.java'
+        temp_filename = self.current_directory / 'temp1.java'
+        algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'copy'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        algorithm_for_inlining().inline_function(filepath, 8, body_start_line, body_end_line, temp_filename)
         with open(temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
