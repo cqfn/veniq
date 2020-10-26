@@ -3,12 +3,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from baselines.semi.create_extraction_opportunities import create_extraction_opportunities
-from baselines.semi.extract_semantic import extract_method_statements_semantic
-from baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
-from baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities
-from dataset_collection.augmentation import method_body_lines
-from utils.ast_builder import build_ast
+from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
+from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
+from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
+from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities
+from veniq.dataset_collection.augmentation import method_body_lines
+from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST, ASTNodeType
 from random import choice
 
