@@ -1,12 +1,12 @@
-import json
 import tempfile
 from os import listdir
 from pathlib import Path
 from typing import Dict, List
 from unittest import TestCase
 
-from tqdm import tqdm
 import pandas as pd
+from tqdm import tqdm
+
 from veniq.dataset_collection.augmentation import analyze_file
 
 
