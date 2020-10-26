@@ -97,11 +97,21 @@ class IntegrationDatasetCollection(TestCase):
                         f"Failed to run analyze function in file {full_filename}"
                     ) from e
 
-            new_results = []
+            new_results = pd.DataFrame(columns=[
+                'input_filename',
+                'class_name',
+                'invocation_text_string',
+                'method_where_invocation_occurred',
+                'start_line_of_function_where_invocation_occurred',
+                'invocation_method_name',
+                'invocation_method_start_line',
+                'invocation_method_end_line',
+                'can_be_parsed'
+            ])
             for x in results_output:
                 x['input_filename'] = str(Path(x['input_filename']).name)
                 del x['output_filename']
-                new_results.append(x)
+                new_results = new_results.append(x, ignore_index=True)
 
         df = pd.DataFrame(new_results)
         df = df.sort_values(by=df.columns.to_list())
