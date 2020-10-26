@@ -12,7 +12,6 @@ class ClassicSetter:
         ASTNodeType.ASSERT_STATEMENT,
         ASTNodeType.STATEMENT_EXPRESSION,
     ]
-
     def _check_body_nodes(self, check_setter_body: List[ASTNode]) -> bool:
         """
         Check whether nodes are agree with the following types
