@@ -52,6 +52,7 @@ if __name__ == '__main__':
     dataset_dir = Path(args.dataset_dir)
     csv_dataset_filename = Path(args.csv_input)
     df = pd.read_csv(csv_dataset_filename)
+    df_is_parsed = df[df['can_be_parsed']]
     failed_cases_in_SEMI_algorithm = 0
     failed_cases_in_validation_examples = 0
     matched_cases = 0
@@ -66,7 +67,7 @@ if __name__ == '__main__':
     # print(body_start_line, body_end_line)
     iteration_number = 0
 
-    for row in df.iterrows():
+    for row in df_is_parsed.iterrows():
         iteration_number += 1
         start_line = row[1]['start_line']
         end_line = row[1]['end_line']
