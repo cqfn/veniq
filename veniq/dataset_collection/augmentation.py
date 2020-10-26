@@ -460,7 +460,7 @@ if __name__ == '__main__':  # noqa: C901
                 if (iteration_number % iteration_cycle) == 0:
                     df.to_csv(csv_output)
                 iteration_number += 1
-            except StopIteration:
+            except Exception:
                 continue
 
     df.to_csv(csv_output)
