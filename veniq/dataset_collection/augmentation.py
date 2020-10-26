@@ -321,7 +321,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     if ast is None:
         return results
 
-    method_declarations = defaultdict(list)
+    method_declarations: Dict[str, List[ASTNode]] = defaultdict(list)
     classes_declaration = [
         ast.get_subtree(node)
         for node in ast.get_root().types
@@ -329,9 +329,7 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     ]
     for class_ast in classes_declaration:
         class_declaration = class_ast.get_root()
-        for method in class_declaration.methods:
-            if not method.parameters:
-                method_declarations[method.name].append(method)
+        collect_info_about_functions_without_params(class_declaration, method_declarations)
 
         methods_list = list(class_declaration.methods) + list(class_declaration.constructors)
         for method_node in methods_list:
@@ -361,6 +359,14 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                     except Exception as e:
                         print('Error has happened during file analyze: ' + str(e))
     return results
+
+
+def collect_info_about_functions_without_params(
+        class_declaration: ASTNode,
+        method_declarations: Dict[str, List[ASTNode]]) -> None:
+    for method in class_declaration.methods:
+        if not method.parameters:
+            method_declarations[method.name].append(method)
 
 
 def save_input_file(input_dir: Path, filename: Path) -> Path:
