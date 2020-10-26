@@ -1,4 +1,3 @@
-import csv
 import hashlib
 import os
 import os.path
@@ -15,25 +14,11 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
 from veniq.utils.ast_builder import build_ast
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
-
-
-def _get_last_return_line(child_statement: ASTNode) -> int:
-    """
-    This function is aimed to find the last line of
-    the all children and children of children
-    for a chosen statement.
-    Main goal is to get the last line of return in method.
-    """
-    last_line = child_statement.line
-    if hasattr(child_statement, 'children'):
-        for children in child_statement.children:
-            if children.line >= last_line:
-                last_line = _get_last_return_line(children)
-    return last_line
 
 
 def _get_last_line(file_path: Path, start_line: int) -> int:
@@ -49,10 +34,10 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
         file_lines = list(f)
         # to start counting opening brackets
         difference_cases = 0
-        for line in file_lines[start_line - 2:start_line]:
-            line_without_comments = line.split('//')[0]
-            difference_cases += line_without_comments.count('{')
-            difference_cases -= line_without_comments.count('}')
+
+        processed_declaration_line = file_lines[start_line - 1].split('//')[0]
+        difference_cases += processed_declaration_line.count('{')
+        difference_cases -= processed_declaration_line.count('}')
         for i, line in enumerate(file_lines[start_line:], start_line):
             if difference_cases:
                 line_without_comments = line.split('//')[0]
@@ -60,15 +45,29 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
                 difference_cases -= line_without_comments.count('}')
             else:
                 return i
+
         return -1
+
+
+def get_line_with_first_open_bracket(
+        file_path: Path,
+        method_decl_start_line: int
+) -> int:
+    f = open(file_path, encoding='utf-8')
+    file_lines = list(f)
+    for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
+        if '{' in line:
+            return i + 1
+    return method_decl_start_line + 1
 
 
 def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     """
-    Ger start and end of method's body
+    Get start and end of method's body
     """
     if len(method_node.body):
-        start_line = method_node.body[0].line
+        m_decl_start_line = start_line = method_node.line + 1
+        start_line = get_line_with_first_open_bracket(file_path, m_decl_start_line)
         end_line = _get_last_line(file_path, start_line)
     else:
         start_line = end_line = -1
@@ -239,7 +238,7 @@ def insert_code_with_new_file_creation(
         file_path: Path,
         output_path: Path,
         dict_original_invocations: Dict[str, List[ASTNode]]
-) -> List[Any]:
+) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
     we process through all of them and for each
@@ -252,41 +251,52 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    body_start_line, body_end_line = method_body_lines(original_func, file_path)
-    text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
-    line_to_csv = []
-    if body_start_line != body_end_line:
-        algorithm_type = determine_algorithm_insertion_type(
-            ast,
-            method_node,
-            invocation_node,
-            dict_original_invocations
-        )
-        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-            line_to_csv = [
-                file_path,
-                class_name,
-                text_lines[invocation_node.line - 1].lstrip(),
-                invocation_node.line,
-                original_func.line,
-                method_node.name,
-                new_full_filename,
-                body_start_line,
-                body_end_line
-            ]
-            algorithm_for_inlining().inline_function(
-                file_path,
-                invocation_node.line,
-                body_start_line,
-                body_end_line,
-                new_full_filename,
+    ncss = NCSSMetric().value(ast.get_subtree(original_func))
+    line_to_csv = {}
+    if ncss > 3:
+        body_start_line, body_end_line = method_body_lines(original_func, file_path)
+        text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+        if body_start_line != body_end_line:
+            algorithm_type = determine_algorithm_insertion_type(
+                ast,
+                method_node,
+                invocation_node,
+                dict_original_invocations
             )
+            algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+            if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
+                line_to_csv = {
+                    'input_filename': file_path,
+                    'class_name': class_name,
+                    'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
+                    'method_where_invocation_occurred': method_node.name,
+                    'start_line_of_function_where_invocation_occurred': method_node.line,
+                    'invocation_method_name': original_func.name,
+                    'invocation_method_start_line': body_start_line,
+                    'invocation_method_end_line': body_end_line,
+                    'output_filename': new_full_filename,
+                }
+
+                algorithm_for_inlining().inline_function(
+                    file_path,
+                    invocation_node.line,
+                    body_start_line,
+                    body_end_line,
+                    new_full_filename,
+                )
+
+                # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
+                if get_ast_if_possible(Path(new_full_filename)):
+                    can_be_parsed = True
+                else:
+                    can_be_parsed = False
+
+                line_to_csv['can_be_parsed'] = can_be_parsed
 
     return line_to_csv
 
 
-def get_ast_if_possibe(file_path: Path) -> Optional[AST]:
+def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
@@ -305,8 +315,9 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     For each file we find each invocation inside,
     which can be inlined.
     """
+    # print(file_path)
     results: List[Any] = []
-    ast = get_ast_if_possibe(file_path)
+    ast = get_ast_if_possible(file_path)
     if ast is None:
         return results
 
@@ -330,22 +341,25 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                 found_method_decl = method_declarations.get(method_invoked.member, [])
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
-                    is_matched = is_match_to_the_conditions(
-                        ast,
-                        method_invoked,
-                        found_method_decl[0]
-                    )
-                    if is_matched:
-                        log_of_inline = insert_code_with_new_file_creation(
-                            class_declaration.name,
+                    try:
+                        is_matched = is_match_to_the_conditions(
                             ast,
-                            method_node,
                             method_invoked,
-                            file_path,
-                            output_path,
-                            method_declarations)
-                        if log_of_inline:
-                            results.append(log_of_inline)
+                            found_method_decl[0]
+                        )
+                        if is_matched:
+                            log_of_inline = insert_code_with_new_file_creation(
+                                class_declaration.name,
+                                ast,
+                                method_node,
+                                method_invoked,
+                                file_path,
+                                output_path,
+                                method_declarations)
+                            if log_of_inline:
+                                results.append(log_of_inline)
+                    except Exception as e:
+                        print('Error has happened during file analyze: ' + str(e))
     return results
 
 
@@ -408,44 +422,48 @@ if __name__ == '__main__':  # noqa: C901
         input_dir.mkdir(parents=True)
     csv_output = Path(full_dataset_folder, 'out.csv')
 
-    with open(csv_output, 'w', newline='\n') as csvfile, ProcessPool(system_cores_qty) as executor:
-        writer = csv.writer(
-            csvfile, delimiter=',',
-            quotechar='"',
-            quoting=csv.QUOTE_MINIMAL
-        )
-        writer.writerow([
-            'input filename',
-            'className',
-            'string where to replace',
-            'line where to replace',
-            'line of original function',
-            'invocation function name',
+    df = pd.DataFrame(
+        columns=[
+            'input_filename',
+            'class_name',
+            'invocation_text_string',
+            'method_where_invocation_occurred',
+            'start_line_of_function_where_invocation_occurred',
+            'invocation_method_name',
+            'invocation_method_start_line',
+            'invocation_method_end_line',
             'output_filename',
-            'start_line',
-            'end_line'
+            'can_be_parsed'
         ])
 
+    with ProcessPool(system_cores_qty) as executor:
         p_analyze = partial(analyze_file, output_path=output_dir.absolute())
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
+        # each 100 cycles we dump the results
+        iteration_cycle = 1000
+        iteration_number = 0
         for filename in tqdm(files_without_tests):
             try:
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
                         dst_filename = save_input_file(input_dir, filename)
-                        # change source filename, since it will be chahged
-                        i[0] = str(dst_filename.as_posix())
+                        # change source filename, since it will be changed
+                        i['input_filename'] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
-                        i[-3] = i[-3].relative_to(os.getcwd()).as_posix()
-                        i[2] = str(i[2]).encode('utf8')
-                        writer.writerow(i)
-                csvfile.flush()
-            except StopIteration:
+                        i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
+                        i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
+                        df = df.append(i, ignore_index=True)
+
+                if (iteration_number % iteration_cycle) == 0:
+                    df.to_csv(csv_output)
+                iteration_number += 1
+            except Exception:
                 continue
 
+    df.to_csv(csv_output)
     if args.zip:
         samples = pd.read_csv(csv_output).sample(args.small_dataset_size, random_state=41)
         small_dataset_folder = Path(args.output) / 'small_dataset'
@@ -460,7 +478,7 @@ if __name__ == '__main__':  # noqa: C901
 
         samples.to_csv(small_dataset_folder / 'out.csv')
         for i in samples.iterrows():
-            input_filename = i[1]['input filename']
+            input_filename = i[1]['input_filename']
             dst_filename = small_input_dir / Path(input_filename).name
             # print(f"Copy from {input_filename}, to {dst_filename}")
             shutil.copyfile(input_filename, dst_filename)

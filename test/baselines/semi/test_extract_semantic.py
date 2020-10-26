@@ -9,44 +9,67 @@ from .utils import objects_semantic, get_method_ast
 
 class ExtractStatementSemanticTestCase(TestCase):
     def test_block_method(self):
-        self._test_helper("block", [objects_semantic("x")])
+        self._test_helper("block", [StatementSemantic(), objects_semantic("x"), StatementSemantic()])
 
     def test_for_cycle_method(self):
-        self._test_helper("forCycle", [objects_semantic("x", "i"), objects_semantic("x", "i", "result")])
+        self._test_helper(
+            "forCycle",
+            [objects_semantic("x", "i"), objects_semantic("x", "i", "result"), StatementSemantic()],
+        )
 
     def test_while_cycle_method(self):
-        self._test_helper("whileCycle", [objects_semantic("x"), objects_semantic("x")])
+        self._test_helper("whileCycle", [objects_semantic("x"), objects_semantic("x"), StatementSemantic()])
 
     def test_do_while_cycle_method(self):
-        self._test_helper("doWhileCycle", [objects_semantic("x"), objects_semantic("x")])
+        self._test_helper("doWhileCycle", [objects_semantic("x"), objects_semantic("x"), StatementSemantic()])
 
     def test_if_branching_method(self):
-        self._test_helper("ifBranching", [
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-        ])
+        self._test_helper(
+            "ifBranching",
+            [
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                StatementSemantic(),
+            ],
+        )
 
     def test_synchronized_block_method(self):
-        self._test_helper("synchronizedBlock", [objects_semantic("x"), objects_semantic("x")])
+        self._test_helper(
+            "synchronizedBlock", [objects_semantic("x"), objects_semantic("x"), StatementSemantic()]
+        )
 
     def test_switch_branching_method(self):
-        self._test_helper("switchBranching", [
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-        ])
+        self._test_helper(
+            "switchBranching",
+            [
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                objects_semantic("x"),
+                StatementSemantic(),
+            ],
+        )
 
     def test_try_block_method(self):
-        self._test_helper("tryBlock", [
-            objects_semantic("x", "resource"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-            objects_semantic("x"),
-        ])
+        self._test_helper(
+            "tryBlock",
+            [
+                StatementSemantic(),
+                objects_semantic("x", "resource"),
+                StatementSemantic(),
+                StatementSemantic(),
+                objects_semantic("x"),
+                StatementSemantic(),
+                objects_semantic("x"),
+                StatementSemantic(),
+                objects_semantic("x"),
+                StatementSemantic(),
+            ],
+        )
 
     def test_assert_statement_method(self):
         self._test_helper("assertStatement", [objects_semantic("x")])
@@ -64,60 +87,85 @@ class ExtractStatementSemanticTestCase(TestCase):
         self._test_helper("localVariableDeclaration", [objects_semantic("x")])
 
     def test_break_statement_method(self):
-        self._test_helper("breakStatement", [StatementSemantic(), StatementSemantic()])
+        self._test_helper("breakStatement", [StatementSemantic(), StatementSemantic(), StatementSemantic()])
 
     def test_continue_statement_method(self):
-        self._test_helper("continueStatement", [StatementSemantic(), StatementSemantic()])
+        self._test_helper(
+            "continueStatement", [StatementSemantic(), StatementSemantic(), StatementSemantic()]
+        )
 
     def test_local_method_call_method(self):
         self._test_helper("localMethodCall", [StatementSemantic(used_methods={"localMethod"})])
 
     def test_object_method_call_method(self):
-        self._test_helper("objectMethodCall", [StatementSemantic(used_objects={"o"}, used_methods={"method"})])
+        self._test_helper(
+            "objectMethodCall", [StatementSemantic(used_objects={"o"}, used_methods={"method"})]
+        )
 
     def test_nested_object_method(self):
         self._test_helper("nestedObject", [StatementSemantic(used_objects={"o.x"})])
 
     def test_nested_object_method_call_method(self):
-        self._test_helper("nestedObjectMethodCall", [
-            StatementSemantic(used_objects={"o.nestedObject"}, used_methods={"method"})
-        ])
+        self._test_helper(
+            "nestedObjectMethodCall",
+            [StatementSemantic(used_objects={"o.nestedObject"}, used_methods={"method"})],
+        )
 
     def test_several_statement_method(self):
-        self._test_helper("severalStatements", [
-            objects_semantic("x"),
-            objects_semantic("x"),
-            StatementSemantic(used_objects={"System.out", "x"}, used_methods={"println"}),
-            objects_semantic("x"),
-        ])
+        self._test_helper(
+            "severalStatements",
+            [
+                objects_semantic("x"),
+                objects_semantic("x"),
+                StatementSemantic(used_objects={"System.out", "x"}, used_methods={"println"}),
+                objects_semantic("x"),
+                StatementSemantic(),
+            ],
+        )
 
     def test_deep_nesting_method(self):
-        self._test_helper("deepNesting", [
-            objects_semantic("i"),
-            objects_semantic("i"),
-            StatementSemantic(used_objects={"System.out", "i"}, used_methods={"println"}),
-            StatementSemantic(used_objects={"System.out"}, used_methods={"println"}),
-        ])
+        self._test_helper(
+            "deepNesting",
+            [
+                objects_semantic("i"),
+                objects_semantic("i"),
+                StatementSemantic(),
+                StatementSemantic(used_objects={"System.out", "i"}, used_methods={"println"}),
+                StatementSemantic(),
+                StatementSemantic(used_objects={"System.out"}, used_methods={"println"}),
+                StatementSemantic(),
+                StatementSemantic(),
+                StatementSemantic(),
+            ],
+        )
 
     def test_complex_expressions_method(self):
-        self._test_helper("complexExpressions", [
-            objects_semantic("x", "y"),
-            objects_semantic("o1", "o2"),
-            StatementSemantic(used_objects={"o1", "x", "y", "z"}, used_methods={"method", "secondMethod"}),
-            StatementSemantic(
-                used_objects={"o1", "o2", "z"},
-                used_methods={"method", "thirdMethod", "fourthMethod", "temporalMethod"},
-            ),
-        ])
+        self._test_helper(
+            "complexExpressions",
+            [
+                objects_semantic("x", "y"),
+                objects_semantic("o1", "o2"),
+                StatementSemantic(
+                    used_objects={"o1", "x", "y", "z"}, used_methods={"method", "secondMethod"}
+                ),
+                StatementSemantic(
+                    used_objects={"o1", "o2", "z"},
+                    used_methods={"method", "thirdMethod", "fourthMethod", "temporalMethod"},
+                ),
+            ],
+        )
 
     def test_multiline_statement_method(self):
         self._test_helper("multilineStatement", [objects_semantic("x", "y", "o")])
 
     def test_multiple_statements_per_line_method(self):
-        self._test_helper("multipleStatementsPerLine", [
-            StatementSemantic(used_methods={"localMethod"}, used_objects={"x"}),
-            StatementSemantic(used_methods={"localMethod"}, used_objects={"y"}),
-        ])
+        self._test_helper(
+            "multipleStatementsPerLine",
+            [
+                StatementSemantic(used_methods={"localMethod"}, used_objects={"x"}),
+                StatementSemantic(used_methods={"localMethod"}, used_objects={"y"}),
+            ],
+        )
 
     def _test_helper(self, method_name: str, expected_statements_semantics: List[StatementSemantic]):
         method_ast = get_method_ast("SemanticExtractionTest.java", "SimpleMethods", method_name)
