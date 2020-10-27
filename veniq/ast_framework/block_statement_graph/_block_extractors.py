@@ -89,13 +89,14 @@ def _extract_blocks_from_try_statement(statement: ASTNode) -> List[BlockInfo]:
         )
     )
 
-    for catch_clause in statement.catches:
-        block_infos.append(
-            BlockInfo(
-                reason=BlockReason.CATCH_BLOCK,
-                statements=_unwrap_block_to_statements_list(catch_clause.block)
+    if statement.catches is not None:
+        for catch_clause in statement.catches:
+            block_infos.append(
+                BlockInfo(
+                    reason=BlockReason.CATCH_BLOCK,
+                    statements=_unwrap_block_to_statements_list(catch_clause.block)
+                )
             )
-        )
 
     if statement.finally_block is not None:
         block_infos.append(
