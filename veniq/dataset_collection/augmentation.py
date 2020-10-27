@@ -86,7 +86,7 @@ def check_attrs(
     has_parent = hasattr(invocation_node, 'parent')
     has_line = hasattr(invocation_node, 'line')
     has_type = hasattr(invocation_node.parent, 'node_type')
-    return has_parent and has_line and has_type
+    return all([has_parent, has_line, has_type])
 
 
 def check_nesting_statements(
