@@ -318,8 +318,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = self.complement_spaces(body_start_line + 1, invocation_line, lines) * ' '
-
+        spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines) * ' '
         for i, line in enumerate(body_lines_original):
             line = line.replace('\t', ' ' * 4)
             return_statement = line.split('return ')
