@@ -44,7 +44,11 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
                 difference_cases += line_without_comments.count('{')
                 difference_cases -= line_without_comments.count('}')
             else:
-                return i
+                # process comments to the last line of method
+                if line.lstrip().rstrip() == '*/':
+                    return i + 2
+                else:
+                    return i
 
         return -1
 

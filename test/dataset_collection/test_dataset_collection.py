@@ -352,3 +352,20 @@ class TestDatasetCollection(TestCase):
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
         temp_filename.unlink()
+
+    def test_inline_comments_at_the_end(self):
+        filepath = self.current_directory / 'InlineExamples' / 'ObjectProperties_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'ObjectProperties_cut.java'
+        temp_filename = self.current_directory / 'temp.java'
+        algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'updateSashWidths'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        algorithm_for_inlining().inline_function(filepath, 43, body_start_line, body_end_line, temp_filename)
+        with open(temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+        temp_filename.unlink()
