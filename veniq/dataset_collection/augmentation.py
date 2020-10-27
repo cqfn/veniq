@@ -78,19 +78,25 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     return start_line, end_line
 
 
+@typing.no_type_check
 def check_attrs(
-        invocation_node: ASTNode       
+        invocation_node: ASTNode
 ) -> bool:
     """
+    Here we check types that need to be considered
+    in those methose which we can process.
     """
     has_parent = hasattr(invocation_node, 'parent')
     has_line = hasattr(invocation_node, 'line')
     has_type = hasattr(invocation_node.parent, 'node_type')
-    return all([has_parent, has_line, has_type])
+    if has_type:
+        not_none = invocation_node.parent.node_type is not None
+    return all([has_parent, has_line, not_none])
 
 
+@typing.no_type_check
 def check_nesting_statements(
-        method_invoked: ASTNode       
+        method_invoked: ASTNode
 ) -> bool:
     """
     Check that the considered method invocation is not
@@ -103,15 +109,15 @@ def check_nesting_statements(
         ASTNodeType.FOR_STATEMENT
     ]
     if check_attrs(method_invoked) and \
-        method_invoked.parent.node_type in prohibited_statements:
+            method_invoked.parent.node_type in prohibited_statements:
         if method_invoked.parent.line == method_invoked.line:
             return False
     elif check_attrs(method_invoked.parent) and \
-        method_invoked.parent.parent.node_type in prohibited_statements:
+            method_invoked.parent.parent.node_type in prohibited_statements:
         if method_invoked.parent.parent.line == method_invoked.line:
             return False
     elif check_attrs(method_invoked.parent.parent) and \
-        method_invoked.parent.parent.parent.node_type in prohibited_statements:
+            method_invoked.parent.parent.parent.node_type in prohibited_statements:
         if method_invoked.parent.parent.parent.line == method_invoked.line:
             return False
     return True
@@ -149,7 +155,6 @@ def is_match_to_the_conditions(
         stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
         if len(stats) > 1:
             is_not_several_returns = False
-    
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
