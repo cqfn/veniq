@@ -91,8 +91,8 @@ def check_attrs(
     has_type = hasattr(invocation_node.parent, 'node_type')
     if has_type:
         not_none = invocation_node.parent.node_type is not None
-    return all([has_parent, has_line, not_none])
-
+        return all([has_parent, has_line, not_none])
+    return all([has_parent, has_line, has_type])
 
 @typing.no_type_check
 def check_nesting_statements(
