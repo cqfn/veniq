@@ -67,7 +67,7 @@ class BlockStatementGraphExamples {
         }
     }
 
-    void singleIfTheElseBranches(int x) {
+    void singleIfThenElseBranches(int x) {
         if(x > 0) {
             x += 1;
         } else {
@@ -129,6 +129,14 @@ class BlockStatementGraphExamples {
         }
         finally {
             System.out.println("FINALLY!!!");
+        }
+    }
+
+    void tryWithoutCatch(Exception e) {
+        try {
+            throw e;
+        }
+        finally {
         }
     }
 
