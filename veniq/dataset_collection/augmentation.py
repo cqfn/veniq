@@ -94,6 +94,7 @@ def check_attrs(
         return all([has_parent, has_line, not_none])
     return all([has_parent, has_line, has_type])
 
+
 @typing.no_type_check
 def check_nesting_statements(
         method_invoked: ASTNode
