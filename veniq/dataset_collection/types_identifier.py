@@ -330,8 +330,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             elif len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
-                    current_line = body_lines_original[i - 1]
-                    space_for_var_decl_line = self.get_spaces_var_decl(current_line)
+                    space_for_var_decl_line = self.get_spaces_var_decl(line)
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     new_body_line = spaces_in_body + instead_of_return
                 else:

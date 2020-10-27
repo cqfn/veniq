@@ -106,7 +106,6 @@ def check_nesting_statements(
     prohibited_statements = [
         ASTNodeType.IF_STATEMENT,
         ASTNodeType.WHILE_STATEMENT,
-        ASTNodeType.TRY_STATEMENT,
         ASTNodeType.FOR_STATEMENT,
         ASTNodeType.SYNCHRONIZED_STATEMENT,
         ASTNodeType.CATCH_CLAUSE
