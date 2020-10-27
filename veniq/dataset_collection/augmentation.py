@@ -78,6 +78,45 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     return start_line, end_line
 
 
+def check_attrs(
+        invocation_node: ASTNode       
+) -> bool:
+    """
+    """
+    has_parent = hasattr(invocation_node, 'parent')
+    has_line = hasattr(invocation_node, 'line')
+    has_type = hasattr(invocation_node.parent, 'node_type')
+    return has_parent and has_line and has_type
+
+
+def check_nesting_statements(
+        method_invoked: ASTNode       
+) -> bool:
+    """
+    Check that the considered method invocation is not
+    at the same line as prohibited statements.
+    """
+    prohibited_statements = [
+        ASTNodeType.IF_STATEMENT,
+        ASTNodeType.WHILE_STATEMENT,
+        ASTNodeType.TRY_STATEMENT,
+        ASTNodeType.FOR_STATEMENT
+    ]
+    if check_attrs(method_invoked) and \
+        method_invoked.parent.node_type in prohibited_statements:
+        if method_invoked.parent.line == method_invoked.line:
+            return False
+    elif check_attrs(method_invoked.parent) and \
+        method_invoked.parent.parent.node_type in prohibited_statements:
+        if method_invoked.parent.parent.line == method_invoked.line:
+            return False
+    elif check_attrs(method_invoked.parent.parent) and \
+        method_invoked.parent.parent.parent.node_type in prohibited_statements:
+        if method_invoked.parent.parent.parent.line == method_invoked.line:
+            return False
+    return True
+
+
 @typing.no_type_check
 def is_match_to_the_conditions(
         ast: AST,
@@ -110,6 +149,7 @@ def is_match_to_the_conditions(
         stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
         if len(stats) > 1:
             is_not_several_returns = False
+    
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
@@ -129,6 +169,7 @@ def is_match_to_the_conditions(
     is_not_cast = not (parent.node_type == ASTNodeType.CAST)
     is_not_array_creator = not (parent.node_type == ASTNodeType.ARRAY_CREATOR)
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
+    is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
     other_requirements = all([
         is_not_chain_before,
         is_actual_parameter_simple,
@@ -147,6 +188,7 @@ def is_match_to_the_conditions(
         is_not_method_inv_single_statement_in_if,
         is_not_assign_value_with_return_type,
         is_not_several_returns,
+        is_not_at_the_same_line_as_prohibited_stats,
         not method_invoked.arguments])
 
     if (not method_invoked.qualifier and other_requirements) or \
