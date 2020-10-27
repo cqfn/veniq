@@ -1,7 +1,13 @@
+import os
 from argparse import ArgumentParser
+from collections import namedtuple
+from functools import partial
 from pathlib import Path
+from typing import Tuple
 
 import pandas as pd
+from pebble import ProcessPool
+from tqdm import tqdm
 
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
@@ -37,6 +43,96 @@ def _print_extraction_opportunities(
     return extraction_opportunities_groups
 
 
+Stats = namedtuple(
+    'Stats',
+    ['matched_cases',
+     'failed_cases_in_SEMI_algorithm',
+     'no_opportunity_chosen',
+     'matched_percent',
+     'failed_cases_in_validation_examples'
+     ])
+
+
+def validate_row(dataset_dir: Path, row: pd.Series) -> Tuple[bool, Stats]:
+    """
+    Validate row of dataset
+
+    :param dataset_dir: directory to dataset, path before the relative path in
+    output_filename
+    :param row: row of dataframe
+    :return: boolean value whether we should consider this row or skip it,
+    Stats - return collected stats
+    """
+    stats = Stats(0, 0, 0, 0, 0)
+    try:
+        start_line_of_invocation_occurred = row[1]['start_line_of_function_where_invocation_occurred']
+        start_line_of_invoked_function = row[1]['invocation_method_start_line']
+        end_line_of_invoked_function = row[1]['invocation_method_end_line']
+        end_line_of_invocation_occurred = \
+            start_line_of_invocation_occurred + end_line_of_invoked_function - start_line_of_invoked_function
+
+        src_filename = row[1]['output_filename']
+        class_name = row[1]['class_name']
+
+        ast = AST.build_from_javalang(build_ast(dataset_dir / src_filename))
+        function_to_analyze = row[1]['method_where_invocation_occurred']
+        for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
+            # class_ast = ast.get_subtree(class_decl)
+            if class_decl.name != class_name:
+                continue
+            elif class_decl.name == class_name:
+                objects_to_consider = list(class_decl.methods) + list(class_decl.constructors) or []
+                for method_decl in objects_to_consider:
+                    if method_decl.name != function_to_analyze:
+                        continue
+                    try:
+                        opport = _print_extraction_opportunities(
+                            ast.get_subtree(method_decl)
+                        )
+                        if opport:
+                            best_group = opport[0]
+                            lines = [node.line for node in best_group._optimal_opportunity]
+                            start_line_opportunity = min(lines)
+                            end_line_opportunity = max(lines)
+                            lines_intersected = set(
+                                range(start_line_of_invocation_occurred, end_line_of_invocation_occurred)) \
+                                                & set(lines)
+                            input_f = row[1]['output_filename']
+                            print(
+                                f'{input_f} {class_decl.name} {method_decl.name}: '
+                                f'inserted lines: {start_line_of_invocation_occurred}, {end_line_of_invocation_occurred};'
+                                f'opportunity chosen: {start_line_opportunity}, {end_line_opportunity}')
+
+                            if (start_line_of_invocation_occurred == start_line_opportunity) \
+                                    and (end_line_of_invocation_occurred == end_line_opportunity):
+                                stats._replace(matched_percent=stats.matched_cases + 1)
+                            updated_percent_value = stats.matched_percent + float(len(lines_intersected)) / len(lines)
+                            stats._replace(matched_percent=updated_percent_value)
+                        else:
+                            stats._replace(no_opportunity_chosen=1)
+                            # print(class_decl.name, method_decl.name)
+
+                    except Exception as e:
+                        import traceback
+                        print(src_filename)
+                        # traceback.print_exc()
+                        stats._replace(failed_cases_in_SEMI_algorithm=stats.failed_cases_in_SEMI_algorithm + 1)
+
+                    break
+                break
+
+    except Exception as e:
+        import traceback
+        # traceback.print_exc()
+        stats._replace(failed_cases_in_validation_examples=stats.failed_cases_in_validation_examples + 1)
+
+    # smth bad happened
+    if stats.failed_cases_in_validation_examples:
+        return False, stats
+    else:
+        return True, stats
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument(
@@ -47,6 +143,16 @@ if __name__ == '__main__':
     parser.add_argument(
         "-i", "--csv_input",
         help="Path for csv"
+    )
+    system_cores_qty = os.cpu_count() or 1
+    parser.add_argument(
+        "--jobs",
+        "-j",
+        type=int,
+        default=system_cores_qty - 1,
+        help="Number of processes to spawn. "
+             "By default one less than number of cores. "
+             "Be careful to raise it above, machine may stop responding while creating dataset.",
     )
     args = parser.parse_args()
     dataset_dir = Path(args.dataset_dir)
@@ -67,64 +173,22 @@ if __name__ == '__main__':
     # print(body_start_line, body_end_line)
     iteration_number = 0
 
-    for row in df_is_parsed.iterrows():
-        iteration_number += 1
-        start_line_of_invocation_occurred = row[1]['start_line_of_function_where_invocation_occurred']
-        start_line_of_invoked_function = row[1]['invocation_method_start_line']
-        end_line_of_invoked_function = row[1]['invocation_method_end_line']
-        end_line_of_invocation_occurred = end_line_of_invoked_function - start_line_of_invoked_function
-        lines_inserted = end_line_of_invocation_occurred - start_line_of_invocation_occurred
-        if lines_inserted >= 1:
-            continue
-
-        src_filename = row[1]['output_filename']
-        class_name = row[1]['class_name']
-        try:
-            ast = AST.build_from_javalang(build_ast(dataset_dir / src_filename))
-            function_to_analyze = row[1]['invocation_method_name']
-            for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
-                # class_ast = ast.get_subtree(class_decl)
-                if class_decl.name != class_name:
-                    continue
-                elif class_decl.name == class_name:
-                    for method_decl in class_decl.methods:
-                        if method_decl.name != function_to_analyze:
-                            continue
-                        try:
-                            # print(
-                            #     f'Trying analyze {class_decl.name} {method_decl.name} '
-                            #     f'{iteration_number}/{total_number}')
-                            opport = _print_extraction_opportunities(
-                                ast.get_subtree(method_decl)
-                            )
-                            if opport:
-                                best_group = opport[0]
-                                lines = [node.line for node in best_group._optimal_opportunity]
-                                start_line_opportunity = min(lines)
-                                end_line_opportunity = max(lines)
-                                lines_intersected = set(
-                                    range(end_line_of_invocation_occurred, end_line_of_invocation_occurred)) \
-                                                    & set(lines)
-
-                                if (start_line_of_invocation_occurred == start_line_opportunity) \
-                                        and (end_line_of_invocation_occurred == end_line_opportunity):
-                                    matched_cases += 1
-                                matched_percent += float(len(lines_intersected)) / len(lines)
-                            else:
-                                no_opportunity_chosen += 0
-                                # print(class_decl.name, method_decl.name)
-
-                        except Exception as e:
-                            import traceback
-                            print(src_filename)
-                            traceback.print_exc()
-                            failed_cases_in_SEMI_algorithm += 1
-
-                        break
-                    break
-
-        except Exception as e:
-            failed_cases_in_validation_examples += 1
+    with ProcessPool(1) as executor:
+        rows_list = list(df_is_parsed.iterrows())
+        validate_row_f = partial(validate_row, dataset_dir)
+        future = executor.map(validate_row_f, rows_list, timeout=1000, )
+        result = future.result()
+        for index, row in tqdm(rows_list):
+            try:
+                should_include_in_results, stats = next(result)
+                if should_include_in_results:
+                    matched_cases += stats.matched_cases
+                    failed_cases_in_SEMI_algorithm += stats.failed_cases_in_SEMI_algorithm
+                    failed_cases_in_validation_examples += stats.failed_cases_in_validation_examples
+                    no_opportunity_chosen += stats.no_opportunity_chosen
+                    matched_percent += stats.matched_percent
+            except Exception:
+                continue
 
     print(f'Failed SEMI algorithm errors: {failed_cases_in_SEMI_algorithm}')
     print(f'Failed examples of synth dataset: {failed_cases_in_validation_examples}')
