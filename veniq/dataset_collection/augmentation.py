@@ -108,7 +108,8 @@ def check_nesting_statements(
         ASTNodeType.WHILE_STATEMENT,
         ASTNodeType.FOR_STATEMENT,
         ASTNodeType.SYNCHRONIZED_STATEMENT,
-        ASTNodeType.CATCH_CLAUSE
+        ASTNodeType.CATCH_CLAUSE,
+        ASTNodeType.SUPER_CONSTRUCTOR_INVOCATION
     ]
     if check_attrs(method_invoked) and \
             method_invoked.parent.node_type in prohibited_statements:
