@@ -20,7 +20,7 @@ class TestDatasetCollection(TestCase):
 
     def setUp(self):
         filepath = self.current_directory / "Example.java"
-        self.ast = AST.build_from_javalang(build_ast(filepath))
+        self.example_ast = AST.build_from_javalang(build_ast(filepath))
         self.temp_filename = self.current_directory / 'temp.java'
 
     def tearDown(self):
@@ -29,58 +29,58 @@ class TestDatasetCollection(TestCase):
 
     def test_determine_type_without_return_without_arguments(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method_without_params'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'method_without_params'][0]
         d = {'method_without_params': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS)
 
     def test_determine_type_with_return_without_parameters(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'reset_return_var_decl'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'closeServer_return'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'closeServer_return'][0]
         d = {'closeServer_return': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS)
 
     def test_determine_type_with_parameters(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'some_method'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method_with_parameters'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'method_with_parameters'][0]
         d = {'method_with_parameters': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
 
     def test_determine_type_with_overridden_functions(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'invoke_overridden'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'overridden_func']
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'overridden_func'][0]
         d = {'overridden_func': m_decl_original}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
 
     def test_determine_type_with_invalid_functions(self):
@@ -88,86 +88,86 @@ class TestDatasetCollection(TestCase):
         but we didn't find it in the list of method declarations
         in current class."""
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'invoke_overridden'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'overridden_func']
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'overridden_func'][0]
         d = {'SOME_RANDOM_NAME': m_decl_original}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.DO_NOTHING)
 
     def test_determine_type_without_variables_declaration(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method_without_params'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'method_without_params'][0]
         d = {'method_without_params': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertEqual(type, InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS)
 
         # We consider all cases (with or without return)
         # if there are no variables, declared in invoked function
 
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method_with_return_not_var_decl'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'closeServer_return'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'closeServer_return'][0]
         d = {'closeServer_return': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
 
         self.assertEqual(type, InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS)
 
     def test_is_invocation_in_if_with_single_statement_valid(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'test_single_stat_in_if'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'intersected_var'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'intersected_var'][0]
 
-        self.assertFalse(is_match_to_the_conditions(self.ast, m_inv, m_decl_original))
+        self.assertFalse(is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original))
 
     def test_is_return_type_not_assigning_value_valid(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'method_decl'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'invocation'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'invocation'][0]
-        self.assertFalse(is_match_to_the_conditions(self.ast, m_inv, m_decl_original))
+        self.assertFalse(is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original))
 
     def test_determine_type_with_non_intersected_variables_declaration(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'test_not_intersected_var_decl'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'intersected_var'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'intersected_var'][0]
         d = {'intersected_var': [m_decl_original]}
-        type = determine_algorithm_insertion_type(self.ast, m_decl, m_inv, d)
+        type = determine_algorithm_insertion_type(self.example_ast, m_decl, m_inv, d)
         self.assertTrue(type in [
             InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS,
             InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS])
@@ -227,38 +227,38 @@ class TestDatasetCollection(TestCase):
 
     def test_is_valid_function_with_several_returns(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'runSeveralReturns'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'severalReturns'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'severalReturns'][0]
-        is_matched = is_match_to_the_conditions(self.ast, m_inv, m_decl_original)
+        is_matched = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, False)
 
     def test_is_valid_function_with_one_return(self):
         m_decl = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'runDelete'][0]
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'delete'][0]
         m_inv = [
-            x for x in self.ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'delete'][0]
-        is_matched = is_match_to_the_conditions(self.ast, m_inv, m_decl_original)
+        is_matched = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, True)
 
     def test_is_valid_function_with_return_in_the_middle(self):
         m_decl_original = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'severalReturns'][0]
         m_inv = [
-            x for x in self.ast.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'severalReturns'][0]
-        is_matched = is_match_to_the_conditions(self.ast, m_inv, m_decl_original)
+        is_matched = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, False)
 
     def test_inline_invocation_inside_var_declaration(self):
