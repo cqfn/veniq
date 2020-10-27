@@ -253,9 +253,12 @@ def insert_code_with_new_file_creation(
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     ncss = NCSSMetric().value(ast.get_subtree(original_func))
     line_to_csv = {}
+    # @acheshkov asked to consider only methods with ncss > 3, that's all.
     if ncss > 3:
         body_start_line, body_end_line = method_body_lines(original_func, file_path)
         text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+        # we do not inline one-line methods like
+        # public String getRemainingString() {return str.substring(index);}
         if body_start_line != body_end_line:
             algorithm_type = determine_algorithm_insertion_type(
                 ast,
@@ -483,14 +486,12 @@ if __name__ == '__main__':  # noqa: C901
             small_output_dir.mkdir(parents=True)
 
         samples.to_csv(small_dataset_folder / 'out.csv')
-        for i in samples.iterrows():
-            input_filename = i[1]['input_filename']
+        for index, row in samples.iterrows():
+            input_filename = row['input_filename']
             dst_filename = small_input_dir / Path(input_filename).name
-            # print(f"Copy from {input_filename}, to {dst_filename}")
             shutil.copyfile(input_filename, dst_filename)
-            output_filename = i[1]['output_filename']
+            output_filename = row['output_filename']
             dst_filename = small_output_dir / Path(output_filename).name
-            # print(f"Copy from {output_filename}, to {dst_filename}")
             shutil.copyfile(output_filename, dst_filename)
 
         with tarfile.open(Path(args.output) / 'small_dataset.tar.gz', "w:gz") as tar:
