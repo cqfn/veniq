@@ -269,6 +269,21 @@ class TestDatasetCollection(TestCase):
         is_matched = is_match_to_the_conditions(ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, True)
 
+    def test_invocation_inside_if_not_process(self):
+        filepath = self.current_directory / "Example_nested.java"
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'doAction'][0]
+        m_decl_original = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'handleAction'][0]
+        m_inv = [
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'handleAction'][0]
+        is_matched = is_match_to_the_conditions(ast, m_inv, m_decl_original)
+        self.assertEqual(is_matched, False)
+
     def test_is_valid_function_with_return_in_the_middle(self):
         filepath = self.current_directory / "Example.java"
         ast = AST.build_from_javalang(build_ast(filepath))
