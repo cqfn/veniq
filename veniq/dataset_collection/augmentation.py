@@ -402,6 +402,7 @@ def analyze_file(
 
     ast = get_ast_if_possible(dst_filename)
     if ast is None:
+        dst_filename.unlink()
         return results
 
     method_declarations: Dict[str, List[ASTNode]] = defaultdict(list)
@@ -443,6 +444,10 @@ def analyze_file(
                                 results.append(log_of_inline)
                     except Exception as e:
                         print('Error has happened during file analyze: ' + str(e))
+
+    if not results:
+        dst_filename.unlink()
+        
     return results
 
 
