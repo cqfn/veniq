@@ -280,13 +280,15 @@ def insert_code_with_new_file_creation(
                     'output_filename': new_full_filename,
                 }
 
-                algorithm_for_inlining().inline_function(
+                inline_method_bounds = algorithm_for_inlining().inline_function(
                     file_path,
                     invocation_node.line,
                     body_start_line,
                     body_end_line,
                     new_full_filename,
                 )
+                line_to_csv['inline_method_start'] = inline_method_bounds[0]
+                line_to_csv['inline_method_end'] = inline_method_bounds[1]
 
                 # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
                 if get_ast_if_possible(Path(new_full_filename)):

@@ -172,8 +172,11 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-    ) -> Union[None, str]:
+    ) -> Union[None, str, List]:
         lines_of_final_file = []
+        inline_method_bounds = []
+        inline_method_bounds.append(invocation_line)
+
         # original code before method invocation, which will be substituted
         lines_before_invoсation = self.get_lines_before_invocation(
             filename_out,
@@ -191,6 +194,9 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_end_line - 1
         )
         lines_of_final_file += body_lines
+        end_inline_method = inline_method_bounds[0] + len(body_lines) - 1
+        inline_method_bounds.append(end_inline_method)
+
 
         # original code after method invocation
         original_code_lines = self.get_lines_after_invocation(
@@ -204,6 +210,9 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         for line in lines_of_final_file:
             f_out.write(line)
         f_out.close()
+        # return bounds of inline method
+        # counted relative to parent method body
+        return inline_method_bounds
 
 
 class DoNothing(IBaseInlineAlgorithm):
