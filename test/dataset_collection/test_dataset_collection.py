@@ -344,5 +344,5 @@ class TestDatasetCollection(TestCase):
                                                                           21,
                                                                           27,
                                                                           self.temp_filename)
-        self.assertEqual([30, 34], pred_inline_rel_bounds,\
-                          msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
+        self.assertEqual([30, 34], pred_inline_rel_bounds,
+                         msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
