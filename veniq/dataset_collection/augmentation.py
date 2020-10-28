@@ -4,7 +4,6 @@ import os.path
 import re
 import shutil
 import tarfile
-import tempfile
 import typing
 from argparse import ArgumentParser
 from collections import defaultdict
@@ -16,10 +15,9 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from utils.utils import RemoveComments
-from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.utils.ast_builder import build_ast
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
