@@ -1,199 +1,326 @@
-from typing import List, Union, Dict
+from typing import List, Union
 from pathlib import Path
 from unittest import TestCase
 
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
+from veniq.ast_framework.block_statement_graph.constants import BlockReason
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.utils.ast_builder import build_ast
 
 
 class BlockStatementTestCase(TestCase):
-    current_directory = Path(__file__).absolute().parent
+    def test_single_assert_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleAssertStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [ASTNodeType.METHOD_DECLARATION, BlockReason.SINGLE_BLOCK, ASTNodeType.ASSERT_STATEMENT],
+        )
 
-    def test_simple_examples(self):
-        filepath = self.current_directory / "BlockStatementGraphExamples.java"
-        ast = AST.build_from_javalang(build_ast(filepath))
+    def test_single_return_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleReturnStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [ASTNodeType.METHOD_DECLARATION, BlockReason.SINGLE_BLOCK, ASTNodeType.RETURN_STATEMENT],
+        )
+
+    def test_single_statement_expression(self):
+        block_statement_graph = self._get_block_statement_graph("singleStatementExpression")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [ASTNodeType.METHOD_DECLARATION, BlockReason.SINGLE_BLOCK, ASTNodeType.STATEMENT_EXPRESSION],
+        )
+
+    def test_single_throw_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleThrowStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [ASTNodeType.METHOD_DECLARATION, BlockReason.SINGLE_BLOCK, ASTNodeType.THROW_STATEMENT],
+        )
+
+    def test_single_local_variable_declaration(self):
+        block_statement_graph = self._get_block_statement_graph("singleVariableDeclarationStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.LOCAL_VARIABLE_DECLARATION,
+            ],
+        )
+
+    def test_single_block_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleBlockStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.BLOCK_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.RETURN_STATEMENT,
+            ],
+        )
+
+    def test_single_do_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleDoStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.DO_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_single_for_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleForStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.FOR_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_single_synchronize_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleSynchronizeStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.SYNCHRONIZED_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_single_while_statement(self):
+        block_statement_graph = self._get_block_statement_graph("singleWhileStatement")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.WHILE_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_cycle_with_break(self):
+        block_statement_graph = self._get_block_statement_graph("cycleWithBreak")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.WHILE_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.BREAK_STATEMENT,
+            ],
+        )
+
+    def test_cycle_with_continue(self):
+        block_statement_graph = self._get_block_statement_graph("cycleWithContinue")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.WHILE_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.CONTINUE_STATEMENT,
+            ],
+        )
+
+    def test_single_if_then_branch(self):
+        block_statement_graph = self._get_block_statement_graph("singleIfThenBranch")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.IF_STATEMENT,
+                BlockReason.THEN_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_single_if_then_else_branches(self):
+        block_statement_graph = self._get_block_statement_graph("singleIfThenElseBranches")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.IF_STATEMENT,
+                BlockReason.THEN_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                BlockReason.ELSE_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_several_else_if_branches(self):
+        block_statement_graph = self._get_block_statement_graph("severalElseIfBranches")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.IF_STATEMENT,
+                BlockReason.THEN_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                BlockReason.THEN_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                BlockReason.ELSE_BRANCH,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_if_branches_without_curly_braces(self):
+        block_statement_graph = self._get_block_statement_graph("ifBranchingWithoutCurlyBraces")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.IF_STATEMENT,
+                BlockReason.THEN_BRANCH,
+                ASTNodeType.RETURN_STATEMENT,
+                BlockReason.ELSE_BRANCH,
+                ASTNodeType.RETURN_STATEMENT,
+            ],
+        )
+
+    def test_switch_branches(self):
+        block_statement_graph = self._get_block_statement_graph("switchBranches")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.SWITCH_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.BLOCK_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_single_try_block(self):
+        block_statement_graph = self._get_block_statement_graph("singleTryBlock")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.TRY_STATEMENT,
+                BlockReason.TRY_BLOCK,
+                ASTNodeType.THROW_STATEMENT,
+                BlockReason.CATCH_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_full_try_block(self):
+        block_statement_graph = self._get_block_statement_graph("fullTryBlock")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.TRY_STATEMENT,
+                BlockReason.TRY_RESOURCES,
+                ASTNodeType.TRY_RESOURCE,
+                BlockReason.TRY_BLOCK,
+                ASTNodeType.THROW_STATEMENT,
+                BlockReason.CATCH_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                BlockReason.CATCH_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                BlockReason.FINALLY_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
+    def test_try_without_catch(self):
+        block_statement_graph = self._get_block_statement_graph("tryWithoutCatch")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.TRY_STATEMENT,
+                BlockReason.TRY_BLOCK,
+                ASTNodeType.THROW_STATEMENT,
+                BlockReason.FINALLY_BLOCK,
+            ],
+        )
+
+    def test_complex_example1(self):
+        block_statement_graph = self._get_block_statement_graph("complexExample1")
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.METHOD_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.FOR_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.WHILE_STATEMENT,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+                ASTNodeType.RETURN_STATEMENT,
+            ],
+        )
+
+    def _get_block_statement_graph(self, method_name: str) -> Block:
+        current_directory = Path(__file__).absolute().parent
+        filename = "BlockStatementGraphExamples.java"
+        ast = AST.build_from_javalang(build_ast(str(current_directory / filename)))
 
         try:
+            class_name = "BlockStatementGraphExamples"
             class_declaration = next(
                 node
                 for node in ast.get_root().types
-                if node.node_type == ASTNodeType.CLASS_DECLARATION and node.name == "BlockStatementGraphExamples"
+                if node.node_type == ASTNodeType.CLASS_DECLARATION and node.name == class_name
             )
         except StopIteration:
-            raise RuntimeError(f"Can't find class BlockStatementGraphExamples in file {filepath}")
+            raise RuntimeError(f"Can't find class {class_name} in file {filename}")
 
-        for method_declaration in class_declaration.methods:
-            with self.subTest(
-                f"Testing method {method_declaration.name} in class {class_declaration.name} in file {filepath}"
-            ):
-                block_statement_graph = build_block_statement_graph(ast.get_subtree(method_declaration))
-                self.assertEqual(
-                    BlockStatementTestCase.flatten_block_statement_graph(block_statement_graph),
-                    BlockStatementTestCase._expected_flattened_graphs[method_declaration.name],
-                )
+        try:
+            method_declaration = next(node for node in class_declaration.methods if node.name == method_name)
+        except StopIteration:
+            raise ValueError(f"Can't find method {method_name} in class {class_name} in file {filename}")
+
+        return build_block_statement_graph(ast.get_subtree(method_declaration))
 
     @staticmethod
-    def flatten_block_statement_graph(root: Union[Block, Statement]) -> List[str]:
-        flattened_graph: List[str] = []
+    def _flatten_block_statement_graph(
+        root: Union[Block, Statement]
+    ) -> List[Union[ASTNodeType, BlockReason]]:
+        flattened_graph: List[Union[ASTNodeType, BlockReason]] = []
 
         def on_node_entering(node: Union[Block, Statement]) -> None:
             if isinstance(node, Block):
-                flattened_graph.append(str(node.reason))
+                flattened_graph.append(node.reason)
             elif isinstance(node, Statement):
-                flattened_graph.append(str(node.node.node_type))
+                flattened_graph.append(node.node.node_type)
             else:
                 raise ValueError(f"Unknown node {node}")
 
         root.traverse(on_node_entering)
         return flattened_graph
-
-    _expected_flattened_graphs: Dict[str, List[str]] = {
-        "singleAssertStatement": ["Method declaration", "BlockReason.SINGLE_BLOCK", "Assert statement"],
-        "singleReturnStatement": ["Method declaration", "BlockReason.SINGLE_BLOCK", "Return statement"],
-        "singleStatementExpression": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-        ],
-        "singleThrowStatement": ["Method declaration", "BlockReason.SINGLE_BLOCK", "Throw statement"],
-        "singleVariableDeclarationStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Local variable declaration",
-        ],
-        "singleBlockStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Block statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Return statement",
-        ],
-        "singleDoStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Do statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-        ],
-        "singleForStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "For statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-        ],
-        "singleSynchronizeStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Synchronized statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-        ],
-        "singleWhileStatement": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "While statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-        ],
-        "cycleWithBreak": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "While statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Break statement",
-        ],
-        "cycleWithContinue": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "While statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Continue statement",
-        ],
-        "singleIfThenBranch": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "If statement",
-            "BlockReason.THEN_BRANCH",
-            "Statement expression",
-        ],
-        "singleIfTheElseBranches": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "If statement",
-            "BlockReason.THEN_BRANCH",
-            "Statement expression",
-            "BlockReason.ELSE_BRANCH",
-            "Statement expression",
-        ],
-        "severalElseIfBranches": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "If statement",
-            "BlockReason.THEN_BRANCH",
-            "Statement expression",
-            "BlockReason.THEN_BRANCH",
-            "Statement expression",
-            "BlockReason.ELSE_BRANCH",
-            "Statement expression",
-        ],
-        "ifBranchingWithoutCurlyBraces": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "If statement",
-            "BlockReason.THEN_BRANCH",
-            "Return statement",
-            "BlockReason.ELSE_BRANCH",
-            "Return statement",
-        ],
-        "switchBranches": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Switch statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-            "Statement expression",
-            "Block statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-            "Statement expression",
-            "Statement expression",
-        ],
-        "singleTryBlock": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Try statement",
-            "BlockReason.TRY_BLOCK",
-            "Throw statement",
-            "BlockReason.CATCH_BLOCK",
-            "Statement expression",
-        ],
-        "fullTryBlock": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Try statement",
-            "BlockReason.TRY_RESOURCES",
-            "Try resource",
-            "BlockReason.TRY_BLOCK",
-            "Throw statement",
-            "BlockReason.CATCH_BLOCK",
-            "Statement expression",
-            "BlockReason.CATCH_BLOCK",
-            "Statement expression",
-            "BlockReason.FINALLY_BLOCK",
-            "Statement expression",
-        ],
-        "complexExample1": [
-            "Method declaration",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-            "For statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-            "While statement",
-            "BlockReason.SINGLE_BLOCK",
-            "Statement expression",
-            "Return statement",
-        ],
-    }
