@@ -197,7 +197,6 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         end_inline_method = inline_method_bounds[0] + len(body_lines) - 1
         inline_method_bounds.append(end_inline_method)
 
-
         # original code after method invocation
         original_code_lines = self.get_lines_after_invocation(
             filename_out,

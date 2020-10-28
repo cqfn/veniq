@@ -40,7 +40,7 @@ class IntegrationDatasetCollection(TestCase):
               'inline_method_start': 131,
               'inline_method_end': 135},
              {'input_filename': 'HudFragment.java',
-              'class_name': 'HudFragment', 
+              'class_name': 'HudFragment',
               'invocation_text_string': 'showLaunchConfirm();',
               'method_where_invocation_occurred': 'addWaveTable',
               'start_line_of_function_where_invocation_occurred': 518,
