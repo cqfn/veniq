@@ -340,22 +340,23 @@ def insert_code_with_new_file_creation(
                     body_end_line,
                     new_full_filename,
                 )
-                line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
-                line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
+                if inline_method_bounds is not None:
+                    line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
+                    line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
 
-                if get_ast_if_possible(new_full_filename):
-                    rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
-                        class_name=class_name,
-                        method_node=method_node,
-                        new_full_filename=new_full_filename,
-                        original_func=original_func)
+                    if get_ast_if_possible(new_full_filename):
+                        rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
+                            class_name=class_name,
+                            method_node=method_node,
+                            new_full_filename=new_full_filename,
+                            original_func=original_func)
 
-                    can_be_parsed = True
-                    line_to_csv.update(rest_of_csv_row_for_changed_file)
-                else:
-                    can_be_parsed = False
+                        can_be_parsed = True
+                        line_to_csv.update(rest_of_csv_row_for_changed_file)
+                    else:
+                        can_be_parsed = False
 
-                line_to_csv['can_be_parsed'] = can_be_parsed
+                    line_to_csv['can_be_parsed'] = can_be_parsed
 
     return line_to_csv
 
