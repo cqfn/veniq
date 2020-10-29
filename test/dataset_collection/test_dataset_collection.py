@@ -19,8 +19,8 @@ class TestDatasetCollection(TestCase):
     current_directory = Path(__file__).absolute().parent
 
     def setUp(self):
-        filepath = self.current_directory / "Example.java"
-        self.example_ast = AST.build_from_javalang(build_ast(filepath))
+        self.filepath = self.current_directory / "Example.java"
+        self.example_ast = AST.build_from_javalang(build_ast(self.filepath))
         self.temp_filename = self.current_directory / 'temp.java'
 
     def tearDown(self):
@@ -335,7 +335,11 @@ class TestDatasetCollection(TestCase):
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
             if x.name == 'copy'][0]
         body_start_line, body_end_line = method_body_lines(m_decl, filepath)
-        algorithm_for_inlining().inline_function(filepath, 8, body_start_line, body_end_line, self.temp_filename)
+        algorithm_for_inlining().inline_function(filepath,
+                                                 8,
+                                                 body_start_line,
+                                                 body_end_line,
+                                                 self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
@@ -354,3 +358,21 @@ class TestDatasetCollection(TestCase):
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
+
+    def test_method_body_lines_1(self):
+        m_decl = [
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'closeServer'][0]
+        body_bounds = method_body_lines(m_decl, self.filepath)
+        self.assertEqual((21, 27), body_bounds)
+
+    def test_start_end_inline_without_args(self):
+        algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        pred_inline_rel_bounds = algorithm_for_inlining().inline_function(self.filepath,
+                                                                          30,
+                                                                          21,
+                                                                          27,
+                                                                          self.temp_filename)
+        self.assertEqual([30, 34], pred_inline_rel_bounds,
+                         msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
