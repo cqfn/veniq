@@ -1,6 +1,7 @@
 import hashlib
 import os
 import os.path
+import re
 import shutil
 import tarfile
 import typing
@@ -14,9 +15,9 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.dataset_collection.types_identifier import AlgorithmFactory, InlineTypesAlgorithms
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.utils.ast_builder import build_ast
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
@@ -273,11 +274,8 @@ def insert_code_with_new_file_creation(
                     'class_name': class_name,
                     'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
                     'method_where_invocation_occurred': method_node.name,
-                    'start_line_of_function_where_invocation_occurred': method_node.line,
                     'invocation_method_name': original_func.name,
-                    'invocation_method_start_line': body_start_line,
-                    'invocation_method_end_line': body_end_line,
-                    'output_filename': new_full_filename,
+                    'output_filename': new_full_filename
                 }
 
                 inline_method_bounds = algorithm_for_inlining().inline_function(
@@ -287,18 +285,70 @@ def insert_code_with_new_file_creation(
                     body_end_line,
                     new_full_filename,
                 )
-                line_to_csv['inline_method_start'] = inline_method_bounds[0]
-                line_to_csv['inline_method_end'] = inline_method_bounds[1]
+                line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
+                line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
 
-                # if get_ast_if_possible(Path(r'D:\temp\AbstractComponent_addBefore_259.java')):
-                if get_ast_if_possible(Path(new_full_filename)):
+                if get_ast_if_possible(new_full_filename):
+                    rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
+                        class_name=class_name,
+                        method_node=method_node,
+                        new_full_filename=new_full_filename,
+                        original_func=original_func)
+
                     can_be_parsed = True
+                    line_to_csv.update(rest_of_csv_row_for_changed_file)
                 else:
                     can_be_parsed = False
 
                 line_to_csv['can_be_parsed'] = can_be_parsed
 
     return line_to_csv
+
+
+def find_lines_in_changed_file(
+        new_full_filename: Path,
+        method_node: ASTNode,
+        original_func: ASTNode,
+        class_name: str) -> Dict[str, any]:
+    """
+    Find start and end line of invocation for changed file
+    :param class_name: class name of old file
+    :param new_full_filename: name of new file
+    :param method_node: method declaration of old file
+    :param original_func: method declaration of invoked function in old file
+    :return:
+    """
+    changed_ast = get_ast_if_possible(new_full_filename)
+    class_node_of_changed_file = [
+        x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+        if x.name == class_name][0]
+    class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
+    node = [x for x in class_subtree.get_proxy_nodes(
+        ASTNodeType.METHOD_DECLARATION,
+        ASTNodeType.CONSTRUCTOR_DECLARATION)
+            if x.name == method_node.name
+            ][0]
+    original_func_changed = [x for x in class_subtree.get_proxy_nodes(
+        ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
+
+    # changed_invocation_node = [
+    #     x for x in node.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+    #     if x.member == original_func.name][0]
+    #
+    body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
+    # algorithm_type = determine_algorithm_insertion_type(
+    #     changed_ast,
+    #     node,
+    #     changed_invocation_node,
+    #     dict_original_invocations
+    # )
+    # algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+
+    return {
+        'invocation_method_start_line': body_start_line,
+        'invocation_method_end_line': body_end_line,
+        'start_line_of_function_where_invocation_occurred': node.line
+    }
 
 
 def get_ast_if_possible(file_path: Path) -> Optional[AST]:
@@ -314,7 +364,28 @@ def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     return ast
 
 
-def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
+def remove_comments(string):
+    pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
+    # first group captures quoted strings (double or single)
+    # second group captures comments (//single-line or /* multi-line */)
+    regex = re.compile(pattern, re.MULTILINE | re.DOTALL)
+
+    def _replacer(match):
+        # if the 2nd group (capturing comments) is not None,
+        # it means we have captured a non-quoted (real) comment string.
+        if match.group(2) is not None:
+            # so we will return empty to remove the comment
+            return ""
+        else:  # otherwise, we will return the 1st group
+            return match.group(1)  # captured quoted-string
+    return regex.sub(_replacer, string)
+
+
+def analyze_file(
+        file_path: Path,
+        output_path: Path,
+        input_dir: Path
+    ) -> List[Any]:
     """
     In this function we process each file.
     For each file we find each invocation inside,
@@ -322,8 +393,16 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
     """
     # print(file_path)
     results: List[Any] = []
-    ast = get_ast_if_possible(file_path)
+    original_text = read_text_with_autodetected_encoding(str(file_path))
+    # remove comments
+    text_without_comments = remove_comments(original_text)
+    # remove whitespaces
+    text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
+    dst_filename = save_text_to_new_file(input_dir, text, file_path)
+
+    ast = get_ast_if_possible(dst_filename)
     if ast is None:
+        dst_filename.unlink()
         return results
 
     method_declarations: Dict[str, List[ASTNode]] = defaultdict(list)
@@ -356,13 +435,19 @@ def analyze_file(file_path: Path, output_path: Path) -> List[Any]:
                                 ast,
                                 method_node,
                                 method_invoked,
-                                file_path,
+                                dst_filename,
                                 output_path,
                                 method_declarations)
                             if log_of_inline:
+                                # change source filename, since it will be changed
+                                log_of_inline['input_filename'] = str(dst_filename.as_posix())
                                 results.append(log_of_inline)
                     except Exception as e:
                         print('Error has happened during file analyze: ' + str(e))
+
+    if not results:
+        dst_filename.unlink()
+        
     return results
 
 
@@ -373,15 +458,27 @@ def collect_info_about_functions_without_params(
         if not method.parameters:
             method_declarations[method.name].append(method)
 
+# def save_input_file(input_dir: Path, filename: Path) -> Path:
+#     # need to avoid situation when filenames are the same
+#     hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
+#     dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
+#     if not dst_filename.parent.exists():
+#         dst_filename.parent.mkdir(parents=True)
+#     if not dst_filename.exists():
+#         shutil.copyfile(filename, dst_filename)
+#     return dst_filename
 
-def save_input_file(input_dir: Path, filename: Path) -> Path:
+
+def save_text_to_new_file(input_dir: Path, text: str, filename: Path) -> Path:
     # need to avoid situation when filenames are the same
     hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
     dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
     if not dst_filename.parent.exists():
         dst_filename.parent.mkdir(parents=True)
     if not dst_filename.exists():
-        shutil.copyfile(filename, dst_filename)
+        with open(dst_filename, 'w', encoding='utf-8') as w:
+            w.write(text)
+
     return dst_filename
 
 
@@ -444,11 +541,17 @@ if __name__ == '__main__':  # noqa: C901
             'invocation_method_start_line',
             'invocation_method_end_line',
             'output_filename',
-            'can_be_parsed'
+            'can_be_parsed',
+            'inline_insertion_line_start',
+            'inline_insertion_line_end'
         ])
 
     with ProcessPool(system_cores_qty) as executor:
-        p_analyze = partial(analyze_file, output_path=output_dir.absolute())
+        p_analyze = partial(
+            analyze_file,
+            output_path=output_dir.absolute(),
+            input_dir=input_dir
+        )
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
@@ -460,9 +563,6 @@ if __name__ == '__main__':  # noqa: C901
                 single_file_features = next(result)
                 if single_file_features:
                     for i in single_file_features:
-                        dst_filename = save_input_file(input_dir, filename)
-                        # change source filename, since it will be changed
-                        i['input_filename'] = str(dst_filename.as_posix())
                         #  get local path for inlined filename
                         i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
                         i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
