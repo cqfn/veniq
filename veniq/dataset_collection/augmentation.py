@@ -305,11 +305,12 @@ def insert_code_with_new_file_creation(
     return line_to_csv
 
 
+# type: ignore
 def find_lines_in_changed_file(
         new_full_filename: Path,
         method_node: ASTNode,
         original_func: ASTNode,
-        class_name: str) -> Dict[str, any]:
+        class_name: str) -> Dict[str, Any]:
     """
     Find start and end line of invocation for changed file
     :param class_name: class name of old file
@@ -319,35 +320,26 @@ def find_lines_in_changed_file(
     :return:
     """
     changed_ast = get_ast_if_possible(new_full_filename)
-    class_node_of_changed_file = [
-        x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
-        if x.name == class_name][0]
-    class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
-    node = [x for x in class_subtree.get_proxy_nodes(
-        ASTNodeType.METHOD_DECLARATION,
-        ASTNodeType.CONSTRUCTOR_DECLARATION)
-        if x.name == method_node.name][0]
-    original_func_changed = [x for x in class_subtree.get_proxy_nodes(
-        ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
+    if changed_ast:
+        class_node_of_changed_file = [
+            x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == class_name][0]
+        class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
+        node = [x for x in class_subtree.get_proxy_nodes(
+            ASTNodeType.METHOD_DECLARATION,
+            ASTNodeType.CONSTRUCTOR_DECLARATION)
+            if x.name == method_node.name][0]  # type: ignore
+        original_func_changed = [x for x in class_subtree.get_proxy_nodes(
+            ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
 
-    # changed_invocation_node = [
-    #     x for x in node.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
-    #     if x.member == original_func.name][0]
-    #
-    body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
-    # algorithm_type = determine_algorithm_insertion_type(
-    #     changed_ast,
-    #     node,
-    #     changed_invocation_node,
-    #     dict_original_invocations
-    # )
-    # algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-
-    return {
-        'invocation_method_start_line': body_start_line,
-        'invocation_method_end_line': body_end_line,
-        'start_line_of_function_where_invocation_occurred': node.line
-    }
+        body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
+        return {
+            'invocation_method_start_line': body_start_line,
+            'invocation_method_end_line': body_end_line,
+            'start_line_of_function_where_invocation_occurred': node.line
+        }
+    else:
+        return {}
 
 
 def get_ast_if_possible(file_path: Path) -> Optional[AST]:
