@@ -339,7 +339,6 @@ class TestDatasetCollection(TestCase):
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
-        temp_filename.unlink()
 
     def test_inline_comments_at_the_end(self):
         filepath = self.current_directory / 'InlineExamples' / 'ObjectProperties_cut.java'
