@@ -22,7 +22,7 @@ class TestDatasetCollection(TestCase):
         self.filepath = self.current_directory / "Example.java"
         self.example_ast = AST.build_from_javalang(build_ast(self.filepath))
         self.temp_filename = self.current_directory / 'temp.java'
-
+        
     def tearDown(self):
         if self.temp_filename.exists():
             self.temp_filename.unlink()
