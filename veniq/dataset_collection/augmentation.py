@@ -423,24 +423,17 @@ def analyze_file(
                 # ignore overloaded functions
                 if len(found_method_decl) == 1:
                     try:
-                        is_matched = is_match_to_the_conditions(
+                        make_insertion(
                             ast,
+                            class_declaration,
+                            dst_filename,
+                            found_method_decl,
+                            method_declarations,
                             method_invoked,
-                            found_method_decl[0]
+                            method_node,
+                            output_path,
+                            results
                         )
-                        if is_matched:
-                            log_of_inline = insert_code_with_new_file_creation(
-                                class_declaration.name,
-                                ast,
-                                method_node,
-                                method_invoked,
-                                dst_filename,
-                                output_path,
-                                method_declarations)
-                            if log_of_inline:
-                                # change source filename, since it will be changed
-                                log_of_inline['input_filename'] = str(dst_filename.as_posix())
-                                results.append(log_of_inline)
                     except Exception as e:
                         print('Error has happened during file analyze: ' + str(e))
 
@@ -448,6 +441,28 @@ def analyze_file(
         dst_filename.unlink()
 
     return results
+
+
+def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
+                   method_node, output_path, results):
+    is_matched = is_match_to_the_conditions(
+        ast,
+        method_invoked,
+        found_method_decl[0]
+    )
+    if is_matched:
+        log_of_inline = insert_code_with_new_file_creation(
+            class_declaration.name,
+            ast,
+            method_node,
+            method_invoked,
+            dst_filename,
+            output_path,
+            method_declarations)
+        if log_of_inline:
+            # change source filename, since it will be changed
+            log_of_inline['input_filename'] = str(dst_filename.as_posix())
+            results.append(log_of_inline)
 
 
 def collect_info_about_functions_without_params(
