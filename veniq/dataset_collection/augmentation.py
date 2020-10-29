@@ -326,8 +326,7 @@ def find_lines_in_changed_file(
     node = [x for x in class_subtree.get_proxy_nodes(
         ASTNodeType.METHOD_DECLARATION,
         ASTNodeType.CONSTRUCTOR_DECLARATION)
-            if x.name == method_node.name
-            ][0]
+        if x.name == method_node.name][0]
     original_func_changed = [x for x in class_subtree.get_proxy_nodes(
         ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
 
@@ -385,7 +384,7 @@ def analyze_file(
         file_path: Path,
         output_path: Path,
         input_dir: Path
-    ) -> List[Any]:
+) -> List[Any]:
     """
     In this function we process each file.
     For each file we find each invocation inside,
@@ -447,7 +446,7 @@ def analyze_file(
 
     if not results:
         dst_filename.unlink()
-        
+
     return results
 
 
