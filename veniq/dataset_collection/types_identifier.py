@@ -156,6 +156,15 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         return lines_after_invoсation
 
     @abc.abstractmethod
+    def get_lines_of_method_body(self,
+                                 filename_out: pathlib.Path,
+                                 filename_in: pathlib.Path,
+                                 invocation_line: int,
+                                 body_start_line: int,
+                                 body_end_line: int
+                                 ) -> List[str]:
+        raise NotImplementedError("Cannot run abstract function")
+
     def inline_function(
             self,
             filename_in: pathlib.Path,
@@ -163,8 +172,46 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             body_start_line: int,
             body_end_line: int,
             filename_out: pathlib.Path
-    ) -> Union[None, str]:
-        raise NotImplementedError("Cannot run abstract function")
+    ) -> Union[None, str, List]:
+        lines_of_final_file = []
+        inline_method_bounds = []
+        inline_method_bounds.append(invocation_line)
+
+        # original code before method invocation, which will be substituted
+        lines_before_invoсation = self.get_lines_before_invocation(
+            filename_out,
+            filename_in,
+            invocation_line
+        )
+        lines_of_final_file += lines_before_invoсation
+
+        # body of the original method, which will be inserted
+        body_lines = self.get_lines_of_method_body(
+            filename_out,
+            filename_in,
+            invocation_line,
+            body_start_line + 1,
+            body_end_line - 1
+        )
+        lines_of_final_file += body_lines
+        end_inline_method = inline_method_bounds[0] + len(body_lines) - 1
+        inline_method_bounds.append(end_inline_method)
+
+        # original code after method invocation
+        original_code_lines = self.get_lines_after_invocation(
+            filename_out,
+            filename_in,
+            invocation_line
+        )
+        lines_of_final_file += original_code_lines
+
+        f_out = open(filename_out, 'w', encoding='utf-8')
+        for line in lines_of_final_file:
+            f_out.write(line)
+        f_out.close()
+        # return bounds of inline method
+        # counted relative to parent method body
+        return inline_method_bounds
 
 
 class DoNothing(IBaseInlineAlgorithm):
@@ -215,46 +262,6 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
             )
             body_lines.append(new_line)
         return body_lines
-
-    def inline_function(
-            self,
-            filename_in: pathlib.Path,
-            invocation_line: int,
-            body_start_line: int,
-            body_end_line: int,
-            filename_out: pathlib.Path
-    ) -> None:
-        lines_of_final_file = []
-        # original code before method invocation, which will be substituted
-        lines_before_invoсation = self.get_lines_before_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
-        lines_of_final_file += lines_before_invoсation
-
-        # body of the original method, which will be inserted
-        body_lines = self.get_lines_of_method_body(
-            filename_out,
-            filename_in,
-            invocation_line,
-            body_start_line + 1,
-            body_end_line - 1
-        )
-        lines_of_final_file += body_lines
-
-        # original code after method invocation
-        original_code_lines = self.get_lines_after_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
-        lines_of_final_file += original_code_lines
-
-        f_out = open(filename_out, 'w', encoding='utf-8')
-        for line in lines_of_final_file:
-            f_out.write(line)
-        f_out.close()
 
 
 class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
@@ -342,42 +349,3 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                 new_body_line = spaces_in_body + line
             body_lines.append(self.get_line_for_body(new_body_line, lines[invocation_line - 2]))
         return body_lines
-
-    def inline_function(
-            self,
-            filename_in: pathlib.Path,
-            invocation_line: int,
-            body_start_line: int,
-            body_end_line: int,
-            filename_out: pathlib.Path
-    ) -> None:
-        lines_of_final_file = []
-        # original code before method invocation, which will be substituted
-        lines_before_invoсation = self.get_lines_before_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
-        lines_of_final_file += lines_before_invoсation
-        # body of the original method, which will be inserted
-        body_lines = self.get_lines_of_method_body(
-            filename_out,
-            filename_in,
-            invocation_line,
-            body_start_line + 1,
-            body_end_line - 1
-        )
-        lines_of_final_file += body_lines
-
-        # original code after method invocation
-        original_code_lines = self.get_lines_after_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
-        lines_of_final_file += original_code_lines
-
-        f_out = open(filename_out, 'w', encoding='utf-8')
-        for line in lines_of_final_file:
-            f_out.write(line)
-        f_out.close()
