@@ -1,26 +1,25 @@
 import os
+import traceback
 from argparse import ArgumentParser
-from collections import namedtuple
+from dataclasses import dataclass, asdict
 from functools import partial
 from pathlib import Path
-from typing import Tuple, List
-import traceback
+from typing import List, Tuple
+
 import pandas as pd
 from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from metrics.ncss.ncss import NCSSMetric
+from veniq.baselines.semi._common_types import ExtractionOpportunity
+from veniq.metrics.ncss.ncss import NCSSMetric
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
+from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
 from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
-from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities
-from veniq.dataset_collection.augmentation import method_body_lines
+from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities, ExtractionOpportunityGroup
 from veniq.utils.ast_builder import build_ast
-from veniq.ast_framework import AST, ASTNodeType
-from random import choice
-
-from dataclasses import make_dataclass as md, dataclass, asdict
 
 
 def find_extraction_opportunities(
@@ -38,7 +37,7 @@ def find_extraction_opportunities(
 
 
 @dataclass
-class MatchedResult:
+class RowResult:
     output_filename: str
     input_filename: str
     start_line_SEMI: int
@@ -56,8 +55,43 @@ class MatchedResult:
     failed_cases_in_validation_examples: bool
 
 
+def fix_start_end_lines_for_opportunity(
+        extracted_lines_of_opportunity: List[int],
+        filepath: str) -> range:
+    """
+    Finds start and end lines for opportunity
+
+    :param filepath: filename where opportunity was found
+    :param extracted_lines_of_opportunity: list of lines for opportunity
+    :return: list of extracted lines for opportunity
+    """
+    start_line_opportunity = min(extracted_lines_of_opportunity)
+    end_line_opportunity = max(extracted_lines_of_opportunity)
+    text = read_text_with_autodetected_encoding(filepath).split('\n')
+    extraction = text[start_line_opportunity:end_line_opportunity]
+    open_brackets = 0
+    close_brackets = 0
+    for x in extraction:
+        close_brackets += x.count('}')
+    for x in extraction:
+        open_brackets += x.count('{')
+
+    if open_brackets < close_brackets:
+        diff = close_brackets - open_brackets
+        while diff > 0:
+            start_line_opportunity -= 1
+            diff -= 1
+    elif open_brackets > close_brackets:
+        diff = open_brackets - close_brackets
+        while diff > 0:
+            end_line_opportunity += 1
+            diff -= 1
+
+    return range(start_line_opportunity, end_line_opportunity + 1)
+
+
 def validate_row(dataset_dir: Path, row: pd.Series) \
-        -> List[MatchedResult]:
+        -> List[RowResult]:
     """
     Validate row of dataset
 
@@ -79,13 +113,12 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
         function_to_analyze = row[1]['method_where_invocation_occurred']
 
         for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
-            # class_ast = ast.get_subtree(class_decl)
             if class_decl.name != class_name:
                 continue
             elif class_decl.name == class_name:
                 objects_to_consider = list(class_decl.methods) + list(class_decl.constructors) or []
                 for ast_node in objects_to_consider:
-                    result = MatchedResult(
+                    result = RowResult(
                         output_filename=full_path,
                         input_filename=row[1]['input_filename'],
                         class_name='',
@@ -110,6 +143,10 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         if opport:
                             best_group = opport[0]
                             lines = [node.line for node in best_group._optimal_opportunity]
+                            # fixed_lines = fix_start_end_lines_for_opportunity(
+                            #     lines,
+                            #     full_path
+                            # )
                             start_line_opportunity = min(lines)
                             end_line_opportunity = max(lines)
                             dataset_range_extraction = range(start_line_of_inserted_block, end_line_of_inserted_block)
@@ -127,7 +164,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                             result.percent_matched = float(len(lines_intersected)) / len(dataset_range_extraction)
                         else:
                             result.no_opportunity_chosen = True
-                            # print(class_decl.name, method_decl.name)
 
                     except Exception as e:
                         traceback.print_exc()
@@ -145,7 +181,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
         result.failed_cases_in_validation_examples = True
         results.append(result)
 
-    # print(dataset_dir / src_filename)
     return results
 
 
@@ -176,16 +211,16 @@ if __name__ == '__main__':
     df = pd.read_csv(csv_dataset_filename)
     df = df[df['can_be_parsed']]
 
-    output_df = pd.DataFrame(columns=list(MatchedResult.__annotations__.keys()))
+    output_df = pd.DataFrame(columns=list(RowResult.__annotations__.keys()))
 
-    with ProcessPool(system_cores_qty) as executor:
+    with ProcessPool(1) as executor:
         validate_row_f = partial(validate_row, dataset_dir)
         future = executor.map(validate_row_f, df.iterrows(), timeout=10000, )
         result = future.result()
         for index, row in tqdm(df.iterrows()):
             try:
                 # print(row['input_filename'])
-                results: List[MatchedResult] = next(result)
+                results: List[RowResult] = next(result)
                 for res in results:
                     output_df = output_df.append(asdict(res), ignore_index=True)
                 output_df.to_csv('matched.csv')
@@ -205,9 +240,7 @@ if __name__ == '__main__':
     print(f'No opportunity chosen: {no_opportunity_chosen} times')
     print(f'Total number of handled cases: {output_df.shape[0]}')
     print(f'Average of matched lines: {matched_percent}')
-    total_case_handled = output_df.shape[0] - \
-                   failed_cases_in_SEMI_algorithm - \
-                   failed_cases_in_validation_examples
+    total_case_handled = output_df.shape[0] - failed_cases_in_SEMI_algorithm - failed_cases_in_validation_examples
     if total_case_handled > 0:
         result = matched_cases / total_case_handled
         print(f'Matched {result}% of cases, {matched_cases} out of {total_case_handled}')
