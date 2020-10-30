@@ -6,6 +6,7 @@ from functools import partial
 from pathlib import Path
 from typing import List, Tuple
 
+
 import pandas as pd
 from numpy import mean
 from pebble import ProcessPool
@@ -149,7 +150,10 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                             # )
                             start_line_opportunity = min(lines)
                             end_line_opportunity = max(lines)
-                            dataset_range_extraction = range(start_line_of_inserted_block, end_line_of_inserted_block)
+                            dataset_range_extraction = range(
+                                start_line_of_inserted_block,
+                                end_line_of_inserted_block + 1
+                            )
                             lines_intersected = set(dataset_range_extraction) & set(lines)
                             result.class_name = class_decl.name
                             result.method_name = ast_node.name
