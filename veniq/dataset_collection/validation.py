@@ -58,7 +58,7 @@ class RowResult:
 
 def fix_start_end_lines_for_opportunity(
         extracted_lines_of_opportunity: List[int],
-        filepath: str) -> range:
+        filepath: str) -> Tuple[int, int]:
     """
     Finds start and end lines for opportunity
 
@@ -74,21 +74,35 @@ def fix_start_end_lines_for_opportunity(
     close_brackets = 0
     for x in extraction:
         close_brackets += x.count('}')
-    for x in extraction:
         open_brackets += x.count('{')
 
-    if open_brackets < close_brackets:
+    if (open_brackets < close_brackets):
         diff = close_brackets - open_brackets
-        while diff > 0:
-            start_line_opportunity -= 1
-            diff -= 1
-    elif open_brackets > close_brackets:
-        diff = open_brackets - close_brackets
-        while diff > 0:
-            end_line_opportunity += 1
-            diff -= 1
+        count = 1
+        for text_line in text[end_line_opportunity:]:
+            if diff < 1:
+                break
+            else:
+                if text_line.find('{') > -1:
+                    diff -= 1
+                    count += 1
 
-    return range(start_line_opportunity, end_line_opportunity + 1)
+        start_line_opportunity += count - 1
+
+    elif (open_brackets > close_brackets):
+        diff = open_brackets - close_brackets
+        count = 1
+        for text_line in text[end_line_opportunity:]:
+            if diff < 1:
+                break
+            else:
+                if text_line.find('}') > -1:
+                    diff -= 1
+                    count += 1
+
+        end_line_opportunity += count - 1
+
+    return start_line_opportunity, end_line_opportunity
 
 
 def validate_row(dataset_dir: Path, row: pd.Series) \
@@ -144,17 +158,17 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         if opport:
                             best_group = opport[0]
                             lines = [node.line for node in best_group._optimal_opportunity]
-                            # fixed_lines = fix_start_end_lines_for_opportunity(
-                            #     lines,
-                            #     full_path
-                            # )
-                            start_line_opportunity = min(lines)
-                            end_line_opportunity = max(lines)
+                            fixed_lines = fix_start_end_lines_for_opportunity(
+                                lines,
+                                full_path
+                            )
+                            start_line_opportunity = min(fixed_lines)
+                            end_line_opportunity = max(fixed_lines)
                             dataset_range_extraction = range(
                                 start_line_of_inserted_block,
                                 end_line_of_inserted_block + 1
                             )
-                            lines_intersected = set(dataset_range_extraction) & set(lines)
+                            lines_intersected = set(dataset_range_extraction) & set(fixed_lines)
                             result.class_name = class_decl.name
                             result.method_name = ast_node.name
                             result.start_line_SEMI = start_line_opportunity
@@ -221,7 +235,7 @@ if __name__ == '__main__':
         validate_row_f = partial(validate_row, dataset_dir)
         future = executor.map(validate_row_f, df.iterrows(), timeout=10000, )
         result = future.result()
-        for index, row in tqdm(df.iterrows()):
+        for index, row in tqdm(df.iterrows(), total=df.shape[0]):
             try:
                 # print(row['input_filename'])
                 results: List[RowResult] = next(result)
