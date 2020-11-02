@@ -39,7 +39,9 @@ class BlockStatementTestCase(TestCase):
         )
 
     def test_single_local_variable_declaration(self):
-        block_statement_graph = self._get_block_statement_graph_from_method("singleVariableDeclarationStatement")
+        block_statement_graph = self._get_block_statement_graph_from_method(
+            "singleVariableDeclarationStatement"
+        )
         self.assertEqual(
             self._flatten_block_statement_graph(block_statement_graph),
             [
@@ -331,7 +333,9 @@ class BlockStatementTestCase(TestCase):
         try:
             method_declaration = next(islice(class_declaration.constructors, constructor_index - 1, None))
         except StopIteration:
-            raise ValueError(f"Can't find {constructor_index}th constructor in class {class_name} in file {filename}")
+            raise ValueError(
+                f"Can't find {constructor_index}th constructor in class {class_name} in file {filename}"
+            )
 
         return build_block_statement_graph(ast.get_subtree(method_declaration))
 
