@@ -1,7 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
-from dataset_collection.validation import fix_start_end_lines_for_opportunity, \
+from veniq.dataset_collection.validation import fix_start_end_lines_for_opportunity, \
     percent_matched
 
 

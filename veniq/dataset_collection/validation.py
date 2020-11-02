@@ -11,7 +11,7 @@ from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from ast_framework import ASTNode
+from veniq.ast_framework import ASTNode
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
