@@ -287,6 +287,17 @@ class BlockStatementTestCase(TestCase):
             ],
         )
 
+    def test_simple_constructor(self):
+        block_statement_graph = self._get_block_statement_graph_from_constructor(1)
+        self.assertEqual(
+            self._flatten_block_statement_graph(block_statement_graph),
+            [
+                ASTNodeType.CONSTRUCTOR_DECLARATION,
+                BlockReason.SINGLE_BLOCK,
+                ASTNodeType.STATEMENT_EXPRESSION,
+            ],
+        )
+
     def _get_class_declaration(self) -> Tuple[str, str, ASTNode, AST]:
         current_directory = Path(__file__).absolute().parent
         filename = "BlockStatementGraphExamples.java"
@@ -318,7 +329,7 @@ class BlockStatementTestCase(TestCase):
         filename, class_name, class_declaration, ast = self._get_class_declaration()
 
         try:
-            method_declaration = next(islice(class_declaration.constructors, constructor_index, None))
+            method_declaration = next(islice(class_declaration.constructors, constructor_index - 1, None))
         except StopIteration:
             raise ValueError(f"Can't find {constructor_index}th constructor in class {class_name} in file {filename}")
 
