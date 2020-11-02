@@ -168,7 +168,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                 start_line_of_inserted_block,
                                 end_line_of_inserted_block + 1
                             )
-                            lines_intersected = set(dataset_range_extraction) & set(fixed_lines)
                             result.class_name = class_decl.name
                             result.method_name = ast_node.name
                             result.start_line_SEMI = start_line_opportunity
@@ -179,7 +178,7 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                     and (end_line_of_inserted_block == end_line_opportunity):
                                 result.matched = True
 
-                            result.percent_matched = float(len(lines_intersected)) / len(dataset_range_extraction)
+                            result.percent_matched = percent_matched(dataset_range_extraction, fixed_lines)
                         else:
                             result.no_opportunity_chosen = True
 
@@ -200,6 +199,11 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
         results.append(result)
 
     return results
+
+
+def percent_matched(dataset_range_lines, semi_range_lines):
+    lines_intersected = set(dataset_range_lines) & set(semi_range_lines)
+    return float(len(lines_intersected)) / len(set(dataset_range_lines))
 
 
 if __name__ == '__main__':
