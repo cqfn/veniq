@@ -11,9 +11,8 @@ from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from baselines.semi._common_types import ExtractionOpportunity
-from veniq.ast_framework import ASTNode
 from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import ASTNode
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
 from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
@@ -69,7 +68,8 @@ def fix_start_end_lines_for_opportunity(
     start_line_opportunity = min(extracted_lines_of_opportunity)
     end_line_opportunity = max(extracted_lines_of_opportunity)
     text = read_text_with_autodetected_encoding(filepath).split('\n')
-    extraction = text[start_line_opportunity:end_line_opportunity]
+
+    extraction = text[start_line_opportunity - 1:end_line_opportunity]
     open_brackets = 0
     close_brackets = 0
     for x in extraction:
@@ -80,9 +80,7 @@ def fix_start_end_lines_for_opportunity(
         diff = close_brackets - open_brackets
         count = 1
         for text_line in text[end_line_opportunity:]:
-            if diff < 1:
-                break
-            else:
+            while diff > 0:
                 if text_line.find('{') > -1:
                     diff -= 1
                     count += 1
@@ -93,9 +91,7 @@ def fix_start_end_lines_for_opportunity(
         diff = open_brackets - close_brackets
         count = 1
         for text_line in text[end_line_opportunity:]:
-            if diff < 1:
-                break
-            else:
+            while diff > 0:
                 if text_line.find('}') > -1:
                     diff -= 1
                     count += 1
@@ -128,9 +124,7 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
         function_to_analyze = row[1]['method_where_invocation_occurred']
 
         for class_decl in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION):
-            if class_decl.name != class_name:
-                continue
-            elif class_decl.name == class_name:
+            if class_decl.name == class_name:
                 objects_to_consider = list(class_decl.methods) + list(class_decl.constructors) or []
                 for ast_node in objects_to_consider:
                     result = RowResult(
@@ -154,8 +148,11 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         continue
                     try:
                         ast_subtree = ast.get_subtree(ast_node)
+                        print(src_filename, 'start')
                         opport = find_extraction_opportunities(ast_subtree)
+                        print(src_filename, 'end')
                         if opport:
+                            print(src_filename, 'start find_matched_lines')
                             find_matched_lines(
                                 ast_node,
                                 ast_subtree,
@@ -165,6 +162,8 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                 full_path,
                                 opport,
                                 result)
+
+                            print(src_filename, 'end find_matched_lines')
                         else:
                             result.no_opportunity_chosen = True
 
@@ -196,6 +195,9 @@ def find_matched_lines(
         full_path: str,
         opportunities_list: List[ExtractionOpportunityGroup],
         result: RowResult) -> None:
+
+    if Path(full_path).stem == 'ParametersPickerOperator_cf13c04617679fdf0fe1779623e8a28e41e89e045c640a1f507d166ba1e8370f_verify_111':
+        print()
     best_group = opportunities_list[0]
     lines = [node.line for node in best_group._optimal_opportunity]
     fixed_lines = fix_start_end_lines_for_opportunity(
