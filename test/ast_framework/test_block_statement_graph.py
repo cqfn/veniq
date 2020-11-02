@@ -1,3 +1,4 @@
+from itertools import islice
 from typing import List, Tuple, Union
 from pathlib import Path
 from unittest import TestCase
@@ -310,6 +311,16 @@ class BlockStatementTestCase(TestCase):
             method_declaration = next(node for node in class_declaration.methods if node.name == method_name)
         except StopIteration:
             raise ValueError(f"Can't find method {method_name} in class {class_name} in file {filename}")
+
+        return build_block_statement_graph(ast.get_subtree(method_declaration))
+
+    def _get_block_statement_graph_from_constructor(self, constructor_index: int = 1) -> Block:
+        filename, class_name, class_declaration, ast = self._get_class_declaration()
+
+        try:
+            method_declaration = next(islice(class_declaration.constructors, constructor_index, None))
+        except StopIteration:
+            raise ValueError(f"Can't find {constructor_index}th constructor in class {class_name} in file {filename}")
 
         return build_block_statement_graph(ast.get_subtree(method_declaration))
 
