@@ -11,6 +11,7 @@ from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
+from baselines.semi._common_types import ExtractionOpportunity
 from veniq.ast_framework import ASTNode
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
@@ -23,7 +24,7 @@ from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
 def find_extraction_opportunities(
-        method_ast: AST):
+        method_ast: AST) -> List[ExtractionOpportunityGroup]:
     statements_semantic = extract_method_statements_semantic(method_ast)
     extraction_opportunities = create_extraction_opportunities(statements_semantic)
     filtered_extraction_opportunities = filter_extraction_opportunities(
@@ -112,9 +113,8 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
 
     :param dataset_dir: directory to dataset, path before the relative path in
     output_filename
-    :param row: row of dataframe
-    :return: boolean value whether we should consider this row or skip it,
-    Stats - return collected stats
+    :param row: row of dataframe of synth validation dataset
+    :return: Stats - return collected stats
     """
     results = []
     try:
@@ -136,7 +136,7 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                     result = RowResult(
                         output_filename=full_path,
                         input_filename=row[1]['input_filename'],
-                        class_name='',
+                        class_name='Not available',
                         method_name='',
                         start_line_SEMI=-1,
                         end_line_SEMI=-1,
@@ -233,7 +233,7 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         "-i", "--csv_input",
-        help="Path for csv"
+        help="Path for csv with synth dataset"
     )
     system_cores_qty = os.cpu_count() or 1
     parser.add_argument(
