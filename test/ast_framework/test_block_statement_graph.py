@@ -1,10 +1,10 @@
-from typing import List, Union
+from typing import List, Tuple, Union
 from pathlib import Path
 from unittest import TestCase
 
 from veniq.ast_framework.block_statement_graph import build_block_statement_graph, Block, Statement
 from veniq.ast_framework.block_statement_graph.constants import BlockReason
-from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import AST, ASTNode, ASTNodeType
 from veniq.utils.ast_builder import build_ast
 
 
@@ -286,7 +286,7 @@ class BlockStatementTestCase(TestCase):
             ],
         )
 
-    def _get_block_statement_graph(self, method_name: str) -> Block:
+    def _get_class_declaration(self) -> Tuple[str, str, ASTNode, AST]:
         current_directory = Path(__file__).absolute().parent
         filename = "BlockStatementGraphExamples.java"
         ast = AST.build_from_javalang(build_ast(str(current_directory / filename)))
@@ -300,6 +300,11 @@ class BlockStatementTestCase(TestCase):
             )
         except StopIteration:
             raise RuntimeError(f"Can't find class {class_name} in file {filename}")
+
+        return filename, class_name, class_declaration, ast
+
+    def _get_block_statement_graph(self, method_name: str) -> Block:
+        filename, class_name, class_declaration, ast = self._get_class_declaration()
 
         try:
             method_declaration = next(node for node in class_declaration.methods if node.name == method_name)
