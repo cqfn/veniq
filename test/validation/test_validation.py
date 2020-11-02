@@ -1,10 +1,8 @@
 from pathlib import Path
 from unittest import TestCase
 
-from dataset_collection.validation import find_extraction_opportunities, fix_start_end_lines_for_opportunity, \
+from dataset_collection.validation import fix_start_end_lines_for_opportunity, \
     percent_matched
-from veniq.ast_framework import AST, ASTNodeType
-from veniq.utils.ast_builder import build_ast
 
 
 class TestValidation(TestCase):
@@ -75,7 +73,7 @@ class TestValidation(TestCase):
         semi_lines = list(range(65, 81))
         dataset_lines = list(range(69, 82))
         percent = percent_matched(dataset_lines, semi_lines)
-        self.assertEqual(percent, 12/13)
+        self.assertEqual(percent, 12 / 13)
 
     def test_percent_not_matched(self):
         semi_lines = list(range(65, 68))

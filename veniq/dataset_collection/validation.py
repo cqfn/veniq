@@ -6,21 +6,20 @@ from functools import partial
 from pathlib import Path
 from typing import List, Tuple
 
-
 import pandas as pd
 from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from veniq.baselines.semi._common_types import ExtractionOpportunity
-from veniq.metrics.ncss.ncss import NCSSMetric
-from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
+from ast_framework import ASTNode
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
 from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
 from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities, ExtractionOpportunityGroup
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.utils.ast_builder import build_ast
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
 def find_extraction_opportunities(
@@ -76,7 +75,7 @@ def fix_start_end_lines_for_opportunity(
         close_brackets += x.count('}')
         open_brackets += x.count('{')
 
-    if (open_brackets < close_brackets):
+    if open_brackets < close_brackets:
         diff = close_brackets - open_brackets
         count = 1
         for text_line in text[end_line_opportunity:]:
@@ -89,7 +88,7 @@ def fix_start_end_lines_for_opportunity(
 
         start_line_opportunity += count - 1
 
-    elif (open_brackets > close_brackets):
+    elif open_brackets > close_brackets:
         diff = open_brackets - close_brackets
         count = 1
         for text_line in text[end_line_opportunity:]:
@@ -105,6 +104,7 @@ def fix_start_end_lines_for_opportunity(
     return start_line_opportunity, end_line_opportunity
 
 
+# flake8: noqa: C901
 def validate_row(dataset_dir: Path, row: pd.Series) \
         -> List[RowResult]:
     """
@@ -156,29 +156,15 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         ast_subtree = ast.get_subtree(ast_node)
                         opport = find_extraction_opportunities(ast_subtree)
                         if opport:
-                            best_group = opport[0]
-                            lines = [node.line for node in best_group._optimal_opportunity]
-                            fixed_lines = fix_start_end_lines_for_opportunity(
-                                lines,
-                                full_path
-                            )
-                            start_line_opportunity = min(fixed_lines)
-                            end_line_opportunity = max(fixed_lines)
-                            dataset_range_extraction = range(
+                            find_matched_lines(
+                                ast_node,
+                                ast_subtree,
+                                class_decl,
                                 start_line_of_inserted_block,
-                                end_line_of_inserted_block + 1
-                            )
-                            result.class_name = class_decl.name
-                            result.method_name = ast_node.name
-                            result.start_line_SEMI = start_line_opportunity
-                            result.end_line_SEMI = end_line_opportunity
-                            result.ncss = NCSSMetric().value(ast_subtree)
-
-                            if (start_line_of_inserted_block == start_line_opportunity) \
-                                    and (end_line_of_inserted_block == end_line_opportunity):
-                                result.matched = True
-
-                            result.percent_matched = percent_matched(dataset_range_extraction, fixed_lines)
+                                end_line_of_inserted_block,
+                                full_path,
+                                opport,
+                                result)
                         else:
                             result.no_opportunity_chosen = True
 
@@ -199,6 +185,38 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
         results.append(result)
 
     return results
+
+
+def find_matched_lines(
+        ast_node: ASTNode,
+        ast_subtree: AST,
+        class_decl: ASTNode,
+        start_line_of_inserted_block: int,
+        end_line_of_inserted_block: int,
+        full_path: str,
+        opportunities_list: List[ExtractionOpportunityGroup],
+        result: RowResult) -> None:
+    best_group = opportunities_list[0]
+    lines = [node.line for node in best_group._optimal_opportunity]
+    fixed_lines = fix_start_end_lines_for_opportunity(
+        lines,
+        full_path
+    )
+    start_line_opportunity = min(fixed_lines)
+    end_line_opportunity = max(fixed_lines)
+    dataset_range_extraction = range(
+        start_line_of_inserted_block,
+        end_line_of_inserted_block + 1
+    )
+    result.class_name = class_decl.name
+    result.method_name = ast_node.name
+    result.start_line_SEMI = start_line_opportunity
+    result.end_line_SEMI = end_line_opportunity
+    result.ncss = NCSSMetric().value(ast_subtree)
+    if (start_line_of_inserted_block == start_line_opportunity) \
+            and (end_line_of_inserted_block == end_line_opportunity):
+        result.matched = True
+    result.percent_matched = percent_matched(dataset_range_extraction, fixed_lines)
 
 
 def percent_matched(dataset_range_lines, semi_range_lines):
@@ -241,13 +259,11 @@ if __name__ == '__main__':
         result = future.result()
         for index, row in tqdm(df.iterrows(), total=df.shape[0]):
             try:
-                # print(row['input_filename'])
                 results: List[RowResult] = next(result)
                 for res in results:
                     output_df = output_df.append(asdict(res), ignore_index=True)
                 output_df.to_csv('matched.csv')
-            except Exception as e:
-                # print(f"Exception inside thread happened: {str(e)}")
+            except Exception:
                 print(traceback.format_exc())
                 continue
 
