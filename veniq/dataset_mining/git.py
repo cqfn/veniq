@@ -114,7 +114,7 @@ if __name__ == '__main__':
                     )
                     if result.stdout:
                         dataset_samples = [x.strip().split()[0] for x in result.stdout.decode('utf-8').split('\n')]
-                        print(dataset_samples)
+                        # print(dataset_samples)
                         saved_files = set()
 
                         for em in refactorings:
