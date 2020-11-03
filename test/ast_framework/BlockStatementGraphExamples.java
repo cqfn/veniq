@@ -153,4 +153,8 @@ class BlockStatementGraphExamples {
 
         return x;
     }
+
+    BlockStatementGraphExamples() { // First constructor
+        System.out.println("Inside constructor.");
+    }
 }
