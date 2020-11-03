@@ -77,9 +77,13 @@ if __name__ == '__main__':
 
     with open(args.dataset_file, encoding='utf-8') as f:
         dataset_samples = json.loads(f.read())
-        repos = set([x['repository'] for x in dataset_samples])
-        print(len(repos))
-        for repo in tqdm(repos):
+        repos_urls = set()
+        for sample in dataset_samples:
+            refactorings = [x for x in sample['refactorings'] if x['type'] == 'Extract Method']
+            if refactorings:
+                repos_urls.add(sample['repository'])
+        print(len(repos_urls))
+        for repo in tqdm(repos_urls):
             repo_dir = cloned_repos / Path(repo).stem
             print(repo_dir)
             result = _run_command(f"git -C {str(cloned_repos)} clone {repo}")
