@@ -111,7 +111,7 @@ if __name__ == '__main__':
                     print(f'Switched to {repo_dir}')
                     try:
                         result: subprocess.CompletedProcess = _run_command_with_error_check(
-                            f'git log --full-history --pretty=format:"%H %ad %s"'
+                            f'git log --full-history --pretty=format:"%H %ad"'
                         )
                         if result.stdout:
                             dataset_samples = [x.strip().split()[0] for x in result.stdout.decode('utf-8').split('\n')]

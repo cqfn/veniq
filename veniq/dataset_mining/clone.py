@@ -5,6 +5,7 @@ from argparse import ArgumentParser
 from pathlib import Path, PurePath
 
 import numpy as np
+from tqdm import tqdm
 
 from veniq.dataset_collection.augmentation import get_ast_if_possible
 
@@ -78,7 +79,7 @@ if __name__ == '__main__':
         dataset_samples = json.loads(f.read())
         repos = set([x['repository'] for x in dataset_samples])
         print(len(repos))
-        for repo in repos:
+        for repo in tqdm(repos):
             repo_dir = cloned_repos / Path(repo).stem
             print(repo_dir)
-            # result = _run_command(f"git -C {str(cloned_repos)} clone {repo}")
+            result = _run_command(f"git -C {str(cloned_repos)} clone {repo}")
