@@ -2,7 +2,7 @@ import json
 import os
 import subprocess
 from argparse import ArgumentParser
-from pathlib import Path
+from pathlib import Path, PurePath
 
 import numpy as np
 
@@ -109,46 +109,57 @@ if __name__ == '__main__':
                 if result != 128:
                     os.chdir(repo_dir)
                     print(f'Switched to {repo_dir}')
-                    result: subprocess.CompletedProcess = _run_command_with_error_check(
-                        f'git log --full-history --pretty=format:"%H %ad %s"'
-                    )
-                    if result.stdout:
-                        dataset_samples = [x.strip().split()[0] for x in result.stdout.decode('utf-8').split('\n')]
-                        # print(dataset_samples)
-                        saved_files = set()
+                    try:
+                        result: subprocess.CompletedProcess = _run_command_with_error_check(
+                            f'git log --full-history --pretty=format:"%H %ad %s"'
+                        )
+                        if result.stdout:
+                            dataset_samples = [x.strip().split()[0] for x in result.stdout.decode('utf-8').split('\n')]
+                            # print(dataset_samples)
+                            saved_files = set()
 
-                        for em in refactorings:
-                            description = em.get('description')
-                            filename_raw = description.split('in class')[1].replace('.', '\\').strip()
-                            class_name = filename_raw.split('\\')[-1]
-                            found_files = list(repo_dir.glob(f'**/{class_name}.java'))
-                            output_dir_for_saved_file = output_dir / str(example_id)
-                            if found_files:
-                                current_file_name = found_files[0].relative_to(repo_dir).as_posix()
-                                if current_file_name in saved_files:
-                                    continue
+                            for em in refactorings:
+                                description = em.get('description')
+                                filename_raw = PurePath(description.split('in class')[1].replace('.', '/').strip())
+                                class_name = filename_raw.parts[-1]
+                                result = _run_command(f'git show --name-only --oneline {commit_sha}')
+                                if result.stdout:
+                                    files_in_commit = [
+                                        x.strip() for x in result.stdout.decode("utf-8").split('\n')[1:]
+                                        if PurePath(x.strip()).is_relative_to(filename_raw)
+                                    ]
 
-                                file_after_changes = Path(output_dir_for_saved_file, class_name + '_after.java')
+                                    found_files = list(repo_dir.glob(f'**/{class_name}.java'))
+                                    output_dir_for_saved_file = output_dir / str(example_id)
+                                    if found_files:
+                                        current_file_name = found_files[0].relative_to(repo_dir).as_posix()
+                                        if current_file_name in saved_files:
+                                            continue
 
-                                ast_of_new_file = save_after_file(
-                                    output_dir_for_saved_file,
-                                    class_name,
-                                    commit_sha,
-                                    current_file_name
-                                )
-                                if ast_of_new_file:
-                                    i = np.argwhere(np.array(dataset_samples) == commit_sha)
-                                    index_of_first = int(i.min())
-                                    if index_of_first:
-                                        ast_of_old_file = save_file_before_changes(
-                                            index_of_first,
-                                            dataset_samples,
+                                        file_after_changes = Path(output_dir_for_saved_file, class_name + '_after.java')
+
+                                        ast_of_new_file = save_after_file(
                                             output_dir_for_saved_file,
                                             class_name,
-                                            current_file_name)
+                                            commit_sha,
+                                            current_file_name
+                                        )
+                                        if ast_of_new_file:
+                                            i = np.argwhere(np.array(dataset_samples) == commit_sha)
+                                            index_of_first = int(i.min())
+                                            if index_of_first:
+                                                ast_of_old_file = save_file_before_changes(
+                                                    index_of_first,
+                                                    dataset_samples,
+                                                    output_dir_for_saved_file,
+                                                    class_name,
+                                                    current_file_name)
 
-                                        if ast_of_old_file:
-                                            saved_files.add(current_file_name)
+                                                if ast_of_old_file:
+                                                    saved_files.add(current_file_name)
 
-                                else:
-                                    print(f'File {file_after_changes} was not found')
+                                        else:
+                                            print(f'File {file_after_changes} was not found')
+                    except subprocess.CalledProcessError as e:
+                        print("Can't make git log: {}".format(result.stdout.decode('utf-8')))
+
