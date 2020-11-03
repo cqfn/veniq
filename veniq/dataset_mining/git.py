@@ -6,7 +6,7 @@ from pathlib import Path
 
 import numpy as np
 
-from dataset_collection.augmentation import get_ast_if_possible
+from veniq.dataset_collection.augmentation import get_ast_if_possible
 
 'https://api.github.com/repos/realm/realm-java/commits/6cf596df183b3c3a38ed5dd9bb3b0100c6548ebb'
 
