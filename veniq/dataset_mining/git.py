@@ -125,7 +125,7 @@ if __name__ == '__main__':
                                 result = _run_command(f'git show --name-only --oneline {commit_sha}')
                                 if result.stdout:
                                     files_in_commit = [
-                                        x.strip() for x in result.stdout.decode("utf-8").split('\n')[1:]
+                                        Path(x.strip()) for x in result.stdout.decode("utf-8").split('\n')[1:]
                                         if x.strip().find(filename_raw.as_posix()) > -1
                                     ]
                                     output_dir_for_saved_file = output_dir / str(example_id)
