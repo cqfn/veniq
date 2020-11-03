@@ -120,13 +120,13 @@ if __name__ == '__main__':
 
                             for em in refactorings:
                                 description = em.get('description')
-                                filename_raw = PurePath(description.split('in class')[1].replace('.', '/').strip())
+                                filename_raw = Path(description.split('in class')[1].replace('.', '/').strip())
                                 class_name = filename_raw.parts[-1]
                                 result = _run_command(f'git show --name-only --oneline {commit_sha}')
                                 if result.stdout:
                                     files_in_commit = [
                                         x.strip() for x in result.stdout.decode("utf-8").split('\n')[1:]
-                                        if PurePath(x.strip()).is_relative_to(filename_raw)
+                                        if x.strip().find(filename_raw.as_posix()) > -1
                                     ]
 
                                     found_files = list(repo_dir.glob(f'**/{class_name}.java'))
