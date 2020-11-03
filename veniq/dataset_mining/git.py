@@ -128,11 +128,9 @@ if __name__ == '__main__':
                                         x.strip() for x in result.stdout.decode("utf-8").split('\n')[1:]
                                         if x.strip().find(filename_raw.as_posix()) > -1
                                     ]
-
-                                    found_files = list(repo_dir.glob(f'**/{class_name}.java'))
                                     output_dir_for_saved_file = output_dir / str(example_id)
-                                    if found_files:
-                                        current_file_name = found_files[0].relative_to(repo_dir).as_posix()
+                                    if files_in_commit:
+                                        current_file_name = files_in_commit[0].relative_to(repo_dir).as_posix()
                                         if current_file_name in saved_files:
                                             continue
 
