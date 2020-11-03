@@ -130,7 +130,7 @@ if __name__ == '__main__':
                                     ]
                                     output_dir_for_saved_file = output_dir / str(example_id)
                                     if files_in_commit:
-                                        current_file_name = files_in_commit[0].relative_to(repo_dir).as_posix()
+                                        current_file_name = files_in_commit[0]
                                         if current_file_name in saved_files:
                                             continue
 
@@ -144,17 +144,20 @@ if __name__ == '__main__':
                                         )
                                         if ast_of_new_file:
                                             i = np.argwhere(np.array(dataset_samples) == commit_sha)
-                                            index_of_first = int(i.min())
-                                            if index_of_first:
-                                                ast_of_old_file = save_file_before_changes(
-                                                    index_of_first,
-                                                    dataset_samples,
-                                                    output_dir_for_saved_file,
-                                                    class_name,
-                                                    current_file_name)
+                                            try:
+                                                index_of_first = int(i.min())
+                                                if index_of_first:
+                                                    ast_of_old_file = save_file_before_changes(
+                                                        index_of_first,
+                                                        dataset_samples,
+                                                        output_dir_for_saved_file,
+                                                        class_name,
+                                                        current_file_name)
 
-                                                if ast_of_old_file:
-                                                    saved_files.add(current_file_name)
+                                                    if ast_of_old_file:
+                                                        saved_files.add(current_file_name)
+                                            except ValueError as e:
+                                                print("Can't find commit: {}".format(commit_sha))
 
                                         else:
                                             print(f'File {file_after_changes} was not found')
