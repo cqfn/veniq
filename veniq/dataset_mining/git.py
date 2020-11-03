@@ -108,9 +108,9 @@ if __name__ == '__main__':
                 # Failed to connect to github.com port
                 if result != 128:
                     os.chdir(repo_dir)
-
+                    print(f'Switched to {repo_dir}')
                     result: subprocess.CompletedProcess = _run_command_with_error_check(
-                        f'git log --full-history --pretty=format:"%H %ad %s'
+                        f'git log --full-history --pretty=format:"%H %ad %s"'
                     )
                     if result.stdout:
                         dataset_samples = [x.strip().split()[0] for x in result.stdout.decode('utf-8').split('\n')]
