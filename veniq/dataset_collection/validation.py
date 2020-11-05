@@ -74,7 +74,6 @@ def fix_start_end_lines_for_opportunity(
     extraction = text[start_line_opportunity - 1:]
 
     balance = 0
-    number_of_lines_added = 0
     first_line_found = False
 
     for i, x in enumerate(extraction):
