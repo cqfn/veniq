@@ -11,7 +11,7 @@ from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from utils.timeout import invoke_with_timeout
+from veniq.utils.timeout import invoke_with_timeout
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.ast_framework import ASTNode
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
@@ -244,7 +244,7 @@ if __name__ == '__main__':
 
     output_df = pd.DataFrame(columns=list(RowResult.__annotations__.keys()))
 
-    with ProcessPool(1) as executor:
+    with ProcessPool(system_cores_qty) as executor:
         validate_row_f = partial(validate_row, dataset_dir)
         future = executor.map(validate_row_f, df.iterrows(), timeout=10000, )
         result = future.result()
