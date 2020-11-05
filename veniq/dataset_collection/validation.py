@@ -194,21 +194,24 @@ def find_matched_lines(
 
     start_line_opportunity = min(fixed_lines)
     end_line_opportunity = max(fixed_lines)
-    dataset_range_extraction = range(
-        start_line_of_inserted_block,
-        end_line_of_inserted_block + 1
-    )
+    dataset_range_extraction = list(
+        range(
+            start_line_of_inserted_block,
+            end_line_of_inserted_block + 1
+    ))
     result.ncss = NCSSMetric().value(ast_subtree)
     result.class_name = class_decl.name
     result.method_name = ast_node.name
     result.start_line_SEMI = start_line_opportunity
     result.end_line_SEMI = end_line_opportunity
+    result.start_line_dataset = start_line_of_inserted_block
+    result.end_line_dataset = end_line_of_inserted_block
     if (start_line_of_inserted_block == start_line_opportunity) \
             and (end_line_of_inserted_block == end_line_opportunity):
         result.matched = True
     result.percent_matched = percent_matched(
         dataset_range_extraction,
-        list(range(start_line_opportunity, end_line_opportunity))
+        list(range(start_line_opportunity, end_line_opportunity + 1))
     )
 
 
