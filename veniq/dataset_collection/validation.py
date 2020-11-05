@@ -204,7 +204,10 @@ def find_matched_lines(
     if (start_line_of_inserted_block == start_line_opportunity) \
             and (end_line_of_inserted_block == end_line_opportunity):
         result.matched = True
-    result.percent_matched = percent_matched(dataset_range_extraction, fixed_lines)
+    result.percent_matched = percent_matched(
+        dataset_range_extraction,
+        list(range(start_line_opportunity, end_line_opportunity))
+    )
 
 
 def percent_matched(dataset_range_lines, semi_range_lines):
@@ -259,7 +262,7 @@ if __name__ == '__main__':
     failed_cases_in_SEMI_algorithm = output_df[output_df["failed_cases_in_SEMI_algorithm"]].shape[0]
     failed_cases_in_validation_examples = output_df[output_df["failed_cases_in_validation_examples"]].shape[0]
     no_opportunity_chosen = output_df[output_df["no_opportunity_chosen"]].shape[0]
-    matched_percent = mean(output_df[output_df["percent_matched"] > 0].percent_matched.values)
+    matched_percent = mean(output_df[output_df["percent_matched"] > -1].percent_matched.values)
     print(f'Failed SEMI algorithm errors: {failed_cases_in_SEMI_algorithm}')
     print(f'Failed examples of synth dataset: {failed_cases_in_validation_examples}')
     print(f'matched_cases: {matched_cases}')

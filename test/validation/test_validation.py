@@ -90,6 +90,11 @@ class TestValidation(TestCase):
         percent = percent_matched(dataset_lines, semi_lines)
         self.assertEqual(percent, 1.0)
 
+        semi_lines = list(range(78, 99))
+        dataset_lines = list(range(72, 121))
+        percent = percent_matched(dataset_lines, semi_lines)
+        self.assertEqual(percent, 0.42857142857142855)
+
     def test_validation_semi_1_line_large_return(self):
         file = self.folder / "WebClasspathPanel.java"
         lines_extracted_by_semi = list(range(35, 36))
