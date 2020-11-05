@@ -1,3 +1,4 @@
+from itertools import islice
 from pathlib import Path
 from typing import List, Tuple, Union
 
@@ -58,3 +59,14 @@ def get_method_ast(filename: str, class_name: str, method_name: str) -> AST:
     return class_ast.get_subtree(method_declaration)
 
 
+def get_constructor_ast(filename: str, class_name: str, constructor_index: int) -> AST:
+    class_ast, filepath = get_class_ast(filename, class_name)
+
+    try:
+        constructor_declaration = next(islice(class_ast.get_root().constructors, constructor_index - 1, None))
+    except StopIteration:
+        raise RuntimeError(
+            f"Failed to find {constructor_index}th constructor in class {class_name} in file {filepath}"
+        )
+
+    return class_ast.get_subtree(constructor_declaration)

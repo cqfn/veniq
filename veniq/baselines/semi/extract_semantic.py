@@ -63,6 +63,7 @@ class _SemanticExtractor:
         # "If" statements is handled separately in _on_block_entering due to "else if" construction
         if extraction_statement.node_type in {
             ASTNodeType.METHOD_DECLARATION,
+            ASTNodeType.CONSTRUCTOR_DECLARATION,
             ASTNodeType.BLOCK_STATEMENT,
             ASTNodeType.TRY_STATEMENT,
             ASTNodeType.IF_STATEMENT,

@@ -5,7 +5,7 @@ from unittest import TestCase
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
 from veniq.baselines.semi._common_types import StatementSemantic
 from veniq.ast_framework import AST
-from .utils import objects_semantic, get_method_ast
+from .utils import objects_semantic, get_method_ast, get_constructor_ast
 
 
 class ExtractStatementSemanticTestCase(TestCase):
@@ -168,9 +168,20 @@ class ExtractStatementSemanticTestCase(TestCase):
             ],
         )
 
+    def test_constructor(self):
+        self._test_constructor(1, [StatementSemantic(used_methods={"init"})])
+
     def _test_method(self, method_name: str, expected_statements_semantics: List[StatementSemantic]):
         method_ast = get_method_ast("SemanticExtractionTest.java", "SimpleMethods", method_name)
         self._test_ast(method_ast, expected_statements_semantics)
+
+    def _test_constructor(
+        self, constructor_index: int, expected_statements_semantics: List[StatementSemantic]
+    ):
+        constructor_ast = get_constructor_ast(
+            "SemanticExtractionTest.java", "SimpleMethods", constructor_index
+        )
+        self._test_ast(constructor_ast, expected_statements_semantics)
 
     def _test_ast(self, ast: AST, expected_statements_semantics: List[StatementSemantic]):
         method_semantic = extract_method_statements_semantic(ast)
