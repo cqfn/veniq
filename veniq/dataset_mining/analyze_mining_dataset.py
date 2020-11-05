@@ -81,14 +81,7 @@ if __name__ == '__main__':
         type=str,
     )
     args = parser.parse_args()
-    cloned_repos = Path(args.cloned_repos)
     output_dir = Path(args.output_dir)
-
-    if not cloned_repos.exists():
-        cloned_repos.mkdir(parents=True)
-
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
 
     with open(args.dataset_file, encoding='utf-8') as f:
         dataset_samples = json.loads(f.read())
@@ -96,7 +89,6 @@ if __name__ == '__main__':
             repository_url = sample['repository']
             example_id = sample['id']
             commit_sha = sample['sha1']
-            repo_dir = cloned_repos / Path(repository_url).stem
             output_dir_for_saved_file = output_dir / str(example_id)
             for em in sample['refactorings']:
                 if em['type'] == 'Extract Method':
