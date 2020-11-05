@@ -628,7 +628,10 @@ if __name__ == '__main__':  # noqa: C901
                         #  get local path for inlined filename
                         i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
                         i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
-                        df = df.append(i, ignore_index=True)
+                        try:
+                            df = df.append(i, ignore_index=True)
+                        except Exception as e:
+                            print(str(e))
 
                 if (iteration_number % iteration_cycle) == 0:
                     df.to_csv(csv_output)
