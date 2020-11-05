@@ -1,6 +1,7 @@
 from pathlib import Path
 from unittest import TestCase
 
+from veniq.utils.timeout import invoke_with_timeout
 from veniq.dataset_collection.validation import fix_start_end_lines_for_opportunity, \
     percent_matched
 
@@ -82,3 +83,14 @@ class TestValidation(TestCase):
         dataset_lines = list(range(69, 82))
         percent = percent_matched(dataset_lines, semi_lines)
         self.assertEqual(percent, 0)
+
+    def test_validation_semi_1_line_large_return(self):
+        file = self.folder / "WebClasspathPanel.java"
+        lines_extracted_by_semi = list(range(35, 36))
+        fixed_lines = invoke_with_timeout(
+            5,
+            fix_start_end_lines_for_opportunity,
+            lines_extracted_by_semi,
+            file
+        )
+        self.assertEqual((35, 46), fixed_lines)

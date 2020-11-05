@@ -11,6 +11,7 @@ from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
+from utils.timeout import invoke_with_timeout
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.ast_framework import ASTNode
 from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
@@ -69,36 +70,25 @@ def fix_start_end_lines_for_opportunity(
     end_line_opportunity = max(extracted_lines_of_opportunity)
     text = read_text_with_autodetected_encoding(filepath).split('\n')
 
-    extraction = text[start_line_opportunity - 1:end_line_opportunity]
-    open_brackets = 0
-    close_brackets = 0
+    #  Extract everything from the beginning of semi opportunity
+    extraction = text[start_line_opportunity - 1:]
+    balance = 0
+    number_of_lines_added = 0
+    first_line_found = False
     for x in extraction:
-        close_brackets += x.count('}')
-        open_brackets += x.count('{')
+        open_brackets = x.count('{')
+        if open_brackets > 0:
+            first_line_found = True
+        balance += open_brackets
+        closing_brackets = x.count('}')
+        balance -= closing_brackets
 
-    if open_brackets < close_brackets:
-        diff = close_brackets - open_brackets
-        count = 1
-        for text_line in text[end_line_opportunity:]:
-            while diff > 0:
-                if text_line.find('{') > -1:
-                    diff -= 1
-                    count += 1
+        if balance == 0 and first_line_found:
+            break
 
-        start_line_opportunity += count - 1
+        number_of_lines_added += 1
 
-    elif open_brackets > close_brackets:
-        diff = open_brackets - close_brackets
-        count = 1
-        for text_line in text[end_line_opportunity:]:
-            while diff > 0:
-                if text_line.find('}') > -1:
-                    diff -= 1
-                    count += 1
-
-        end_line_opportunity += count - 1
-
-    return start_line_opportunity, end_line_opportunity
+    return start_line_opportunity, end_line_opportunity + number_of_lines_added
 
 
 # flake8: noqa: C901
@@ -148,11 +138,12 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         continue
                     try:
                         ast_subtree = ast.get_subtree(ast_node)
-                        print(src_filename, 'start')
+                        result.ncss = NCSSMetric().value(ast_subtree)
+                        if result.ncss > 20:
+                            result.error_string = 'large ncss'
+                            continue
                         opport = find_extraction_opportunities(ast_subtree)
-                        print(src_filename, 'end')
                         if opport:
-                            print(src_filename, 'start find_matched_lines')
                             find_matched_lines(
                                 ast_node,
                                 ast_subtree,
@@ -162,8 +153,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                 full_path,
                                 opport,
                                 result)
-
-                            print(src_filename, 'end find_matched_lines')
                         else:
                             result.no_opportunity_chosen = True
 
@@ -196,14 +185,15 @@ def find_matched_lines(
         opportunities_list: List[ExtractionOpportunityGroup],
         result: RowResult) -> None:
 
-    if Path(full_path).stem == 'ParametersPickerOperator_cf13c04617679fdf0fe1779623e8a28e41e89e045c640a1f507d166ba1e8370f_verify_111':
-        print()
     best_group = opportunities_list[0]
     lines = [node.line for node in best_group._optimal_opportunity]
-    fixed_lines = fix_start_end_lines_for_opportunity(
+    fixed_lines = invoke_with_timeout(
+        5,
+        fix_start_end_lines_for_opportunity,
         lines,
         full_path
     )
+
     start_line_opportunity = min(fixed_lines)
     end_line_opportunity = max(fixed_lines)
     dataset_range_extraction = range(
@@ -214,7 +204,6 @@ def find_matched_lines(
     result.method_name = ast_node.name
     result.start_line_SEMI = start_line_opportunity
     result.end_line_SEMI = end_line_opportunity
-    result.ncss = NCSSMetric().value(ast_subtree)
     if (start_line_of_inserted_block == start_line_opportunity) \
             and (end_line_of_inserted_block == end_line_opportunity):
         result.matched = True
