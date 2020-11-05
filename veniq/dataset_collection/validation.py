@@ -138,10 +138,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         continue
                     try:
                         ast_subtree = ast.get_subtree(ast_node)
-                        result.ncss = NCSSMetric().value(ast_subtree)
-                        if result.ncss > 20:
-                            result.error_string = 'large ncss'
-                            continue
                         opport = find_extraction_opportunities(ast_subtree)
                         if opport:
                             find_matched_lines(
@@ -200,6 +196,7 @@ def find_matched_lines(
         start_line_of_inserted_block,
         end_line_of_inserted_block + 1
     )
+    result.ncss = NCSSMetric().value(ast_subtree)
     result.class_name = class_decl.name
     result.method_name = ast_node.name
     result.start_line_SEMI = start_line_opportunity
