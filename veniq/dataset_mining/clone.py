@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 from veniq.dataset_collection.augmentation import get_ast_if_possible
 
+
 def _run_command(command) -> subprocess.CompletedProcess:
     print("Command: {}".format(command))
     result = subprocess.run(command, shell=True, capture_output=True)
@@ -29,30 +30,6 @@ def _run_command_with_error_check(command) -> subprocess.CompletedProcess:
     # if result.stdout:
         # print("Command Result: {}".format(result.stdout.decode('utf-8')))
     return result
-
-
-def save_after_file(output_dir, class_name, commit_sha, current_file_name):
-    if not output_dir.exists():
-        output_dir.mkdir(parents=True)
-    _run_command_with_error_check(
-        f'git show {commit_sha}:{current_file_name} > {file_after_changes}'
-    )
-    return get_ast_if_possible(file_after_changes)
-
-
-def save_file_before_changes(
-        index_of_first,
-        dataset_samples,
-        output_dir,
-        class_name,
-        current_file_name):
-    previous_commit_sha = dataset_samples[index_of_first - 1]
-    print(f'previous commit-sha is {previous_commit_sha}')
-    file_before_changes = Path(output_dir, class_name + '_before.java')
-    _run_command_with_error_check(
-        f'git show {previous_commit_sha}:"{current_file_name}" > {file_before_changes}')
-
-    return get_ast_if_possible(file_before_changes)
 
 
 if __name__ == '__main__':
