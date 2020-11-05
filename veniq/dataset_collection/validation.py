@@ -148,11 +148,8 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         continue
                     try:
                         ast_subtree = ast.get_subtree(ast_node)
-                        print(src_filename, 'start')
                         opport = find_extraction_opportunities(ast_subtree)
-                        print(src_filename, 'end')
                         if opport:
-                            print(src_filename, 'start find_matched_lines')
                             find_matched_lines(
                                 ast_node,
                                 ast_subtree,
@@ -162,8 +159,6 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                 full_path,
                                 opport,
                                 result)
-
-                            print(src_filename, 'end find_matched_lines')
                         else:
                             result.no_opportunity_chosen = True
 
@@ -196,8 +191,6 @@ def find_matched_lines(
         opportunities_list: List[ExtractionOpportunityGroup],
         result: RowResult) -> None:
 
-    if Path(full_path).stem == 'ParametersPickerOperator_cf13c04617679fdf0fe1779623e8a28e41e89e045c640a1f507d166ba1e8370f_verify_111':
-        print()
     best_group = opportunities_list[0]
     lines = [node.line for node in best_group._optimal_opportunity]
     fixed_lines = fix_start_end_lines_for_opportunity(
