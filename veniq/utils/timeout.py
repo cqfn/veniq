@@ -1,7 +1,6 @@
 import threading
 import signal
 import os
-import time
 
 
 class TerminateExecution(Exception):

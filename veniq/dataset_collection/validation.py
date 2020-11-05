@@ -69,13 +69,15 @@ def fix_start_end_lines_for_opportunity(
     start_line_opportunity = min(extracted_lines_of_opportunity)
     end_line_opportunity = max(extracted_lines_of_opportunity)
     text = read_text_with_autodetected_encoding(filepath).split('\n')
-
+    extraction_lines_number = end_line_opportunity - start_line_opportunity
     #  Extract everything from the beginning of semi opportunity
     extraction = text[start_line_opportunity - 1:]
+
     balance = 0
     number_of_lines_added = 0
     first_line_found = False
-    for x in extraction:
+
+    for i, x in enumerate(extraction):
         open_brackets = x.count('{')
         if open_brackets > 0:
             first_line_found = True
@@ -83,12 +85,14 @@ def fix_start_end_lines_for_opportunity(
         closing_brackets = x.count('}')
         balance -= closing_brackets
 
-        if balance == 0 and first_line_found:
-            break
+        if balance == 0:
+            if not first_line_found and (i > extraction_lines_number):
+                break
 
-        number_of_lines_added += 1
+            elif first_line_found:
+                break
 
-    return start_line_opportunity, end_line_opportunity + number_of_lines_added
+    return start_line_opportunity, start_line_opportunity + i
 
 
 # flake8: noqa: C901
@@ -180,7 +184,6 @@ def find_matched_lines(
         full_path: str,
         opportunities_list: List[ExtractionOpportunityGroup],
         result: RowResult) -> None:
-
     best_group = opportunities_list[0]
     lines = [node.line for node in best_group._optimal_opportunity]
     fixed_lines = invoke_with_timeout(
