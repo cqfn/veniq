@@ -1,15 +1,29 @@
 import json
 import os
 import subprocess
+import traceback
 from argparse import ArgumentParser
-from pathlib import Path, PurePath
+from collections import defaultdict
+from dataclasses import dataclass, asdict
+from functools import partial
+from pathlib import Path
+from typing import List, Tuple
 
-import numpy as np
+import pandas as pd
+from numpy import mean
+from pebble import ProcessPool
+from tqdm import tqdm
 
-from veniq.dataset_collection.augmentation import get_ast_if_possible
-
-'https://api.github.com/repos/realm/realm-java/commits/6cf596df183b3c3a38ed5dd9bb3b0100c6548ebb'
-
+from dataset_collection.augmentation import get_ast_if_possible
+from veniq.ast_framework import AST, ASTNodeType
+from veniq.ast_framework import ASTNode
+from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
+from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
+from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
+from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities, ExtractionOpportunityGroup
+from veniq.metrics.ncss.ncss import NCSSMetric
+from veniq.utils.ast_builder import build_ast
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 def _run_command(command) -> subprocess.CompletedProcess:
     print("Command: {}".format(command))
@@ -29,7 +43,7 @@ def _run_command_with_error_check(command) -> subprocess.CompletedProcess:
             stderr=result.stderr
         )
     # if result.stdout:
-        # print("Command Result: {}".format(result.stdout.decode('utf-8')))
+    # print("Command Result: {}".format(result.stdout.decode('utf-8')))
     return result
 
 
@@ -84,6 +98,8 @@ if __name__ == '__main__':
     output_dir = Path(args.output_dir)
 
     with open(args.dataset_file, encoding='utf-8') as f:
+        after_files = set()
+        before_files = set()
         dataset_samples = json.loads(f.read())
         for sample in dataset_samples:
             repository_url = sample['repository']
@@ -97,7 +113,43 @@ if __name__ == '__main__':
                     class_name = filename_raw.parts[-1]
                     file_after_changes = Path(output_dir_for_saved_file, class_name + '_after.java')
                     file_before_changes = Path(output_dir_for_saved_file, class_name + '_before.java')
-                    print(file_after_changes, file_after_changes.exists())
-                    print(file_before_changes, file_before_changes.exists())
+                    ast_after = get_ast_if_possible(file_after_changes)
+                    if not ast_after:
+                        continue
+                    else:
+                        class_ast = [x for x in ast_after.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+                                     if x.name == class_name][0]
+                        class_subtree = ast_after.get_subtree(class_ast)
+                        methods = defaultdict(list)
+                        for x in class_ast.methods:
+                            methods[x.name].append(x.name)
+                        # remove 'Extract Method private/public' from description
+                        extracted_function_name = description.split()[3].strip()
+                        functions_number = len(methods[extracted_function_name])
+                        if functions_number > 1:
+                            # overloaded function, we ignore it
+                            print(f'{extracted_function_name} is overloaded in {class_name}')
+                            continue
+                        else:
+                            ast_before = get_ast_if_possible(file_before_changes)
+                            if not ast_before:
+                                continue
+                            else:
+                                class_ast = [
+                                    x for x in ast_before.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+                                    if x.name == class_name][0]
+                                class_subtree = ast_after.get_subtree(class_ast)
+                                invocations = [
+                                    x for x in class_subtree.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+                                    if x.member == extracted_function_name]
+                                if len(invocations) > 0:
+                                    print(f'Duplicated code of {extracted_function_name} in {class_name}')
 
-
+                    # if file_after_changes not in after_files:
+                    #     # print(file_after_changes, file_after_changes.exists())
+                    #     get_ast_if_possible(file_after_changes)
+                    #     after_files.add(file_after_changes)
+                    # if file_before_changes not in before_files:
+                    #     # print(file_before_changes, file_before_changes.exists())
+                    #     get_ast_if_possible(file_after_changes)
+                    #     before_files.add(file_after_changes)
