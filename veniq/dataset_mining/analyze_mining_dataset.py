@@ -88,14 +88,14 @@ def check_duplication(
                         results.append(r)
                         print(r.error_string)
                     else:
-                        invocations = [
+                        invocations_before = [
                             x for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
                             if x.member == extracted_function_name]
-                        if len(invocations) > 1:
+                        if len(invocations_before) > 1:
                             r.error_string = f'Function {extracted_function_name} ' \
-                                             f'is invoked {len(invocations)} times in before class {class_name}.'
+                                             f'is invoked {len(invocations_before)} times in before class {class_name}.'
                             results.append(r)
-                            r.invoked_times = len(invocations)
+                            r.invoked_times = len(invocations_before)
                             print(r.error_string)
                         else:
                             ast_after = get_ast_if_possible(file_after_changes)
@@ -119,7 +119,8 @@ def check_duplication(
                                         classes_ast,
                                         extracted_function_name,
                                         r,
-                                        results)
+                                        results,
+                                        len(invocations_before))
     return results
 
 
@@ -129,7 +130,8 @@ def check_after_file(
         classes_ast: List[ASTNode],
         extracted_function_name: str,
         r: RowResult,
-        results: List[RowResult]):
+        results: List[RowResult],
+        invocations_before):
     class_ast_after = classes_ast[0]
     class_subtree_before = ast_after.get_subtree(class_ast_after)
     invocations = [
@@ -147,6 +149,7 @@ def check_after_file(
         results.append(r)
     else:
         r.has_duplicated_code = False
+        r.invoked_times = len(invocations_before)
         results.append(r)
         # print(f'1 invocation')
 
