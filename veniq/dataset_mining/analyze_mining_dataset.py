@@ -1,29 +1,20 @@
 import json
 import os
-import subprocess
 import traceback
 from argparse import ArgumentParser
 from collections import defaultdict
 from dataclasses import dataclass, asdict
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple, Dict, Any
+from typing import List, Dict, Any
 
 import pandas as pd
-from numpy import mean
 from pebble import ProcessPool
 from tqdm import tqdm
 
 from dataset_collection.augmentation import get_ast_if_possible
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.ast_framework import ASTNode
-from veniq.baselines.semi.create_extraction_opportunities import create_extraction_opportunities
-from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
-from veniq.baselines.semi.filter_extraction_opportunities import filter_extraction_opportunities
-from veniq.baselines.semi.rank_extraction_opportunities import rank_extraction_opportunities, ExtractionOpportunityGroup
-from veniq.metrics.ncss.ncss import NCSSMetric
-from veniq.utils.ast_builder import build_ast
-from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
 @dataclass
@@ -104,7 +95,7 @@ def check_duplication(
                             r.error_string = f'Function {extracted_function_name} ' \
                                              f'is invoked {len(invocations)} times in before class {class_name}.'
                             results.append(r)
-                            results.invoked_times = len(invocations)
+                            r.invoked_times = len(invocations)
                             print(r.error_string)
                         else:
                             ast_after = get_ast_if_possible(file_after_changes)
