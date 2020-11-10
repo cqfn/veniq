@@ -19,18 +19,25 @@ from veniq.dataset_collection.augmentation import get_ast_if_possible
 from bs4 import BeautifulSoup
 
 
-def get_before_url(file_item):
+def get_previous_commit_url_in_html(file_item, d):
     url_after = file_item['blob_url'].replace('blob', 'commits')
+    time.sleep(10)
     html_history = requests.get(url_after).content
     soup = BeautifulSoup(html_history, 'html.parser')
     dom = etree.HTML(str(soup))
-    links = dom.xpath('//p[@class="mb-1"]/a')
+    links = dom.xpath('//p[@class="mb-1"]')
     try:
-        href = links[1].attrib['href']
-        commit_sha_before = Path(href).parts[-1].split('#')[0]
+        # sometimes we have lots of links with the same refs
+        # when they are split by some tex like `{link} is mentioned in issue {link}`
+        hrefs = links[1].xpath('.//a[@aria-label and @href]/@href')
+        commit_sha_before = Path(str(hrefs[0])).parts[-1].split('#')[0]
         return commit_sha_before
-    except:
-        print(f'cannot get {url_after}')
+    except IndexError:
+        d['error'] = 'No previous commit found. Files was moved'
+        commit_sha_before = ''
+    except Exception as e:
+        print(f'cannot get {url_after} {str(e)}')
+        d['error'] = str(e)
         commit_sha_before = ''
     return commit_sha_before
 
@@ -38,8 +45,6 @@ def get_before_url(file_item):
 def handle_commit_example(sample, token, output_dir):
     refactorings = [x for x in sample['refactorings'] if x['type'] == 'Extract Method']
     results = []
-    proxies = {"https": "182.52.90.42", "http": "167.71.5.83"}
-
     if refactorings:
         repository_url = sample['repository']
         example_id = sample['id']
@@ -72,16 +77,17 @@ def handle_commit_example(sample, token, output_dir):
                     'downloaded_before': False,
                     'class_name': class_name,
                     'commit_before': '',
-                    'commit_after': commit_sha
+                    'commit_after': commit_sha,
+                    'id': example_id,
+                    'error': ''
                 }
                 files = json_resp.get('files', [])
                 if not files:
-                    print(resp.content, resp.status_code, commit_url)
+                    d['error'] = resp.content
+                    print(resp.content, resp.status_code, commit_url, resp.status_code)
 
-                files_after_arr = [x for x in files if x['filename'].find(filename_raw.as_posix()) > -1]
-                if not files_after_arr:
-                    filename_raw_after = Path(*filename_raw.parts[:-1])
-                    files_after_arr = [x for x in files if x['filename'].find(filename_raw_after.as_posix()) > -1]
+                files_after_arr = search_filenames_in_commit(filename_raw, files)
+
                 for file_item in files_after_arr:
                     url_after = file_item['raw_url']
                     content_after = s.get(url_after, headers=headers).content
@@ -93,7 +99,7 @@ def handle_commit_example(sample, token, output_dir):
                         w.write(content_after)
                         d['downloaded_after'] = True
 
-                    commit_sha_before = get_before_url(file_item)
+                    commit_sha_before = get_previous_commit_url_in_html(file_item, d)
                     if commit_sha_before:
                         d['commit_before'] = commit_sha_before
                         commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha_before}'
@@ -104,12 +110,7 @@ def handle_commit_example(sample, token, output_dir):
                         if not files_before:
                             print(resp_before.content, resp_before.status_code, commit_url)
 
-                        files_before_arr = [x for x in files_before if x['filename'].find(filename_raw.as_posix()) > -1]
-                        if not files_before_arr:
-                            filename_raw_before = Path(*filename_raw.parts[:-1])
-                            files_after_arr = [
-                                x for x in files if
-                                x['filename'].find(filename_raw_before.as_posix()) > -1]
+                        files_after_arr = search_filenames_in_commit(filename_raw, files_before)
 
                         for file_item_before in files_after_arr:
                             url_before = file_item_before['raw_url']
@@ -125,6 +126,28 @@ def handle_commit_example(sample, token, output_dir):
                 results.append(d)
 
     return results
+
+
+def search_filenames_in_commit(filename_raw: Path, files):
+    """
+    Searches filename in commit. If it is not found it tries
+    to find a subclass
+    :param filename_raw: file path of file in a commit
+    :param files: list of all items of a commit, given by github API
+    :return: list of found files
+    """
+    files_after_arr = find_filename(filename_raw, files)
+    if not files_after_arr:
+        # finds subclass
+        files_after_arr = find_filename(Path(*filename_raw.parts[:-1]), files)
+    if not files_after_arr:
+        # finds subclass of subclass
+        files_after_arr = find_filename(Path(*filename_raw.parts[:-2]), files)
+    return files_after_arr
+
+
+def find_filename(filename_raw: Path, files):
+    return [x for x in files if x['filename'].find(filename_raw.as_posix()) > -1]
 
 
 if __name__ == '__main__':
@@ -163,6 +186,7 @@ if __name__ == '__main__':
 
     output_df = pd.DataFrame(
         columns=[
+            'id',
             'repo_url',
             'class_name',
             'file_name_after',
@@ -170,7 +194,7 @@ if __name__ == '__main__':
             'downloaded_after',
             'downloaded_before',
             'commit_before',
-            'commit_after'
+            'commit_after',
         ]
     )
     with open(args.dataset_file, encoding='utf-8') as f:
@@ -190,5 +214,5 @@ if __name__ == '__main__':
                     print(traceback.format_exc())
                     continue
 
-    output_df = output_df.drop_duplicates()
-    output_df.to_csv('new_urls.csv')
+    # output_df = output_df.drop_duplicates()
+    # output_df.to_csv('new_urls.csv')
