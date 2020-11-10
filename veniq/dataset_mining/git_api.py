@@ -1,22 +1,17 @@
 import json
 import os
-import subprocess
+import time
 import traceback
 from argparse import ArgumentParser
-from dataclasses import asdict
 from functools import partial
-from pathlib import Path, PurePath
-import requests
-import numpy as np
-import pandas as pd
-from lxml import etree
-import time
+from pathlib import Path
 
+import pandas as pd
+import requests
+from bs4 import BeautifulSoup
+from lxml import etree
 from pebble import ProcessPool
 from tqdm import tqdm
-
-from veniq.dataset_collection.augmentation import get_ast_if_possible
-from bs4 import BeautifulSoup
 
 
 def get_previous_commit_url_in_html(file_item, d):
@@ -64,7 +59,6 @@ def handle_commit_example(sample, token, output_dir):
                 s = requests.Session()
                 resp = s.get(commit_url, headers=headers)
                 json_resp = resp.json()
-                # time.sleep(10)
                 output_dir_for_saved_file = output_dir / str(example_id)
                 if not output_dir_for_saved_file.exists():
                     output_dir_for_saved_file.mkdir(parents=True)
@@ -105,7 +99,6 @@ def handle_commit_example(sample, token, output_dir):
                         commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha_before}'
                         resp_before = s.get(commit_url, headers=headers)
                         resp_before_json = resp_before.json()
-                        # time.sleep(10)
                         files_before = resp_before_json.get('files', [])
                         if not files_before:
                             print(resp_before.content, resp_before.status_code, commit_url)
