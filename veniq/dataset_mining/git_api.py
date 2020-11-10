@@ -5,6 +5,7 @@ import traceback
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
+from typing import Dict, Any
 
 import pandas as pd
 import requests
@@ -14,26 +15,32 @@ from pebble import ProcessPool
 from tqdm import tqdm
 
 
-def get_previous_commit_url_in_html(file_item, d):
-    url_after = file_item['blob_url'].replace('blob', 'commits')
-    time.sleep(10)
-    html_history = requests.get(url_after).content
-    soup = BeautifulSoup(html_history, 'html.parser')
-    dom = etree.HTML(str(soup))
-    links = dom.xpath('//p[@class="mb-1"]')
-    try:
-        # sometimes we have lots of links with the same refs
-        # when they are split by some tex like `{link} is mentioned in issue {link}`
-        hrefs = links[1].xpath('.//a[@aria-label and @href]/@href')
-        commit_sha_before = Path(str(hrefs[0])).parts[-1].split('#')[0]
-        return commit_sha_before
-    except IndexError:
-        d['error'] = 'No previous commit found. Files was moved'
-        commit_sha_before = ''
-    except Exception as e:
-        print(f'cannot get {url_after} {str(e)}')
-        d['error'] = str(e)
-        commit_sha_before = ''
+def get_previous_commit_url_in_html(
+        sha: str,
+        file_path: str,
+        repo: str,
+        d: Dict[str, Any],
+        session: requests.Session):
+
+    commit_sha_before = ''
+    url_with_params = f'https://api.github.com/repos/{repo}/commits?path={file_path}&sha={sha}'
+    # time.sleep(10)
+
+    resp = session.get(url_with_params)
+    if resp.status_code == 200:
+        try:
+            resp_json = resp.json()
+            if len(resp_json) < 2:
+                d['error'] = 'No previous commit found. Files was moved'
+            else:
+                previous_commit_item = resp_json[1]
+                commit_sha_before = previous_commit_item['sha']
+                d['error'] = 'No previous commit found. Files was moved'
+
+        except Exception as e:
+            print(f'cannot get previous commit {str(e)}')
+            d['error'] = str(e)
+
     return commit_sha_before
 
 
@@ -93,7 +100,13 @@ def handle_commit_example(sample, token, output_dir):
                         w.write(content_after)
                         d['downloaded_after'] = True
 
-                    commit_sha_before = get_previous_commit_url_in_html(file_item, d)
+                    commit_sha_before = get_previous_commit_url_in_html(
+                        commit_sha,
+                        file_item['filename'],
+                        repo_name,
+                        d,
+                        s
+                    )
                     if commit_sha_before:
                         d['commit_before'] = commit_sha_before
                         commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha_before}'
