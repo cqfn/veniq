@@ -35,7 +35,6 @@ def get_previous_commit_url_in_html(
             else:
                 previous_commit_item = resp_json[1]
                 commit_sha_before = previous_commit_item['sha']
-                d['error'] = 'No previous commit found. Files was moved'
 
         except Exception as e:
             print(f'cannot get previous commit {str(e)}')
@@ -204,7 +203,7 @@ if __name__ == '__main__':
         ]
     )
     with open(args.dataset_file, encoding='utf-8') as f:
-        with ProcessPool(system_cores_qty) as executor:
+        with ProcessPool(1) as executor:
             dataset_samples = json.loads(f.read())
             f = partial(handle_commit_example, output_dir=output_dir, token=args.token)
             future = executor.map(f, dataset_samples, timeout=10000, )
