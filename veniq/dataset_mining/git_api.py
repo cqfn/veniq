@@ -46,6 +46,67 @@ def get_previous_commit(
     return commit_sha_before
 
 
+def download_file(
+        repo_name: str,
+        commit_sha: str,
+        filename_raw: Path,
+        output_dir_for_saved_file: Path,
+        headers: Dict[str, str],
+        session: requests.Session,
+        file_prefix: str,
+        dict_result: Dict[str, Any],
+        is_finding_previous_commit=False
+    ):
+
+    commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha}'
+
+    resp = session.get(commit_url, headers=headers)
+    resp_json = resp.json()
+    files = resp_json.get('files', [])
+    if not files:
+        dict_result['error'] = f'{resp.status_code}: {resp.content}'
+
+    found_files_in_commit = search_filenames_in_commit(filename_raw, files)
+    if not found_files_in_commit:
+        dict_result['error'] = f'File{file_prefix} was not found in commit'
+
+    for file_item in found_files_in_commit:
+        url = file_item['raw_url']
+        file_content = session.get(url, headers=headers).content
+        file_name_for_csv = Path(
+            output_dir_for_saved_file,
+            Path(file_item['filename']).stem + file_prefix + '.java')
+        dict_result['file_name' + file_prefix] = str(file_name_for_csv)
+        with open(file_name_for_csv, 'wb') as w:
+            w.write(file_content)
+            dict_result['downloaded' + file_prefix] = True
+
+        if is_finding_previous_commit:
+            return
+        else:
+            commit_sha_before = get_previous_commit(
+                commit_sha,
+                file_item['filename'],
+                repo_name,
+                dict_result,
+                session,
+                headers
+            )
+            if commit_sha_before:
+                dict_result['commit_before'] = commit_sha_before
+                download_file(
+                    repo_name,
+                    commit_sha_before,
+                    filename_raw,
+                    output_dir_for_saved_file,
+                    headers,
+                    session,
+                    '_before',
+                    dict_result,
+                    True
+                )
+
+
 def handle_commit_example(sample, token, output_dir, classes_dict):
     refactorings = sample.get('refactorings')
     results = []
@@ -56,21 +117,17 @@ def handle_commit_example(sample, token, output_dir, classes_dict):
     report_part_2 = Path(repository_url).parts[-1].replace('.git', '')
     repo_name = Path(*report_part_1, report_part_2).as_posix()
     description = refactorings.get('description')
-    str_filename = description.split('in class')[1].replace('.', '/').strip() + '.java'
-    filename_raw = Path(str_filename)
+    filename_raw = Path(description.split('in class')[1].replace('.', '/').strip())
     class_name = filename_raw.stem
     classes = classes_dict.get(commit_sha_after, set())
     if class_name not in classes:
         add_to_dict_set(commit_sha_after, class_name, classes_dict)
-        commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha_after}'
-        headers = {f"Authorization": f"token {token}"}
-        s = requests.Session()
-        resp = s.get(commit_url, headers=headers)
-        json_resp = resp.json()
         output_dir_for_saved_file = output_dir / str(example_id)
         if not output_dir_for_saved_file.exists():
             output_dir_for_saved_file.mkdir(parents=True)
 
+        headers = {f"Authorization": f"token {token}"}
+        session = requests.Session()
         d = {
             'repo_url': repository_url,
             'file_name_before': 'Not found',
@@ -83,56 +140,17 @@ def handle_commit_example(sample, token, output_dir, classes_dict):
             'id': example_id,
             'error': ''
         }
-        files = json_resp.get('files', [])
-        if not files:
-            d['error'] = resp.content
-            print(resp.content, resp.status_code, commit_url, resp.status_code)
 
-        files_after_arr = search_filenames_in_commit(filename_raw, files)
-        if not files_after_arr:
-            d['error'] = 'File_before was not found in commit'
-
-        for file_item in files_after_arr:
-            url_after = file_item['raw_url']
-            content_after = s.get(url_after, headers=headers).content
-            file_after_changes = Path(
-                output_dir_for_saved_file,
-                Path(file_item['filename']).stem + '_after.java')
-            d['file_name_after'] = str(file_after_changes)
-            with open(file_after_changes, 'wb') as w:
-                w.write(content_after)
-                d['downloaded_after'] = True
-
-            commit_sha_before = get_previous_commit(
-                commit_sha_after,
-                file_item['filename'],
-                repo_name,
-                d,
-                s,
-                headers
-            )
-            if commit_sha_before:
-                d['commit_before'] = commit_sha_before
-                commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha_before}'
-                resp_before = s.get(commit_url, headers=headers)
-                resp_before_json = resp_before.json()
-                files_before = resp_before_json.get('files', [])
-                if not files_before:
-                    print(resp_before.content, resp_before.status_code, commit_url)
-
-                files_after_arr = search_filenames_in_commit(filename_raw, files_before)
-
-                for file_item_before in files_after_arr:
-                    url_before = file_item_before['raw_url']
-                    content_before = s.get(url_before, headers=headers).content
-                    file_before_changes = Path(
-                        output_dir_for_saved_file,
-                        Path(file_item_before['filename']).stem + '_before.java')
-                    d['file_name_before'] = str(file_before_changes)
-                    with open(file_before_changes, 'wb') as w:
-                        w.write(content_before)
-                        d['downloaded_before'] = True
-
+        download_file(
+            repo_name,
+            commit_sha_after,
+            filename_raw,
+            output_dir_for_saved_file,
+            headers,
+            session,
+            '_after',
+            d
+        )
         results.append(d)
 
     return results
@@ -146,13 +164,16 @@ def search_filenames_in_commit(filename_raw: Path, files):
     :param files: list of all items of a commit, given by github API
     :return: list of found files
     """
-    files_after_arr = find_filename(filename_raw, files)
+    filename_to_search = Path(*filename_raw.parts[:-1], filename_raw.parts[-1] + '.java')
+    files_after_arr = find_filename(filename_to_search, files)
     if not files_after_arr:
         # finds subclass
-        files_after_arr = find_filename(Path(*filename_raw.parts[:-1]), files)
+        filename_to_search = Path(*filename_raw.parts[:-2], filename_raw.parts[-2] + '.java')
+        files_after_arr = find_filename(filename_to_search, files)
     if not files_after_arr:
         # finds subclass of subclass
-        files_after_arr = find_filename(Path(*filename_raw.parts[:-2]), files)
+        filename_to_search = Path(*filename_raw.parts[:-3], filename_raw.parts[-3] + '.java')
+        files_after_arr = find_filename(filename_to_search, files)
     return files_after_arr
 
 
@@ -178,6 +199,7 @@ def filter_refactorings_by_em(dataset_samples):
                 handled_samples.append(new_item)
 
     return handled_samples
+
 
 if __name__ == '__main__':
     system_cores_qty = os.cpu_count() or 1
