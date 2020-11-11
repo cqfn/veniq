@@ -25,7 +25,8 @@ class RowResult:
     has_duplicated_code: bool
     error_string: str
     overloaded: int
-    invoked_times: int
+    invoked_times_before_changes: int
+    invoked_times_after_changes: int
     function_name: str
     class_name: str
 
@@ -53,7 +54,8 @@ def check_duplication(
                 file_name_after=str(file_after_changes),
                 has_duplicated_code=False,
                 error_string='',
-                invoked_times=1,
+                invoked_times_before_changes=0,
+                invoked_times_after_changes=0,
                 overloaded=0,
                 class_name=class_name,
                 function_name=''
@@ -85,25 +87,20 @@ def check_duplication(
                     if functions_number > 1:
                         # overloaded function, we ignore it
                         r.error_string = f'{extracted_function_name} is overloaded in {class_name}'
-                        print(r.error_string)
+                        # print(r.error_string)
                         r.overloaded = functions_number
                         results.append(r)
                         continue
-                    elif functions_number == 0:
-                        r.error_string = f'The name of parsed function {extracted_function_name} ' \
-                                         f'was not found in class {class_name}. It\'s an error'
-                        results.append(r)
-                        print(r.error_string)
                     else:
                         invocations_before = [
                             x for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
                             if x.member == extracted_function_name]
-                        r.invoked_times = len(invocations_before)
+                        r.invoked_times_before_changes = len(invocations_before)
                         if len(invocations_before) > 1:
                             r.error_string = f'Function {extracted_function_name} ' \
                                              f'is invoked {len(invocations_before)} times in before class {class_name}.'
                             results.append(r)
-                            print(r.error_string)
+                            # print(r.error_string)
                         else:
                             ast_after = get_ast_if_possible(file_after_changes)
                             if not ast_after:
@@ -142,6 +139,7 @@ def check_after_file(
     invocations = [
         x for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
         if x.member == extracted_function_name]
+    r.invoked_times_after_changes = len(invocations)
     if len(invocations) > 1:
         r.has_duplicated_code = True
         results.append(r)
@@ -189,7 +187,7 @@ if __name__ == '__main__':
 
     with open(args.dataset_file, encoding='utf-8') as f:
         dataset_samples = json.loads(f.read())
-        with ProcessPool(system_cores_qty) as executor:
+        with ProcessPool(1) as executor:
             check_duplication_f = partial(
                 check_duplication,
                 output_dir=output_dir
