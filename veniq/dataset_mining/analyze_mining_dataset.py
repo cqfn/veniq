@@ -19,12 +19,15 @@ from veniq.ast_framework import ASTNode
 
 @dataclass
 class RowResult:
+    id: int
     file_name_before: str
     file_name_after: str
     has_duplicated_code: bool
     error_string: str
     overloaded: int
     invoked_times: int
+    function_name: str
+    class_name: str
 
 
 def check_duplication(
@@ -45,12 +48,15 @@ def check_duplication(
             file_before_changes = Path(output_dir_for_saved_file, class_name + '_before.java')
             ast_before = get_ast_if_possible(file_before_changes)
             r = RowResult(
+                id=example_id,
                 file_name_before=str(file_before_changes),
                 file_name_after=str(file_after_changes),
                 has_duplicated_code=False,
                 error_string='',
                 invoked_times=1,
-                overloaded=0
+                overloaded=0,
+                class_name=class_name,
+                function_name=''
             )
 
             if not ast_before:
@@ -74,6 +80,7 @@ def check_duplication(
                         methods[x.name].append(x.name)
                     # remove 'Extract Method private/public' from description
                     extracted_function_name = description.split()[3].strip().split('(')[0]
+                    r.function_name = extracted_function_name
                     functions_number = len(methods[extracted_function_name])
                     if functions_number > 1:
                         # overloaded function, we ignore it
