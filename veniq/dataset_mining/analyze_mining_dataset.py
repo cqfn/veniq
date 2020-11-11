@@ -12,7 +12,7 @@ import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
 
-from dataset_collection.augmentation import get_ast_if_possible
+from veniq.dataset_collection.augmentation import get_ast_if_possible
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.ast_framework import ASTNode
 
