@@ -110,11 +110,11 @@ def check_duplication(
                         extracted_function_name = description.split()[3].strip().split('(')[0]
                         r.function_name = extracted_function_name
                         functions_number = len(methods[extracted_function_name])
+                        r.overloaded = functions_number
                         if functions_number > 1:
                             # overloaded function, we ignore it
                             r.error_string = f'{extracted_function_name} is overloaded in {class_name}'
                             # print(r.error_string)
-                            r.overloaded = functions_number
                             results.append(r)
                             continue
                         else:
