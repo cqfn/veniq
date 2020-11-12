@@ -214,8 +214,8 @@ def find_matched_lines(
                 start_line_opportunity = min(fixed_lines)
                 end_line_opportunity = max(fixed_lines)
 
-                print(f'{Path(full_path).stem}: SEMI {start_line_opportunity}, {end_line_opportunity}; '
-                      f'synth dataset: {start_line_of_inserted_block}, {end_line_of_inserted_block}')
+                # print(f'{Path(full_path).stem}: SEMI {start_line_opportunity}, {end_line_opportunity}; '
+                #       f'synth dataset: {start_line_of_inserted_block}, {end_line_of_inserted_block}')
 
                 if (start_line_of_inserted_block == start_line_opportunity) \
                         and (end_line_of_inserted_block == end_line_opportunity):
