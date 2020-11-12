@@ -45,7 +45,6 @@ class RowResult:
     end_line_SEMI: int
     start_line_dataset: int
     end_line_dataset: int
-    percent_matched: float
     class_name: str
     method_name: str
     error_string: str
@@ -54,6 +53,7 @@ class RowResult:
     failed_cases_in_SEMI_algorithm: bool
     no_opportunity_chosen: bool
     failed_cases_in_validation_examples: bool
+    all_opportunities_number: int
 
 
 def fix_start_end_lines_for_opportunity(
@@ -129,7 +129,7 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                         end_line_SEMI=-1,
                         start_line_dataset=start_line_of_inserted_block,
                         end_line_dataset=end_line_of_inserted_block,
-                        percent_matched=-1.0,
+                        all_opportunities_number=-1,
                         error_string='',
                         ncss=0,
                         matched=False,
@@ -154,6 +154,7 @@ def validate_row(dataset_dir: Path, row: pd.Series) \
                                 result)
                         else:
                             result.no_opportunity_chosen = True
+                            result.all_opportunities_number = 0
 
                     except Exception as e:
                         traceback.print_exc()
@@ -183,36 +184,59 @@ def find_matched_lines(
         full_path: str,
         opportunities_list: List[ExtractionOpportunityGroup],
         result: RowResult) -> None:
-    best_group = opportunities_list[0]
-    lines = [node.line for node in best_group._optimal_opportunity]
-    fixed_lines = invoke_with_timeout(
-        5,
-        fix_start_end_lines_for_opportunity,
-        lines,
-        full_path
-    )
-
-    start_line_opportunity = min(fixed_lines)
-    end_line_opportunity = max(fixed_lines)
-    dataset_range_extraction = list(
-        range(
-            start_line_of_inserted_block,
-            end_line_of_inserted_block + 1
-    ))
     result.ncss = NCSSMetric().value(ast_subtree)
     result.class_name = class_decl.name
     result.method_name = ast_node.name
-    result.start_line_SEMI = start_line_opportunity
-    result.end_line_SEMI = end_line_opportunity
     result.start_line_dataset = start_line_of_inserted_block
     result.end_line_dataset = end_line_of_inserted_block
-    if (start_line_of_inserted_block == start_line_opportunity) \
-            and (end_line_of_inserted_block == end_line_opportunity):
-        result.matched = True
-    result.percent_matched = percent_matched(
-        dataset_range_extraction,
-        list(range(start_line_opportunity, end_line_opportunity + 1))
-    )
+    break_label = False
+
+    start_line_opportunity = -2
+    end_line_opportunity = -2
+
+    result.all_opportunities_number = 0
+    for group in opportunities_list:
+        if break_label:
+            # if we found no single match
+            result.start_line_SEMI = start_line_opportunity
+            result.end_line_SEMI = end_line_opportunity
+            break
+        else:
+            for op, benefit in group.opportunities:
+                result.all_opportunities_number += 1
+                lines = [node.line for node in op]
+                fixed_lines = invoke_with_timeout(
+                    5,
+                    fix_start_end_lines_for_opportunity,
+                    lines,
+                    full_path
+                )
+                start_line_opportunity = min(fixed_lines)
+                end_line_opportunity = max(fixed_lines)
+
+                print(f'{Path(full_path).stem}: SEMI {start_line_opportunity}, {end_line_opportunity}; '
+                      f'synth dataset: {start_line_of_inserted_block}, {end_line_of_inserted_block}')
+
+                if (start_line_of_inserted_block == start_line_opportunity) \
+                        and (end_line_of_inserted_block == end_line_opportunity):
+                    result.matched = True
+                    result.start_line_SEMI = start_line_opportunity
+                    result.end_line_SEMI = end_line_opportunity
+                    break_label = True
+                    break
+
+                # Can't calculate percent_matched cause
+                # we consider all opportunities
+                #
+                # dataset_range_extraction = list(
+                #     range(
+                #         start_line_of_inserted_block,
+                #         end_line_of_inserted_block + 1
+                # ))
+                # result.percent_matched = percent_matched(
+                #     dataset_range_extraction,
+                #     list(range(start_line_opportunity, end_line_opportunity + 1))
+                # )
 
 
 def percent_matched(dataset_range_lines, semi_range_lines):
@@ -267,13 +291,14 @@ if __name__ == '__main__':
     failed_cases_in_SEMI_algorithm = output_df[output_df["failed_cases_in_SEMI_algorithm"]].shape[0]
     failed_cases_in_validation_examples = output_df[output_df["failed_cases_in_validation_examples"]].shape[0]
     no_opportunity_chosen = output_df[output_df["no_opportunity_chosen"]].shape[0]
-    matched_percent = mean(output_df[output_df["percent_matched"] > -1].percent_matched.values)
+    all_opportunities = output_df[output_df["all_opportunities_number"] < -1].shape[0]
+    # matched_percent = mean(output_df[output_df["percent_matched"] > -1].percent_matched.values)
     print(f'Failed SEMI algorithm errors: {failed_cases_in_SEMI_algorithm}')
     print(f'Failed examples of synth dataset: {failed_cases_in_validation_examples}')
     print(f'matched_cases: {matched_cases}')
     print(f'No opportunity chosen: {no_opportunity_chosen} times')
     print(f'Total number of handled cases: {output_df.shape[0]}')
-    print(f'Average of matched lines: {matched_percent}')
+    # print(f'Average of matched lines: {matched_percent}')
     total_case_handled = output_df.shape[0] - failed_cases_in_SEMI_algorithm - failed_cases_in_validation_examples
     if total_case_handled > 0:
         result = matched_cases / total_case_handled
