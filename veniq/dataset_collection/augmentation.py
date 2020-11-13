@@ -58,12 +58,13 @@ def get_line_with_first_open_bracket(
         file_path: Path,
         method_decl_start_line: int
 ) -> int:
-    f = open(file_path, encoding='utf-8')
-    file_lines = list(f)
-    for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
-        if '{' in line:
-            return i + 1
-    return method_decl_start_line + 1
+    with open(file_path, encoding='utf-8') as f:
+        file_lines = f.read().split('\n')
+        for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
+            if '{' in line:
+                return i + 1
+        f.close()
+        return method_decl_start_line + 1
 
 
 def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
@@ -79,24 +80,6 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     return start_line, end_line
 
 
-@typing.no_type_check
-def check_attrs(
-        invocation_node: ASTNode
-) -> bool:
-    """
-    Here we check types that need to be considered
-    in those methose which we can process.
-    """
-    has_parent = hasattr(invocation_node, 'parent')
-    has_line = hasattr(invocation_node, 'line')
-    has_type = hasattr(invocation_node.parent, 'node_type')
-    if has_type:
-        not_none = invocation_node.parent.node_type is not None
-        return all([has_parent, has_line, not_none])
-    return all([has_parent, has_line, has_type])
-
-
-@typing.no_type_check
 def check_nesting_statements(
         method_invoked: ASTNode
 ) -> bool:
@@ -113,18 +96,19 @@ def check_nesting_statements(
         ASTNodeType.SUPER_CONSTRUCTOR_INVOCATION,
         ASTNodeType.TRY_STATEMENT
     ]
-    if check_attrs(method_invoked) and \
-            method_invoked.parent.node_type in prohibited_statements:
-        if method_invoked.parent.line == method_invoked.line:
+    if method_invoked.parent is not None:
+        if (method_invoked.parent.node_type in prohibited_statements) \
+                and (method_invoked.parent.line == method_invoked.line):
             return False
-    elif check_attrs(method_invoked.parent) and \
-            method_invoked.parent.parent.node_type in prohibited_statements:
-        if method_invoked.parent.parent.line == method_invoked.line:
+    elif method_invoked.parent.parent is not None:
+        if (method_invoked.parent.parent.node_type in prohibited_statements) \
+                and (method_invoked.parent.parent.line == method_invoked.line):
             return False
-    elif check_attrs(method_invoked.parent.parent) and \
-            method_invoked.parent.parent.parent.node_type in prohibited_statements:
-        if method_invoked.parent.parent.parent.line == method_invoked.line:
+    elif method_invoked.parent.parent.parent is not None:
+        if (method_invoked.parent.parent.parent.node_type in prohibited_statements) \
+                and (method_invoked.parent.parent.parent.line == method_invoked.line):
             return False
+
     return True
 
 
