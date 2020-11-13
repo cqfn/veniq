@@ -48,16 +48,14 @@ class IntegrationDatasetCollection(TestCase):
                 'invocation_method_name',
                 'invocation_method_start_line',
                 'invocation_method_end_line',
-                'output_filename',
                 'can_be_parsed',
                 'inline_insertion_line_start',
                 'inline_insertion_line_end'
             ])
             for x in results_output:
-                x['input_filename'] = str(Path(x['input_filename']).name)
+                x['input_filename'] = str(Path(x['input_filename']).name).split('_')[0] + '.java'
                 del x['output_filename']
                 new_results = new_results.append(x, ignore_index=True)
-            print('Files handled')
 
         df = pd.DataFrame(new_results)
         new_results = df.sort_values(by=df.columns.to_list())
@@ -65,6 +63,10 @@ class IntegrationDatasetCollection(TestCase):
         df = pd.read_csv(Path(__file__).absolute().parent / 'results_predefined.csv', index_col=0)
         results_predefined = df.sort_values(by=df.columns.to_list())
         df_diff = pd.concat([new_results, results_predefined]).drop_duplicates(keep=False)
+        import json
+        print(f'new_results: {json.dumps(new_results.to_dict())}')
+        print(f'results_predefined: {json.dumps(results_predefined.to_dict())}')
+
         size_of_difference = df_diff.shape[0]
         print(f'Difference in dataframes: {size_of_difference} rows')
         self.assertEqual(size_of_difference, 0)
