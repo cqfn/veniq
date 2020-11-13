@@ -100,14 +100,16 @@ def check_nesting_statements(
         if (method_invoked.parent.node_type in prohibited_statements) \
                 and (method_invoked.parent.line == method_invoked.line):
             return False
-    elif method_invoked.parent.parent is not None:
-        if (method_invoked.parent.parent.node_type in prohibited_statements) \
-                and (method_invoked.parent.parent.line == method_invoked.line):
-            return False
-    elif method_invoked.parent.parent.parent is not None:
-        if (method_invoked.parent.parent.parent.node_type in prohibited_statements) \
-                and (method_invoked.parent.parent.parent.line == method_invoked.line):
-            return False
+
+        if method_invoked.parent.parent is not None:
+            if (method_invoked.parent.parent.node_type in prohibited_statements) \
+                    and (method_invoked.parent.parent.line == method_invoked.line):
+                return False
+
+            if method_invoked.parent.parent.parent is not None:
+                if (method_invoked.parent.parent.parent.node_type in prohibited_statements) \
+                        and (method_invoked.parent.parent.parent.line == method_invoked.line):
+                    return False
 
     return True
 

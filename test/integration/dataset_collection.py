@@ -1,8 +1,6 @@
 import tempfile
-import unittest
 from os import listdir
 from pathlib import Path
-from typing import Dict, List
 from unittest import TestCase
 
 import pandas as pd
@@ -13,7 +11,6 @@ from veniq.dataset_collection.augmentation import analyze_file
 
 class IntegrationDatasetCollection(TestCase):
 
-    # @unittest.skip('invocation_line_number is not ready in augmentation.py')
     def test_dataset_collection(self):
         samples_path = Path(__file__).absolute().parent / "dataset_collection"
         # ignore output filename, cause it is not so important
