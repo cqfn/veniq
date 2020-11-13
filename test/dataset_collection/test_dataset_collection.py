@@ -5,7 +5,7 @@ from unittest import TestCase
 from veniq.dataset_collection.augmentation import (
     determine_algorithm_insertion_type,
     method_body_lines,
-    is_match_to_the_conditions)
+    is_match_to_the_conditions, analyze_file)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms,
@@ -376,3 +376,69 @@ class TestDatasetCollection(TestCase):
                                                                           self.temp_filename)
         self.assertEqual([30, 34], pred_inline_rel_bounds,
                          msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
+
+    def test_inline_with_return_without_assigning(self):
+        filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_without_return.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'btSelectMethod'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 80, body_end_line == 85)
+        algorithm_for_inlining().inline_function(
+            filepath,
+            111,
+            body_start_line,
+            body_end_line,
+            self.temp_filename
+        )
+        with open(self.temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertMultiLineEqual(actual_file.read(), test_ex.read(), 'File are not matched')
+
+    def test_inline_with_return_with_var_declaration(self):
+        filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_with_var_declaration.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'btSelectProperty'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 60, body_end_line == 65)
+        algorithm_for_inlining().inline_function(
+            filepath,
+            112,
+            body_start_line,
+            body_end_line,
+            self.temp_filename
+        )
+        with open(self.temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertMultiLineEqual(actual_file.read(), test_ex.read(), 'File are not matched')
+
+    def test_inline_with_return_with_assigning(self):
+        filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_without_return.java'
+        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'cboComponent'][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        self.assertEqual(body_start_line == 40, body_end_line == 45)
+        algorithm_for_inlining().inline_function(
+            filepath,
+            113,
+            body_start_line,
+            body_end_line,
+            self.temp_filename
+        )
+        with open(self.temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertMultiLineEqual(actual_file.read(), test_ex.read(), 'File are not matched')
