@@ -62,7 +62,7 @@ class IntegrationDatasetCollection(TestCase):
         df = pd.DataFrame(new_results)
         new_results = df.sort_values(by=df.columns.to_list())
 
-        df = pd.read_csv('results_predefined.csv', index_col=0)
+        df = pd.read_csv(Path(__file__).absolute().parent / 'results_predefined.csv', index_col=0)
         results_predefined = df.sort_values(by=df.columns.to_list())
         df_diff = pd.concat([new_results, results_predefined]).drop_duplicates(keep=False)
         size_of_difference = df_diff.shape[0]
