@@ -108,11 +108,12 @@ public class ParametersPickerOperator extends FormCustomEditorOperator {
         rbComponent();
         rbMethodCall();
         rbProperty();
-        if(_btSelectMethod == null) {
-            _btSelectMethod = new JButtonOperator(this, "...", 1);
-        }
+        btSelectMethod();
         JButtonOperator jbuttonoperator = btSelectProperty();
-        _cboComponent = cboComponent();
+        if(_cboComponent == null) {
+            _cboComponent = new JComboBoxOperator(this, 0);
+        }
+        _cboComponent = _cboComponent;
         super.verify();
     }
 }

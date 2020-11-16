@@ -5,7 +5,7 @@ from unittest import TestCase
 from veniq.dataset_collection.augmentation import (
     determine_algorithm_insertion_type,
     method_body_lines,
-    is_match_to_the_conditions, analyze_file)
+    is_match_to_the_conditions)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms,
@@ -309,22 +309,6 @@ class TestDatasetCollection(TestCase):
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())
 
-    def test_inline_strange_body1(self):
-        filepath = self.current_directory / 'InlineExamples' / 'SkipString.java'
-        test_filepath = self.current_directory / 'InlineTestExamples' / 'SkipString.java'
-        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
-        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'getString'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
-        self.assertEqual(body_start_line == 10, body_end_line == 16)
-        algorithm_for_inlining().inline_function(filepath, 5, body_start_line, body_end_line, self.temp_filename)
-        with open(self.temp_filename, encoding='utf-8') as actual_file, \
-                open(test_filepath, encoding='utf-8') as test_ex:
-            self.assertEqual(actual_file.read(), test_ex.read())
-
     def test_inline_strange_body2(self):
         filepath = self.current_directory / 'InlineExamples' / 'cut.java'
         test_filepath = self.current_directory / 'InlineTestExamples' / 'cut.java'
@@ -423,7 +407,7 @@ class TestDatasetCollection(TestCase):
 
     def test_inline_with_return_with_assigning(self):
         filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
-        test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_without_return.java'
+        test_filepath = self.current_directory / 'InlineTestExamples/Parameters_without_return_without_assigning.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
         ast = AST.build_from_javalang(build_ast(filepath))
