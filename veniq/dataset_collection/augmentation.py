@@ -63,7 +63,6 @@ def get_line_with_first_open_bracket(
         for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
             if '{' in line:
                 return i + 1
-        f.close()
         return method_decl_start_line + 1
 
 
