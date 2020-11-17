@@ -336,7 +336,8 @@ class TestDatasetCollection(TestCase):
         ast = AST.build_from_javalang(build_ast(filepath))
         m_decl = [
             x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'updateSashWidths'][0]
+            if x.name == 'updateSashWidths'
+        ][0]
         body_start_line, body_end_line = method_body_lines(m_decl, filepath)
         algorithm_for_inlining().inline_function(filepath, 43, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
