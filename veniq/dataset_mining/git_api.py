@@ -61,7 +61,7 @@ def download_file(
     resp_json = resp.json()
     files = resp_json.get('files', [])
     if not files:
-        dict_result['error'] = f'{resp.status_code}: {resp.content}'
+        dict_result['error'] = f'{resp.status_code}: {resp.content}'  # type: ignore
 
     found_files_in_commit = search_filenames_in_commit(filename_raw, files)
     if not found_files_in_commit:
@@ -247,15 +247,14 @@ if __name__ == '__main__':
     )
     with open(args.dataset_file, encoding='utf-8') as f:
         with Manager() as manager:
-            d = manager.dict()
+            d = manager.dict()  # type: ignore
             with ProcessPool(system_cores_qty) as executor:
                 dataset_samples = json.loads(f.read())
 
                 handled_samples = filter_refactorings_by_em(dataset_samples)
 
-                print(1)
-                f = partial(handle_commit_example, output_dir=output_dir, token=args.token, classes_dict=d)
-                future = executor.map(f, handled_samples, timeout=10000, )
+                func = partial(handle_commit_example, output_dir=output_dir, token=args.token, classes_dict=d)
+                future = executor.map(func, handled_samples, timeout=10000, )
                 result = future.result()
 
                 for sample in tqdm(handled_samples, total=len(handled_samples)):

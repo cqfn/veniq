@@ -2,7 +2,7 @@ flake8==3.7.9
 matplotlib==3.2.1
 javalang==0.13.0
 beautifulsoup4==4.8.2
-mypy==0.770
+mypy==0.790
 networkx==2.4
 cchardet==2.1.6
 lxml==4.5.0

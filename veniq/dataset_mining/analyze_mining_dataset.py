@@ -63,7 +63,7 @@ def check_duplication(
             resp_json = resp.json()
             files = resp_json.get('files', [])
             if not files:
-                print(f'{resp.status_code}: {resp.content}')
+                print(f'{resp.status_code}: {resp.content}')  # type: ignore
 
             found_files_in_commit = search_filenames_in_commit(filename_raw, files)
             if not found_files_in_commit:
