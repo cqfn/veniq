@@ -33,6 +33,7 @@ class RowResult:
     class_name: str
 
 
+# flake8: noqa: C901
 def check_duplication(
         sample: Dict[str, Any],
         output_dir: Path,
@@ -114,7 +115,6 @@ def check_duplication(
                         if functions_number > 1:
                             # overloaded function, we ignore it
                             r.error_string = f'{extracted_function_name} is overloaded in {class_name}'
-                            # print(r.error_string)
                             results.append(r)
                             continue
                         else:
@@ -124,7 +124,8 @@ def check_duplication(
                             r.invoked_times_before_changes = len(invocations_before)
                             if len(invocations_before) > 1:
                                 r.error_string = f'Function {extracted_function_name} ' \
-                                                 f'is invoked {len(invocations_before)} times in before class {class_name}.'
+                                                 f'is invoked {len(invocations_before)} times ' \
+                                                 f'in before class {class_name}.'
                                 results.append(r)
                                 # print(r.error_string)
                             else:

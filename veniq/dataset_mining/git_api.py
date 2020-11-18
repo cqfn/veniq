@@ -1,16 +1,14 @@
 import json
 import os
-import time
 import traceback
 from argparse import ArgumentParser
 from functools import partial
+from multiprocessing import Manager
 from pathlib import Path
 from typing import Dict, Any
-from multiprocessing import Process, Manager
+
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
-from lxml import etree
 from pebble import ProcessPool
 from tqdm import tqdm
 
@@ -55,8 +53,7 @@ def download_file(
         session: requests.Session,
         file_prefix: str,
         dict_result: Dict[str, Any],
-        is_finding_previous_commit=False
-    ):
+        is_finding_previous_commit=False):
 
     commit_url = f'https://api.github.com/repos/{repo_name}/commits/{commit_sha}'
 
