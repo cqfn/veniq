@@ -2,12 +2,9 @@ import json
 import os
 import subprocess
 from argparse import ArgumentParser
-from pathlib import Path, PurePath
+from pathlib import Path
 
-import numpy as np
 from tqdm import tqdm
-
-from veniq.dataset_collection.augmentation import get_ast_if_possible
 
 
 def _run_command(command) -> subprocess.CompletedProcess:

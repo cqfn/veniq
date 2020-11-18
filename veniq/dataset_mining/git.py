@@ -2,13 +2,11 @@ import json
 import os
 import subprocess
 from argparse import ArgumentParser
-from pathlib import Path, PurePath
+from pathlib import Path
 
 import numpy as np
 
 from veniq.dataset_collection.augmentation import get_ast_if_possible
-
-'https://api.github.com/repos/realm/realm-java/commits/6cf596df183b3c3a38ed5dd9bb3b0100c6548ebb'
 
 
 def _run_command(command) -> subprocess.CompletedProcess:
