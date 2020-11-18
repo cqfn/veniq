@@ -137,6 +137,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_before_invoсation = lines[:invocation_line - 1]
+        original_file.close()
         return lines_before_invoсation
 
     def get_lines_after_invocation(
@@ -153,6 +154,7 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         original_file = open(filename_in, encoding='utf-8')
         lines = list(original_file)
         lines_after_invoсation = lines[invocation_line:]
+        original_file.close()
         return lines_after_invoсation
 
     @abc.abstractmethod
@@ -261,6 +263,7 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
                 lines[invocation_line - 2]
             )
             body_lines.append(new_line)
+        original_file.close()
         return body_lines
 
 
@@ -325,8 +328,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         line_with_declaration = lines[invocation_line - 1].split('=')
         is_var_declaration = self.is_var_declaration(lines, invocation_line)
         is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = self.complement_spaces(body_start_line + 1, invocation_line, lines) * ' '
-
+        spaces_in_body = ' ' * self.complement_spaces(body_start_line, invocation_line, lines)
         for i, line in enumerate(body_lines_original):
             line = line.replace('\t', ' ' * 4)
             return_statement = line.split('return ')
@@ -337,8 +339,7 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
             elif len(return_statement) == 2 and not is_direct_return:
                 if is_var_declaration:
                     variable_declaration = line_with_declaration[0].replace('{', ' ').lstrip()
-                    current_line = body_lines_original[i - 1]
-                    space_for_var_decl_line = self.get_spaces_var_decl(current_line)
+                    space_for_var_decl_line = self.get_spaces_var_decl(line)
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     new_body_line = spaces_in_body + instead_of_return
                 else:

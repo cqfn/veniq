@@ -251,6 +251,21 @@ class TestDatasetCollection(TestCase):
         is_matched = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original)
         self.assertEqual(is_matched, True)
 
+    def test_invocation_inside_if_not_process(self):
+        filepath = self.current_directory / "Example_nested.java"
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'doAction'][0]
+        m_decl_original = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'handleAction'][0]
+        m_inv = [
+            x for x in ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'handleAction'][0]
+        is_matched = is_match_to_the_conditions(ast, m_inv, m_decl_original)
+        self.assertEqual(is_matched, False)
+
     def test_is_valid_function_with_return_in_the_middle(self):
         m_decl_original = [
             x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
@@ -325,6 +340,22 @@ class TestDatasetCollection(TestCase):
                                                  body_start_line,
                                                  body_end_line,
                                                  self.temp_filename)
+        with open(self.temp_filename, encoding='utf-8') as actual_file, \
+                open(test_filepath, encoding='utf-8') as test_ex:
+            self.assertEqual(actual_file.read(), test_ex.read())
+
+    def test_inline_comments_at_the_end(self):
+        filepath = self.current_directory / 'InlineExamples' / 'ObjectProperties_cut.java'
+        test_filepath = self.current_directory / 'InlineTestExamples' / 'ObjectProperties_cut.java'
+        algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        ast = AST.build_from_javalang(build_ast(filepath))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'updateSashWidths'
+        ][0]
+        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        algorithm_for_inlining().inline_function(filepath, 43, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertEqual(actual_file.read(), test_ex.read())

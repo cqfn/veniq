@@ -45,7 +45,11 @@ def _get_last_line(file_path: Path, start_line: int) -> int:
                 difference_cases += line_without_comments.count('{')
                 difference_cases -= line_without_comments.count('}')
             else:
-                return i
+                # process comments to the last line of method
+                if line.strip() == '*/':
+                    return i + 2
+                else:
+                    return i
 
         return -1
 
@@ -54,12 +58,12 @@ def get_line_with_first_open_bracket(
         file_path: Path,
         method_decl_start_line: int
 ) -> int:
-    f = open(file_path, encoding='utf-8')
-    file_lines = list(f)
-    for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
-        if '{' in line:
-            return i + 1
-    return method_decl_start_line + 1
+    with open(file_path, encoding='utf-8') as f:
+        file_lines = f.read().split('\n')
+        for i, line in enumerate(file_lines[method_decl_start_line - 2:], method_decl_start_line - 2):
+            if '{' in line:
+                return i + 1
+        return method_decl_start_line + 1
 
 
 def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
@@ -73,6 +77,40 @@ def method_body_lines(method_node: ASTNode, file_path: Path) -> Tuple[int, int]:
     else:
         start_line = end_line = -1
     return start_line, end_line
+
+
+def check_nesting_statements(
+        method_invoked: ASTNode
+) -> bool:
+    """
+    Check that the considered method invocation is not
+    at the same line as prohibited statements.
+    """
+    prohibited_statements = [
+        ASTNodeType.IF_STATEMENT,
+        ASTNodeType.WHILE_STATEMENT,
+        ASTNodeType.FOR_STATEMENT,
+        ASTNodeType.SYNCHRONIZED_STATEMENT,
+        ASTNodeType.CATCH_CLAUSE,
+        ASTNodeType.SUPER_CONSTRUCTOR_INVOCATION,
+        ASTNodeType.TRY_STATEMENT
+    ]
+    if method_invoked.parent is not None:
+        if (method_invoked.parent.node_type in prohibited_statements) \
+                and (method_invoked.parent.line == method_invoked.line):
+            return False
+
+        if method_invoked.parent.parent is not None:
+            if (method_invoked.parent.parent.node_type in prohibited_statements) \
+                    and (method_invoked.parent.parent.line == method_invoked.line):
+                return False
+
+            if method_invoked.parent.parent.parent is not None:
+                if (method_invoked.parent.parent.parent.node_type in prohibited_statements) \
+                        and (method_invoked.parent.parent.parent.line == method_invoked.line):
+                    return False
+
+    return True
 
 
 @typing.no_type_check
@@ -126,6 +164,7 @@ def is_match_to_the_conditions(
     is_not_cast = not (parent.node_type == ASTNodeType.CAST)
     is_not_array_creator = not (parent.node_type == ASTNodeType.ARRAY_CREATOR)
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
+    is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
     other_requirements = all([
         is_not_chain_before,
         is_actual_parameter_simple,
@@ -144,6 +183,7 @@ def is_match_to_the_conditions(
         is_not_method_inv_single_statement_in_if,
         is_not_assign_value_with_return_type,
         is_not_several_returns,
+        is_not_at_the_same_line_as_prohibited_stats,
         not method_invoked.arguments])
 
     if (not method_invoked.qualifier and other_requirements) or \
@@ -285,22 +325,23 @@ def insert_code_with_new_file_creation(
                     body_end_line,
                     new_full_filename,
                 )
-                line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
-                line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
+                if inline_method_bounds is not None:
+                    line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
+                    line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
 
-                if get_ast_if_possible(new_full_filename):
-                    rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
-                        class_name=class_name,
-                        method_node=method_node,
-                        new_full_filename=new_full_filename,
-                        original_func=original_func)
+                    if get_ast_if_possible(new_full_filename):
+                        rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
+                            class_name=class_name,
+                            method_node=method_node,
+                            new_full_filename=new_full_filename,
+                            original_func=original_func)
 
-                    can_be_parsed = True
-                    line_to_csv.update(rest_of_csv_row_for_changed_file)
-                else:
-                    can_be_parsed = False
+                        can_be_parsed = True
+                        line_to_csv.update(rest_of_csv_row_for_changed_file)
+                    else:
+                        can_be_parsed = False
 
-                line_to_csv['can_be_parsed'] = can_be_parsed
+                    line_to_csv['can_be_parsed'] = can_be_parsed
 
     return line_to_csv
 
@@ -577,8 +618,8 @@ if __name__ == '__main__':  # noqa: C901
                 if (iteration_number % iteration_cycle) == 0:
                     df.to_csv(csv_output)
                 iteration_number += 1
-            except Exception:
-                continue
+            except Exception as e:
+                print(str(e))
 
     df.to_csv(csv_output)
     if args.zip:
