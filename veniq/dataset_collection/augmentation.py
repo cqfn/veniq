@@ -278,7 +278,8 @@ def insert_code_with_new_file_creation(
         invocation_node: ASTNode,
         file_path: Path,
         output_path: Path,
-        dict_original_invocations: Dict[str, List[ASTNode]]
+        dict_original_invocations: Dict[str, List[ASTNode]],
+        source_filepath: str
 ) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
@@ -310,6 +311,7 @@ def insert_code_with_new_file_creation(
             algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
             if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
                 line_to_csv = {
+                    'project': source_filepath,
                     'input_filename': file_path,
                     'class_name': class_name,
                     'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
@@ -465,6 +467,7 @@ def analyze_file(
                             method_invoked,
                             method_node,
                             output_path,
+                            file_path,
                             results
                         )
                     except Exception as e:
@@ -477,7 +480,7 @@ def analyze_file(
 
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, results):
+                   method_node, output_path, source_filepath, results):
     is_matched = is_match_to_the_conditions(
         ast,
         method_invoked,
@@ -491,7 +494,8 @@ def make_insertion(ast, class_declaration, dst_filename, found_method_decl, meth
             method_invoked,
             dst_filename,
             output_path,
-            method_declarations)
+            method_declarations,
+            source_filepath)
         if log_of_inline:
             # change source filename, since it will be changed
             log_of_inline['input_filename'] = str(dst_filename.as_posix())
@@ -579,6 +583,7 @@ if __name__ == '__main__':  # noqa: C901
 
     df = pd.DataFrame(
         columns=[
+            'project',
             'input_filename',
             'class_name',
             'invocation_text_string',
@@ -612,6 +617,7 @@ if __name__ == '__main__':  # noqa: C901
                     for i in single_file_features:
                         #  get local path for inlined filename
                         i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
+                        print(i['output_filename'], filename)
                         i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
                         df = df.append(i, ignore_index=True)
 
