@@ -1,3 +1,4 @@
+import json
 import tempfile
 from os import listdir
 from pathlib import Path
@@ -55,6 +56,7 @@ class IntegrationDatasetCollection(TestCase):
             for x in results_output:
                 x['input_filename'] = str(Path(x['input_filename']).name).split('_')[0] + '.java'
                 del x['output_filename']
+                del x['project']
                 new_results = new_results.append(x, ignore_index=True)
 
         df = pd.DataFrame(new_results)
