@@ -11,7 +11,7 @@ from pebble import ProcessPool
 from sortedcontainers import SortedSet
 from tqdm import tqdm
 
-from utils.encoding_detector import read_text_with_autodetected_encoding
+from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
 
 
 @dataclass
