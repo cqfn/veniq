@@ -35,16 +35,7 @@ def is_similar_functions(
 
         matched_strings_before = []
 
-        for string_before, lst in d.items():
-            max_val = -1
-            max_hamm = -1
-            for subs_val, hamm, iterator_i, iteration_j, string_matched in lst:
-                if max_val < subs_val:
-                    max_val = subs_val
-                    max_hamm = hamm
-            if max_val > 0.7000000000000000000000000000000000000000001:
-                if max_hamm > 0.4:
-                    matched_strings_before.append(string_before)
+        find_similar_strings(d, matched_strings_before)
 
     lines_number_of_function_before = 0
     for i in before_lines:
@@ -56,3 +47,16 @@ def is_similar_functions(
         return True
 
     return False
+
+
+def find_similar_strings(d, matched_strings_before):
+    for string_before, lst in d.items():
+        max_val = -1
+        max_hamm = -1
+        for subs_val, hamm, iterator_i, iteration_j, string_matched in lst:
+            if max_val < subs_val:
+                max_val = subs_val
+                max_hamm = hamm
+        if max_val > 0.7000000000000000000000000000000000000000001:
+            if max_hamm > 0.4:
+                matched_strings_before.append(string_before)

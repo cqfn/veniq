@@ -1,18 +1,17 @@
+import json
 import os
+import traceback
 from argparse import ArgumentParser
-from functools import partial
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import List, Dict, Tuple, Any
+
 import pandas as pd
-from sortedcontainers import SortedSet
-from dataclasses import dataclass, field, asdict
 from pebble import ProcessPool
+from sortedcontainers import SortedSet
 from tqdm import tqdm
 
-import traceback
-
 from utils.encoding_detector import read_text_with_autodetected_encoding
-import json
 
 
 @dataclass
@@ -22,7 +21,7 @@ class RowResult:
     lines: Tuple[Tuple[int]]
     sha1: str
     description: str
-    #url: str
+    url: str
 
 
 def find_em_items(file: Path):
@@ -40,8 +39,8 @@ def find_em_items(file: Path):
                         repository=x['repository'],
                         sha1=x['sha1'],
                         lines=tuple(),
-                        description=ref.get('description')
-                        #url=x['url'],
+                        description=ref.get('description'),
+                        url=x['url']
                     )
                     ref_items = [
                         x for x in ref.get('leftSideLocations', [])
@@ -123,7 +122,7 @@ if __name__ == '__main__':
                         df = df.append(asdict(i), ignore_index=True)
                     df.to_csv(args.csv_output)
 
-            except Exception as e:
+            except Exception:
                 traceback.print_exc()
     df = df.drop_duplicates()
     df.to_csv(args.csv_output)

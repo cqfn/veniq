@@ -28,41 +28,32 @@ class TestFunctionsForMining(TestCase):
         self.assertEqual(is_similar, False)
 
     def test_find_lines_second_line_with_gap(self):
-        d = [{
-            "startLine": 1,
-            "endLine": 1},
-            {
-                "startLine": 3,
-                "endLine": 5,
-            }]
+        d = [{"startLine": 1, "endLine": 1},
+             {"startLine": 3, "endLine": 5}]
 
         lst = find_lines(d)
         self.assertEqual(lst, ((1, 1), (3, 5)))
 
     def test_find_lines_second_line_no_gap(self):
-        d = [{
-            "startLine": 1,
-            "endLine": 1
-        },
-            {
-                "startLine": 2,
-                "endLine": 5,
-            }]
+        d = [{"startLine": 1, "endLine": 1},
+             {"startLine": 2, "endLine": 5, }]
         lst = find_lines(d)
-        self.assertEqual(lst, ((1, 5), ))
+        self.assertEqual(lst, ((1, 5),))
 
     def test_find_lines_repetitions(self):
-        d = [{
-            "startLine": 1,
-            "endLine": 4
+        d = [
+            {
+                "startLine": 1,
+                "endLine": 4
             },
             {
                 "endLine": 2,
-                "startLine": 2,
+                "startLine": 2
             },
             {
                 "startLine": 3,
-                "endLine": 3},
+                "endLine": 3
+            },
             {
 
                 "startLine": 6,
@@ -80,9 +71,10 @@ class TestFunctionsForMining(TestCase):
         self.assertEqual(lst, ((1, 4), (6, 10)))
 
     def test_find_lines_last_wit_gap(self):
-        d = [{
-            "startLine": 1,
-            "endLine": 4
+        d = [
+            {
+                "startLine": 1,
+                "endLine": 4
             },
             {
 
@@ -321,4 +313,4 @@ class TestFunctionsForMining(TestCase):
             }
         ]
         lst = find_lines(d)
-        self.assertEqual(lst, ((324, 411), ))
+        self.assertEqual(lst, ((324, 411),))
