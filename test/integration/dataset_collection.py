@@ -1,4 +1,3 @@
-import json
 import tempfile
 from os import listdir
 from pathlib import Path
