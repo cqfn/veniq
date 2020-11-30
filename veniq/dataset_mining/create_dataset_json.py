@@ -110,7 +110,7 @@ if __name__ == '__main__':
     files = [x for x in input_dir.iterdir() if x.is_file() and x.name.endswith('out.txt')]
     df = pd.DataFrame(columns=list(RowResult.__annotations__.keys()))
 
-    with ProcessPool(1) as executor:
+    with ProcessPool(system_cores_qty) as executor:
         future = executor.map(find_em_items, files)
         result = future.result()
 
