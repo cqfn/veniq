@@ -52,7 +52,7 @@ def is_similar_functions(
         ratio = 0
     else:
         ratio = len(matched_strings_before) / float(lines_number_of_function_before)
-    res.function_lines = lines_number_of_function_before
+    res.lines_number = lines_number_of_function_before
     res.lines_matched = len(matched_strings_before)
     res.matched_percent = ratio
     res.matched_strings = '\n'.join(matched_strings_before)
