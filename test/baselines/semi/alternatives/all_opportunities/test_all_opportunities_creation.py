@@ -1,5 +1,5 @@
 from itertools import zip_longest
-from typing import List, Optional
+from typing import List
 from unittest import TestCase
 
 from veniq.baselines.semi.extract_semantic import extract_method_statements_semantic
@@ -27,15 +27,11 @@ class AllOpportunitiesCreationTestCase(TestCase):
                 f"ending on line {actual_opportunity[-1].line}."
             )
 
-    _expected_opportunities_nodes_types: List[List[Optional[ASTNodeType]]] = [
+    _expected_opportunities_nodes_types: List[List[ASTNodeType]] = [
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION],
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION, ASTNodeType.FOR_STATEMENT],
         [ASTNodeType.LOCAL_VARIABLE_DECLARATION, ASTNodeType.FOR_STATEMENT, ASTNodeType.STATEMENT_EXPRESSION],
-        [ASTNodeType.LOCAL_VARIABLE_DECLARATION, ASTNodeType.FOR_STATEMENT, ASTNodeType.STATEMENT_EXPRESSION, None],
         [ASTNodeType.FOR_STATEMENT],
         [ASTNodeType.FOR_STATEMENT, ASTNodeType.STATEMENT_EXPRESSION],
-        [ASTNodeType.FOR_STATEMENT, ASTNodeType.STATEMENT_EXPRESSION, None],
         [ASTNodeType.STATEMENT_EXPRESSION],
-        [ASTNodeType.STATEMENT_EXPRESSION, None],
-        [None],
     ]

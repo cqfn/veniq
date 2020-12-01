@@ -9,7 +9,7 @@ from ..._common_types import Statement, StatementSemantic, ExtractionOpportunity
 def create_extraction_opportunities(
     statements_semantic: Dict[Statement, StatementSemantic]
 ) -> List[ExtractionOpportunity]:
-    statements = list(statements_semantic.keys())
+    statements = [statement for statement in statements_semantic.keys() if not statement.is_fake]
     extraction_opportunities: List[ExtractionOpportunity] = []
     for first in range(len(statements)):
         for last in range(first, len(statements)):
