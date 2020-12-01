@@ -1,5 +1,5 @@
 flake8==3.7.9
-matplotlib==3.2.1
+matplotlib==3.3.3
 javalang==0.13.0
 beautifulsoup4==4.8.2
 mypy==0.770
