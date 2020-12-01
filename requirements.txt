@@ -4,7 +4,7 @@ javalang==0.13.0
 beautifulsoup4==4.8.2
 mypy==0.770
 networkx==2.4
-cchardet==2.1.6
+cchardet==2.1.7
 lxml==4.5.0
 cached-property==1.2.0
 deprecated==1.2.10
