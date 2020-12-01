@@ -38,7 +38,7 @@ def find_em_items(file: Path):
                         filename='',
                         repository=x['repository'],
                         sha1=x['sha1'],
-                        lines=tuple(),
+                        lines=tuple(),  # type: ignore
                         description=ref.get('description'),
                         url=x['url']
                     )
@@ -47,7 +47,7 @@ def find_em_items(file: Path):
                         if x.get('codeElementType') != "METHOD_DECLARATION"
                     ]
                     lines_list_of_lists = find_lines(ref_items)
-                    res.lines = lines_list_of_lists
+                    res.lines = lines_list_of_lists  # type: ignore
                     if ref_items:
                         res.filename = ref_items[0]['filePath']
                     results.append(res)
@@ -55,7 +55,7 @@ def find_em_items(file: Path):
     return results
 
 
-def find_lines(ref_items: List[Dict[any, any]]) -> Tuple[Tuple[Any, ...], ...]:
+def find_lines(ref_items: List[Dict[str, any]]) -> Tuple[Tuple[Any, ...], ...]:  # type: ignore
 
     def add_to_list(small_list, global_list):
         range_extraction = tuple([small_list[0], small_list[-1]])
@@ -63,11 +63,11 @@ def find_lines(ref_items: List[Dict[any, any]]) -> Tuple[Tuple[Any, ...], ...]:
 
     lines = SortedSet()
     for ref_block in ref_items:
-        for j in range(ref_block['startLine'], ref_block['endLine'] + 1):
+        for j in range(ref_block['startLine'], ref_block['endLine'] + 1):  # type: ignore
             lines.add(j)
     prev = lines[0]
     cur_list = [prev]
-    lines_list_of_lists = []
+    lines_list_of_lists: List[Tuple[int, int]] = []
     for x in lines[1:]:
         diff = x - prev
         prev = x
