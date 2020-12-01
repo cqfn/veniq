@@ -3,17 +3,43 @@ from unittest import TestCase
 
 from veniq.dataset_mining.create_dataset_json import find_lines
 from veniq.dataset_mining.code_similarity import is_similar_functions
+from veniq.dataset_mining.mine_examples_with_similarity import Row
 
 
 class TestFunctionsForMining(TestCase):
     current_directory = Path(__file__).absolute().parent
+    res = Row(
+        filepath_saved='',
+        filename='',
+        class_name='',
+        repo_url='',
+        function_inlined='',
+        function_name_with_LM='',
+        commit_sha_before='',
+        commit_sha_after='',
+        function_target_start_line=-1,
+        function_target_end_line=-1,
+        real_extractions=(),
+        lines_number=-1,
+        lines_matched=-1,
+        matched_percent=-1.0,
+        matched_strings='',
+        is_similar=False,
+        error='',
+        url='',
+        downloaded_after=False,
+        downloaded_before=False,
+        found_class_before_in_java_file=False,
+        found_class_after_in_java_file=False
+    )
 
     def test_is_similar(self):
         is_similar = is_similar_functions(
             str(Path(self.current_directory, 'before/EduStepicConnector.java')),
             str(Path(self.current_directory, 'after/EduStepicConnector.java')),
-            [142, 153],
-            [159, 171]
+            [[142, 153]],
+            (159, 171),
+            self.res
         )
         self.assertEqual(is_similar, True)
 
@@ -22,10 +48,21 @@ class TestFunctionsForMining(TestCase):
         is_similar = is_similar_functions(
             str(Path(self.current_directory, 'before/FixedMembershipToken.java')),
             str(Path(self.current_directory, 'after/FixedMembershipToken.java')),
-            [55, 88],
-            [73, 82]
+            [[55, 88]],
+            (73, 82),
+            self.res
         )
         self.assertEqual(is_similar, False)
+
+    def test_is_similar_with_non_sequential(self):
+        is_similar = is_similar_functions(
+            str(Path(self.current_directory, 'before/IOUringEventLoop.java')),
+            str(Path(self.current_directory, 'after/IOUringEventLoop.java')),
+            [[231, 231], [233, 233], [235, 235]],
+            (258, 267),
+            self.res
+        )
+        self.assertEqual(is_similar, True)
 
     def test_find_lines_second_line_with_gap(self):
         d = [{"startLine": 1, "endLine": 1},

@@ -11,6 +11,7 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
 
+import javalang
 import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
@@ -385,7 +386,7 @@ def find_lines_in_changed_file(
         return {}
 
 
-def get_ast_if_possible(file_path: Path) -> Optional[AST]:
+def get_ast_if_possible(file_path: Path, res=None) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
@@ -393,8 +394,11 @@ def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     ast = None
     try:
         ast = AST.build_from_javalang(build_ast(str(file_path)))
-    except Exception:
-        print(f"Processing {file_path} is aborted due to parsing")
+    except javalang.parser.JavaSyntaxError:
+        res.error = 'JavaSyntaxError'
+    except Exception as e:
+        res.error = str(e)
+
     return ast
 
 

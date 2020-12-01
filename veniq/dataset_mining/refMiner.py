@@ -52,8 +52,8 @@ if __name__ == '__main__':  # noqa: C901
         sum_size = sum(java_files)
         dir_to_analyze[x] = sum_size
 
-    dir_to_analyze = OrderedDict(sorted(dir_to_analyze.items(), key=lambda x: x[1]))
-    dir_to_analyze = [x[0] for x in dir_to_analyze]
+    dir_to_analyze = OrderedDict(sorted(dir_to_analyze.items(), key=lambda x: x[1]))  # type: ignore
+    dir_to_analyze = [x[0] for x in dir_to_analyze]  # type: ignore
 
     with ProcessPool(system_cores_qty) as executor:
         future = executor.map(run_ref_miner, dir_to_analyze)
