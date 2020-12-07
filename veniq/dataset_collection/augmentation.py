@@ -395,9 +395,11 @@ def get_ast_if_possible(file_path: Path, res=None) -> Optional[AST]:
     try:
         ast = AST.build_from_javalang(build_ast(str(file_path)))
     except javalang.parser.JavaSyntaxError:
-        res.error = 'JavaSyntaxError'
+        if res:
+            res.error = 'JavaSyntaxError'
     except Exception as e:
-        res.error = str(e)
+        if res:
+            res.error = str(e)
 
     return ast
 

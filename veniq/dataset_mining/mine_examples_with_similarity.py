@@ -3,12 +3,13 @@ import os
 import random
 import traceback
 from argparse import ArgumentParser
-from ast import literal_eval
+from ast import literal_eval, AST
+from collections import defaultdict
 from dataclasses import dataclass, asdict
 from functools import partial
 from multiprocessing import Manager
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List
 
 import pandas as pd
 from pebble import ProcessPool
@@ -16,7 +17,7 @@ from requests.auth import HTTPBasicAuth
 from requests import Session
 from tqdm import tqdm
 
-from veniq.ast_framework import ASTNodeType
+from veniq.ast_framework import ASTNode, ASTNodeType
 # f77a2ddf76ca1e95be78c3808278b5a3cf7871d0
 from veniq.dataset_collection.augmentation import get_ast_if_possible, method_body_lines
 from veniq.dataset_mining.code_similarity import is_similar_functions
@@ -48,6 +49,10 @@ class Row:
     found_class_after_in_java_file: bool
     error: str
     url: str
+    has_duplicated_code: bool
+    invoked_times_before_changes: int
+    invoked_times_after_changes: int
+    overloaded: int
 
 
 def get_previous_commit(
@@ -121,6 +126,86 @@ def sample_from_dict(d, sample=1):
     return keys[0], values[0]
 
 
+def check_after_file(
+        ast_after: AST,
+        class_name: str,
+        classes_ast: List[ASTNode],
+        extracted_function_name: str,
+        r: Row):
+    class_ast_after = classes_ast[0]
+    class_subtree_before = ast_after.get_subtree(class_ast_after)
+    invocations = [
+        x for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+        if x.member == extracted_function_name]
+    r.invoked_times_after_changes = len(invocations)
+    if len(invocations) > 1:
+        r.has_duplicated_code = True
+    elif len(invocations) == 0:
+        r.error = 'The name of invoked parsed function ' \
+                  f'{extracted_function_name} was not found ' \
+                  f'in class {class_name}. It\'s an error'
+    else:
+        r.has_duplicated_code = False
+
+
+def check_duplication(
+        file_before_changes: str,
+        file_after_changes: str,
+        class_name: str,
+        extracted_function_name: str,
+        res: Row
+):
+    ast_before = get_ast_if_possible(Path(file_before_changes))
+    if not ast_before:
+        res.error = 'Cannot parse ast before'
+    else:
+        classes_ast = [
+            x for x in ast_before.get_proxy_nodes(
+                ASTNodeType.CLASS_DECLARATION,
+                ASTNodeType.ENUM_DECLARATION,
+                ASTNodeType.INTERFACE_DECLARATION
+            )
+            if x.name == class_name]
+        if not classes_ast:
+            res.error = f'File {file_before_changes} is empty'
+        else:
+            class_ast_before = classes_ast[0]
+            class_subtree_before = ast_before.get_subtree(class_ast_before)
+            methods = defaultdict(list)
+            #  TODO find when `methods` field will be implemented for enums and interfaces
+            for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION):
+                methods[x.name].append(x.name)
+
+            functions_number = len(methods[extracted_function_name])
+            res.overloaded = functions_number
+            if functions_number < 2:
+                invocations_before = [
+                    x for x in class_subtree_before.get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+                    if x.member == extracted_function_name]
+                res.invoked_times_before_changes = len(invocations_before)
+                if len(invocations_before) < 2:
+                    ast_after = get_ast_if_possible(Path(file_after_changes))
+                    if not ast_after:
+                        res.error = 'Cannot parse ast after'
+                    else:
+                        classes_ast = [
+                            x for x in ast_after.get_proxy_nodes(
+                                ASTNodeType.CLASS_DECLARATION,
+                                ASTNodeType.ENUM_DECLARATION,
+                                ASTNodeType.INTERFACE_DECLARATION
+                            )
+                            if x.name == class_name]
+                        if not classes_ast:
+                            res.error = f'File {file_after_changes} is empty'
+                        else:
+                            check_after_file(
+                                ast_after,
+                                class_name,
+                                classes_ast,
+                                extracted_function_name,
+                                res)
+
+
 def handle_commit_example(sample, tokens, output_dir, classes_dict):
     example_id, series = sample
     results = []
@@ -141,34 +226,10 @@ def handle_commit_example(sample, tokens, output_dir, classes_dict):
         if not unique_directory.exists():
             unique_directory.mkdir(parents=True)
 
+        print(user, passwd)
         auth = HTTPBasicAuth(user, passwd)
         s = Session()
-        res = Row(
-            filepath_saved='',
-            filename=filename_in_commit,
-            class_name=class_name,
-            repo_url=repository_url,
-            function_inlined='',
-            function_name_with_LM='',
-            commit_sha_before='',
-            commit_sha_after=commit_sha_after,
-            # hamming=-1,
-            # ratcliff_obershelp=-1,
-            function_target_start_line=-1,
-            function_target_end_line=-1,
-            real_extractions=(),
-            lines_number=-1,
-            lines_matched=-1,
-            matched_percent=-1.0,
-            matched_strings='',
-            is_similar=False,
-            error='',
-            url=series['url'],
-            downloaded_after=False,
-            downloaded_before=False,
-            found_class_before_in_java_file=False,
-            found_class_after_in_java_file=False
-        )
+        res = init_row_item(class_name, commit_sha_after, filename_in_commit, repository_url, series)
         file_after = download_file(
             repo_name, commit_sha_after, filename_in_commit,
             unique_directory, auth, s, '_after', res)
@@ -179,21 +240,26 @@ def handle_commit_example(sample, tokens, output_dir, classes_dict):
         if file_after:
             res.downloaded_after = True
             res.filepath_saved = file_after
+
             if commit_sha_before:
                 res.commit_sha_before = commit_sha_before
                 file_before = download_file(
-                    repo_name,
-                    commit_sha_before,
-                    filename_in_commit,
-                    unique_directory,
-                    auth,
-                    s,
-                    '_before',
-                    res
+                    repo_name, commit_sha_before, filename_in_commit,
+                    unique_directory, auth, s, '_before', res
                 )
                 if file_before:
                     res.downloaded_before = True
-                    run_similarity(class_name, description, file_after, file_before, res, series)
+                    function_name_inlined = get_function_name_from_description(description, 'Extract Method')
+                    check_duplication(file_before, file_after, class_name, function_name_inlined, res)
+                    should_continue = not res.has_duplicated_code and \
+                                      not res.error and \
+                                      res.overloaded < 2
+
+                    if should_continue:
+                        run_similarity(
+                            class_name, description, file_after,
+                            file_before, res, series, function_name_inlined
+                        )
                 else:
                     res.error = 'File before was not downloaded'
         else:
@@ -203,10 +269,48 @@ def handle_commit_example(sample, tokens, output_dir, classes_dict):
     return results
 
 
-def run_similarity(class_name, description, file_after, file_before, res, series):
+def init_row_item(class_name, commit_sha_after, filename_in_commit, repository_url, series):
+    res = Row(
+        filepath_saved='',
+        filename=filename_in_commit,
+        class_name=class_name,
+        repo_url=repository_url,
+        function_inlined='',
+        function_name_with_LM='',
+        commit_sha_before='',
+        commit_sha_after=commit_sha_after,
+        function_target_start_line=-1,
+        function_target_end_line=-1,
+        real_extractions=(),
+        lines_number=-1,
+        lines_matched=-1,
+        matched_percent=-1.0,
+        matched_strings='',
+        is_similar=False,
+        error='',
+        url=series['url'],
+        downloaded_after=False,
+        downloaded_before=False,
+        found_class_before_in_java_file=False,
+        found_class_after_in_java_file=False,
+        has_duplicated_code=False,
+        invoked_times_before_changes=0,
+        invoked_times_after_changes=0,
+        overloaded=0
+    )
+    return res
+
+
+def run_similarity(
+        class_name,
+        description,
+        file_after,
+        file_before,
+        res,
+        series,
+        function_name_inlined):
     list_of_lines_before = series['lines']
     res.real_extractions = list_of_lines_before
-    function_name_inlined = get_function_name_from_description(description, 'Extract Method')
     res.function_inlined = function_name_inlined
     function_name_with_LM = get_function_name_from_description(description, 'extracted from')
     function_name_with_LM = function_name_with_LM.split('(')[0]
@@ -372,5 +476,7 @@ if __name__ == '__main__':
                         print(f'Error for {id} {sha1} {stack}')
                         continue
 
-    # output_df = output_df.drop_duplicates()
-    # output_df.to_csv('new_urls.csv')
+    output_df = output_df.drop_duplicates()
+    output_df = output_df[~output_df['has_duplicated_code']]
+    output_df = output_df[output_df['is_similar']]
+    output_df.to_csv('filtered_results.csv')
