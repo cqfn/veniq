@@ -11,6 +11,7 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
 
+import javalang
 import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
@@ -278,7 +279,8 @@ def insert_code_with_new_file_creation(
         invocation_node: ASTNode,
         file_path: Path,
         output_path: Path,
-        dict_original_invocations: Dict[str, List[ASTNode]]
+        dict_original_invocations: Dict[str, List[ASTNode]],
+        source_filepath: str
 ) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
@@ -310,6 +312,7 @@ def insert_code_with_new_file_creation(
             algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
             if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
                 line_to_csv = {
+                    'project': source_filepath,
                     'input_filename': file_path,
                     'class_name': class_name,
                     'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
@@ -365,13 +368,17 @@ def find_lines_in_changed_file(
         class_node_of_changed_file = [
             x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
             if x.name == class_name][0]
+        if class_node_of_changed_file.name == 'PainlessParser' and method_node.name == 'rstatement':
+            print(1)
         class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
-        node = [x for x in class_subtree.get_proxy_nodes(
-            ASTNodeType.METHOD_DECLARATION,
-            ASTNodeType.CONSTRUCTOR_DECLARATION)
-            if x.name == method_node.name][0]  # type: ignore
-        original_func_changed = [x for x in class_subtree.get_proxy_nodes(
-            ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
+        methods_and_constructors = \
+            list(class_node_of_changed_file.methods) + list(class_subtree.get_proxy_nodes(
+            ASTNodeType.CONSTRUCTOR_DECLARATION))
+        node = [x for x in methods_and_constructors
+                if x.name == method_node.name][0]  # type: ignore
+        original_func_changed = [
+            x for x in class_node_of_changed_file.methods
+            if x.name == original_func.name][0]
 
         body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
         return {
@@ -383,7 +390,7 @@ def find_lines_in_changed_file(
         return {}
 
 
-def get_ast_if_possible(file_path: Path) -> Optional[AST]:
+def get_ast_if_possible(file_path: Path, res=None) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
@@ -391,8 +398,13 @@ def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     ast = None
     try:
         ast = AST.build_from_javalang(build_ast(str(file_path)))
-    except Exception:
-        print(f"Processing {file_path} is aborted due to parsing")
+    except javalang.parser.JavaSyntaxError:
+        if res:
+            res.error = 'JavaSyntaxError'
+    except Exception as e:
+        if res:
+            res.error = str(e)
+
     return ast
 
 
@@ -449,26 +461,30 @@ def analyze_file(
 
         methods_list = list(class_declaration.methods) + list(class_declaration.constructors)
         for method_node in methods_list:
-            method_decl = ast.get_subtree(method_node)
-            for method_invoked in method_decl.get_proxy_nodes(
-                    ASTNodeType.METHOD_INVOCATION):
-                found_method_decl = method_declarations.get(method_invoked.member, [])
-                # ignore overloaded functions
-                if len(found_method_decl) == 1:
-                    try:
-                        make_insertion(
-                            ast,
-                            class_declaration,
-                            dst_filename,
-                            found_method_decl,
-                            method_declarations,
-                            method_invoked,
-                            method_node,
-                            output_path,
-                            results
-                        )
-                    except Exception as e:
-                        print('Error has happened during file analyze: ' + str(e))
+            # Ignore overloaded target methods
+            found_methods_decl = method_declarations.get(method_node.name, [])
+            if len(found_methods_decl) == 1:
+                method_decl = ast.get_subtree(method_node)
+                for method_invoked in method_decl.get_proxy_nodes(
+                        ASTNodeType.METHOD_INVOCATION):
+                    found_method_decl = method_declarations.get(method_invoked.member, [])
+                    # ignore overloaded extracted functions
+                    if len(found_method_decl) == 1:
+                        try:
+                            make_insertion(
+                                ast,
+                                class_declaration,
+                                dst_filename,
+                                found_method_decl,
+                                method_declarations,
+                                method_invoked,
+                                method_node,
+                                output_path,
+                                file_path,
+                                results
+                            )
+                        except Exception as e:
+                            print('Error has happened during file analyze: ' + str(e))
 
     if not results:
         dst_filename.unlink()
@@ -477,7 +493,7 @@ def analyze_file(
 
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, results):
+                   method_node, output_path, source_filepath, results):
     is_matched = is_match_to_the_conditions(
         ast,
         method_invoked,
@@ -491,7 +507,8 @@ def make_insertion(ast, class_declaration, dst_filename, found_method_decl, meth
             method_invoked,
             dst_filename,
             output_path,
-            method_declarations)
+            method_declarations,
+            source_filepath)
         if log_of_inline:
             # change source filename, since it will be changed
             log_of_inline['input_filename'] = str(dst_filename.as_posix())
@@ -579,6 +596,7 @@ if __name__ == '__main__':  # noqa: C901
 
     df = pd.DataFrame(
         columns=[
+            'project',
             'input_filename',
             'class_name',
             'invocation_text_string',
@@ -612,6 +630,7 @@ if __name__ == '__main__':  # noqa: C901
                     for i in single_file_features:
                         #  get local path for inlined filename
                         i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
+                        print(i['output_filename'], filename)
                         i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
                         df = df.append(i, ignore_index=True)
 
