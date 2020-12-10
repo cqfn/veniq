@@ -368,8 +368,6 @@ def find_lines_in_changed_file(
         class_node_of_changed_file = [
             x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
             if x.name == class_name][0]
-        if class_node_of_changed_file.name == 'PainlessParser' and method_node.name == 'rstatement':
-            print(1)
         class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
         methods_and_constructors = \
             list(class_node_of_changed_file.methods) + list(class_subtree.get_proxy_nodes(
