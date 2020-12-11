@@ -72,7 +72,6 @@ if __name__ == '__main__':  # noqa: C901
     )
     parser.add_argument(
         "-o", "--out",
-        required=True,
         help="Output csv file",
         default='filtered_target.csv'
     )
