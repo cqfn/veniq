@@ -88,7 +88,7 @@ if __name__ == '__main__':  # noqa: C901
     args = parser.parse_args()
     csv_output = Path(args.out, 'filtered_results_with_target.csv')
 
-    df = pd.read_csv('temp_filtered.csv')
+    df = pd.read_csv(args.input)
     df['real_extractions'] = df['real_extractions'].apply(literal_eval)
 
     new_df = pd.DataFrame(columns=df.columns)
