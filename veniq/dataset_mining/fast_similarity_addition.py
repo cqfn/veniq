@@ -2,6 +2,7 @@ import os
 import traceback
 from argparse import ArgumentParser
 from ast import literal_eval
+from functools import partial
 from pathlib import Path
 
 import pandas as pd
@@ -15,11 +16,12 @@ from veniq.dataset_mining.code_similarity import is_similar_functions, get_after
 from veniq.utils.ast_builder import build_ast
 
 
-def calculate_additional_similarity(row: pd.Series):
+def calculate_additional_similarity(ser: pd.Series, output_path):
+    row = ser[1]
     target_function_name = row['function_name_with_LM']
     # real_extractions = row['real_extractions']
     class_name = row['class_name']
-    filepath_after = str(csv_output / row['filepath_saved'])
+    filepath_after = str(output_path / row['filepath_saved'])
     filepath_before = filepath_after.replace('_after.java', '_before.java')
     # extracted_function_name = row['function_inlined']
     function_target_start_line = row['function_target_start_line']
@@ -38,8 +40,8 @@ def calculate_additional_similarity(row: pd.Series):
     )
 
     _, lines_matched, _, _, how_similar_btw_extractions_target_modified, _ = is_similar_functions(
-        str(csv_output / filepath_before),
-        str(csv_output / filepath_after),
+        str(output_path / filepath_before),
+        str(output_path / filepath_after),
         [[function_target_start_line + 1, function_target_end_line]],
         (body_start_line_mdfd, body_end_line_mdfd)
     )
@@ -90,17 +92,26 @@ if __name__ == '__main__':  # noqa: C901
 
     df = pd.read_csv(args.input)
     df['real_extractions'] = df['real_extractions'].apply(literal_eval)
+    columns = [x for x in list(df.columns) if x.find('Unnamed') < 0] + ['similarity_modified']
+    new_df = pd.DataFrame(columns=columns)
+    with ProcessPool(1) as executor:
+        p_func = partial(
+            calculate_additional_similarity,
+            output_path=Path(args.dir).absolute(),
+        )
 
-    new_df = pd.DataFrame(columns=df.columns)
-    with ProcessPool(system_cores_qty) as executor:
-        future = executor.map(calculate_additional_similarity)
+        future = executor.map(p_func, df.iterrows())
         result = future.result()
 
-        for filename in tqdm(df.iterrows(), total=df.shape[0]):
+        for _ in tqdm(df.iterrows(), total=df.shape[0]):
             try:
                 row = next(result)
-                new_df.append(row, ignore_index=True)
+                new_df = new_df.append(row[columns], ignore_index=True)
+                new_df.to_csv(args.out)
             except Exception as e:
-                traceback.print_stack()
+                stack = traceback.format_exc()
+                print(f'Error {stack} {_[0]}')
 
     new_df.to_csv(args.out)
+    new_df = new_df[new_df['similarity'] > 0.699999 and new_df['similarity_modified'] > 0.6999999]
+    new_df.to_csv('filtered_both.csv')
