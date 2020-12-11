@@ -1,6 +1,7 @@
+import collections
 from collections import defaultdict
 from typing import List, Tuple
-
+import re
 import textdistance
 
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
@@ -13,14 +14,21 @@ def is_similar_functions(
         ranges_list_after: Tuple[int, int]):
     d = defaultdict(set)
     before_lines_for_all_ranges = []
-    exc = [' ', '{', '}', '']
+    exc = [' ', '', '@Override']
+    pattern = re.compile('^[(){};]*$')
     before_text = read_text_with_autodetected_encoding(file_before).split('\n')
-    after_lines, start_after = get_after_lines(exc, file_after, ranges_list_after)
+    after_lines, start_after = get_after_lines(
+        file_after,
+        ranges_list_after,
+        exc=exc,
+        pattern=pattern
+    )
     for start_before, end_before in ranges_list_before:
         # since the beginning in array start with 0
         before_lines = [
             x.strip() for x in before_text[start_before - 1: end_before]
-            if x.strip() not in exc]
+            if (x.strip() not in exc) and not re.match(pattern, x.strip())
+        ]
         before_lines_for_all_ranges.extend(before_lines)
 
         for iteration_i, i in enumerate(after_lines, start=start_before):
@@ -53,16 +61,22 @@ def is_similar_functions(
 
 
 def get_after_lines(
-        exc: List[str],
         file_after: str,
-        ranges_list_after: Tuple[int, int]) -> Tuple[List[str], int]:
+        ranges_list_after: Tuple[int, int],
+        pattern=None,
+        exc=None) -> Tuple[List[str], int]:
+
+    if exc is None:
+        exc = [' ', '', '@Override']
+    if pattern is None:
+        pattern = re.compile('^[(){};]*$')
     after_text = read_text_with_autodetected_encoding(file_after).split('\n')
     # since the beginning in array start with 0 and we
     # do not need the function's name which is usually on the first line
     start_after, end_after = ranges_list_after
     after_lines = [
         x.strip() for x in after_text[start_after: end_after]
-        if x.strip() not in exc]
+        if (x.strip() not in exc) and not re.match(pattern, x.strip())]
     return after_lines, start_after
 
 

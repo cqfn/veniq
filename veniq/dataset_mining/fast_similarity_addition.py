@@ -45,11 +45,11 @@ def calculate_additional_similarity(ser: pd.Series, output_path):
         [[function_target_start_line + 1, function_target_end_line]],
         (body_start_line_mdfd, body_end_line_mdfd)
     )
-    exc = [' ', '{', '}', '']
+
     after_lines = get_after_lines(
-        exc,
         filepath_after,
-        (body_start_line_mdfd, body_end_line_mdfd))
+        (body_start_line_mdfd, body_end_line_mdfd)
+    )
 
     # we add 1 line since invocation of extracted method
     # will differ every time
@@ -94,6 +94,7 @@ if __name__ == '__main__':  # noqa: C901
     df['real_extractions'] = df['real_extractions'].apply(literal_eval)
     columns = [x for x in list(df.columns) if x.find('Unnamed') < 0] + ['similarity_modified']
     new_df = pd.DataFrame(columns=columns)
+    failed_df = pd.DataFrame(columns=columns)
     with ProcessPool(1) as executor:
         p_func = partial(
             calculate_additional_similarity,
@@ -110,8 +111,13 @@ if __name__ == '__main__':  # noqa: C901
                 new_df.to_csv(args.out)
             except Exception as e:
                 stack = traceback.format_exc()
-                print(f'Error {stack} {_[0]}')
+                _[1].error = str(e)
+                failed_df.append(_[1], ignore_index=True)
+                print(f'Error {_[0]}')
 
     new_df.to_csv(args.out)
-    new_df = new_df[new_df['similarity'] > 0.699999 and new_df['similarity_modified'] > 0.6999999]
-    new_df.to_csv('filtered_both.csv')
+    filtered_both = new_df[(new_df['matched_percent'] > 0.699999) & (new_df['similarity_modified'] > 0.6999999)]
+    filtered_both.to_csv('filtered_both.csv')
+
+    failed_df.to_csv('failed.csv')
+
