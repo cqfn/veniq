@@ -389,15 +389,10 @@ class TestDatasetCollection(TestCase):
         inlined_function_declaration = [
             x for x in class_decl.methods
             if x.name == 'trailer'][0]
-        target_function = [
-            x for x in class_decl.methods
-            if x.name == 'rstatement'][0]
         result = find_lines_in_changed_file(
             new_full_filename=new_filename,
-            method_node=target_function,
             original_func=inlined_function_declaration,
             class_name='PainlessParser')
 
         self.assertEqual(result['invocation_method_start_line'], 1022)
         self.assertEqual(result['invocation_method_end_line'], 1083)
-        self.assertEqual(result['start_line_of_function_where_invocation_occurred'], 544)

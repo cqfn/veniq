@@ -12,6 +12,7 @@ requirements:
 
 unittest:
 	python3 -m unittest discover
+	python3 -m unittest test/integration/dataset_collection.py
 
 install:
 	python3 -m pip install .

@@ -318,7 +318,8 @@ def insert_code_with_new_file_creation(
                     'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
                     'method_where_invocation_occurred': method_node.name,
                     'invocation_method_name': original_func.name,
-                    'output_filename': new_full_filename
+                    'output_filename': new_full_filename,
+                    'start_line_of_function_where_invocation_occurred': method_node.line
                 }
 
                 inline_method_bounds = algorithm_for_inlining().inline_function(
@@ -335,10 +336,8 @@ def insert_code_with_new_file_creation(
                     if get_ast_if_possible(new_full_filename):
                         rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
                             class_name=class_name,
-                            method_node=method_node,
                             new_full_filename=new_full_filename,
                             original_func=original_func)
-
                         can_be_parsed = True
                         line_to_csv.update(rest_of_csv_row_for_changed_file)
                     else:
@@ -352,7 +351,6 @@ def insert_code_with_new_file_creation(
 # type: ignore
 def find_lines_in_changed_file(
         new_full_filename: Path,
-        method_node: ASTNode,
         original_func: ASTNode,
         class_name: str) -> Dict[str, Any]:
     """
@@ -369,12 +367,6 @@ def find_lines_in_changed_file(
             x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
             if x.name == class_name][0]
         class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
-        methods_and_constructors = \
-            list(class_node_of_changed_file.methods) + list(
-                class_subtree.get_proxy_nodes(
-                    ASTNodeType.CONSTRUCTOR_DECLARATION))
-        node = [x for x in methods_and_constructors
-                if x.name == method_node.name][0]  # type: ignore
         original_func_changed = [
             x for x in class_node_of_changed_file.methods
             if x.name == original_func.name][0]
@@ -382,8 +374,7 @@ def find_lines_in_changed_file(
         body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
         return {
             'invocation_method_start_line': body_start_line,
-            'invocation_method_end_line': body_end_line,
-            'start_line_of_function_where_invocation_occurred': node.line
+            'invocation_method_end_line': body_end_line
         }
     else:
         return {}
@@ -461,30 +452,27 @@ def analyze_file(
 
         methods_list = list(class_declaration.methods) + list(class_declaration.constructors)
         for method_node in methods_list:
-            # Ignore overloaded target methods
-            found_methods_decl = method_declarations.get(method_node.name, [])
-            if len(found_methods_decl) == 1:
-                method_decl = ast.get_subtree(method_node)
-                for method_invoked in method_decl.get_proxy_nodes(
-                        ASTNodeType.METHOD_INVOCATION):
-                    found_method_decl = method_declarations.get(method_invoked.member, [])
-                    # ignore overloaded extracted functions
-                    if len(found_method_decl) == 1:
-                        try:
-                            make_insertion(
-                                ast,
-                                class_declaration,
-                                dst_filename,
-                                found_method_decl,
-                                method_declarations,
-                                method_invoked,
-                                method_node,
-                                output_path,
-                                file_path,
-                                results
-                            )
-                        except Exception as e:
-                            print('Error has happened during file analyze: ' + str(e))
+            method_decl = ast.get_subtree(method_node)
+            for method_invoked in method_decl.get_proxy_nodes(
+                    ASTNodeType.METHOD_INVOCATION):
+                found_method_decl = method_declarations.get(method_invoked.member, [])
+                # ignore overloaded extracted functions
+                if len(found_method_decl) == 1:
+                    try:
+                        make_insertion(
+                            ast,
+                            class_declaration,
+                            dst_filename,
+                            found_method_decl,
+                            method_declarations,
+                            method_invoked,
+                            method_node,
+                            output_path,
+                            file_path,
+                            results
+                        )
+                    except Exception as e:
+                        print('Error has happened during file analyze: ' + str(e))
 
     if not results:
         dst_filename.unlink()
