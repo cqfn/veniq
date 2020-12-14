@@ -370,8 +370,9 @@ def find_lines_in_changed_file(
             if x.name == class_name][0]
         class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
         methods_and_constructors = \
-            list(class_node_of_changed_file.methods) + list(class_subtree.get_proxy_nodes(
-            ASTNodeType.CONSTRUCTOR_DECLARATION))
+            list(class_node_of_changed_file.methods) + list(
+                class_subtree.get_proxy_nodes(
+                    ASTNodeType.CONSTRUCTOR_DECLARATION))
         node = [x for x in methods_and_constructors
                 if x.name == method_node.name][0]  # type: ignore
         original_func_changed = [
@@ -420,6 +421,7 @@ def remove_comments(string):
             return ""
         else:  # otherwise, we will return the 1st group
             return match.group(1)  # captured quoted-string
+
     return regex.sub(_replacer, string)
 
 
@@ -519,6 +521,7 @@ def collect_info_about_functions_without_params(
     for method in class_declaration.methods:
         if not method.parameters:
             method_declarations[method.name].append(method)
+
 
 # def save_input_file(input_dir: Path, filename: Path) -> Path:
 #     # need to avoid situation when filenames are the same
