@@ -366,7 +366,6 @@ def find_lines_in_changed_file(
         class_node_of_changed_file = [
             x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
             if x.name == class_name][0]
-        class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
         original_func_changed = [
             x for x in class_node_of_changed_file.methods
             if x.name == original_func.name][0]

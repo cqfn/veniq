@@ -1,3 +1,5 @@
+import difflib
+import pprint
 import tempfile
 from os import listdir
 from pathlib import Path
@@ -5,11 +7,9 @@ from unittest import TestCase
 
 import pandas as pd
 from tqdm import tqdm
-import difflib
-import pprint
 
 from veniq.dataset_collection.augmentation import analyze_file
-import traceback
+
 
 class IntegrationDatasetCollection(TestCase):
 
