@@ -1,5 +1,4 @@
 import difflib
-import json
 import pprint
 import tempfile
 from os import listdir
@@ -75,8 +74,6 @@ class IntegrationDatasetCollection(TestCase):
 
         df = pd.read_csv(Path(__file__).absolute().parent / 'results_predefined.csv', index_col=0)
         results_predefined = df.sort_values(by=df.columns.to_list())
-        # json.dump(new_results.to_dict(), open('new_results.json', 'w'))
-        # json.dump(results_predefined.to_dict(), open('results_predefined.json', 'w'))
         df_diff = pd.concat([new_results, results_predefined]).drop_duplicates(keep=False)
         size_of_difference = df_diff.shape[0]
         print(f'Difference in dataframes: {size_of_difference} rows')

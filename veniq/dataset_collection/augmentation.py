@@ -415,6 +415,7 @@ def remove_comments(string):
     return regex.sub(_replacer, string)
 
 
+# flake8: noqa: C901
 def analyze_file(
         file_path: Path,
         output_path: Path,
