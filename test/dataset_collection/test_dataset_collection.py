@@ -172,6 +172,13 @@ class TestDatasetCollection(TestCase):
             InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS,
             InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS])
 
+    def _get_lines(self, file, function_name):
+        ast = AST.build_from_javalang(build_ast(file))
+        m_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == function_name][0]
+        return method_body_lines(m_decl, file)
+
     @unittest.skip("This functionality is not implemented")
     def test_inline_with_return_type_but_not_returning(self):
         """
@@ -184,11 +191,7 @@ class TestDatasetCollection(TestCase):
         file = self.current_directory / 'InlineExamples' / 'ReturnTypeUseless.java'
 
         test_example = self.current_directory / 'InlineTestExamples' / 'ReturnTypeUseless.java'
-        ast = AST.build_from_javalang(build_ast(file))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'invocation'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, file)
+        body_start_line, body_end_line = self._get_lines(file, 'invocation')
 
         algorithm.inline_function(file, 36, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
@@ -199,11 +202,7 @@ class TestDatasetCollection(TestCase):
         algorithm = InlineWithReturnWithoutArguments()
         file = self.current_directory / 'InlineExamples' / 'ReaderHandler.java'
         test_example = self.current_directory / 'InlineTestExamples' / 'ReaderHandler.java'
-        ast = AST.build_from_javalang(build_ast(file))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'getReceiverQueueSize'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, file)
+        body_start_line, body_end_line = self._get_lines(file, 'getReceiverQueueSize')
 
         algorithm.inline_function(file, 76, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
@@ -214,11 +213,7 @@ class TestDatasetCollection(TestCase):
         algorithm = InlineWithoutReturnWithoutArguments()
         file = self.current_directory / 'InlineExamples' / 'PlanetDialog.java'
         test_example = self.current_directory / 'InlineTestExamples' / 'PlanetDialog.java'
-        ast = AST.build_from_javalang(build_ast(file))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'makeBloom'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, file)
+        body_start_line, body_end_line = self._get_lines(file, 'makeBloom')
 
         algorithm.inline_function(file, 70, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
@@ -281,11 +276,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'EntityResolver_cut.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'createDocumentBuilderFactory'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'createDocumentBuilderFactory')
         self.assertEqual(body_start_line == 33, body_end_line == 40)
         algorithm_for_inlining().inline_function(filepath, 22, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
@@ -297,11 +288,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'AbstractMarshaller_cut.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'fireChildRemoved'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'fireChildRemoved')
         self.assertEqual(body_start_line == 17, body_end_line == 20)
 
         algorithm_for_inlining().inline_function(filepath, 14, body_start_line, body_end_line, self.temp_filename)
@@ -314,11 +301,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'cut.java'
         algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'copy'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'copy')
         algorithm_for_inlining().inline_function(filepath,
                                                  8,
                                                  body_start_line,
@@ -333,11 +316,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'ObjectProperties_cut.java'
         algorithm_type = InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'updateSashWidths'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'updateSashWidths')
         algorithm_for_inlining().inline_function(filepath, 43, body_start_line, body_end_line, self.temp_filename)
         with open(self.temp_filename, encoding='utf-8') as actual_file, \
                 open(test_filepath, encoding='utf-8') as test_ex:
@@ -366,11 +345,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_without_return.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'btSelectMethod'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'btSelectMethod')
         self.assertEqual(body_start_line == 80, body_end_line == 85)
         invocation_line = 111
         algorithm_for_inlining().inline_function(
@@ -389,11 +364,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_with_var_declaration.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'btSelectProperty'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'btSelectProperty')
         self.assertEqual(body_start_line == 60, body_end_line == 65)
         algorithm_for_inlining().inline_function(
             filepath,
@@ -411,11 +382,7 @@ class TestDatasetCollection(TestCase):
         test_filepath = self.current_directory / 'InlineTestExamples/Parameters_without_return_without_assigning.java'
         algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        ast = AST.build_from_javalang(build_ast(filepath))
-        m_decl = [
-            x for x in ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
-            if x.name == 'cboComponent'][0]
-        body_start_line, body_end_line = method_body_lines(m_decl, filepath)
+        body_start_line, body_end_line = self._get_lines(filepath, 'cboComponent')
         self.assertEqual(body_start_line == 40, body_end_line == 45)
         algorithm_for_inlining().inline_function(
             filepath,
