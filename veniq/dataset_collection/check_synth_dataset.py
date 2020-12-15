@@ -158,7 +158,8 @@ if __name__ == '__main__':  # noqa: C901
 
     args = parser.parse_args()
 
-    df = pd.read_csv(args.csv)
+    full_df = pd.read_csv(args.csv)
+    df = full_df[full_df['can_be_parsed']]
     columns = [x for x in df.columns if x.find('Unnamed') < 0] \
               + ['are_target_lines_matched',
                  'are_inlined_lines_matched',
@@ -196,10 +197,13 @@ if __name__ == '__main__':  # noqa: C901
 
     print(f'Samples where insertion were outside target function {insertion_start_line_inside_target.shape[0]}')
 
-    negative_insertion = new_df[
-        new_df['invocation_method_start_line'] - new_df['invocation_method_end_line']
-    ]
-    print(f'Negative insertions: {negative_insertion.shape[0]}')
+    new_df['score_diff'] = new_df['invocation_method_start_line'].sub(new_df['invocation_method_end_line'], axis=0)
+    negative_insertions = new_df[new_df['score_diff'] < 0]
+    print(f'Negative insertions: {negative_insertions.shape[0]}')
+
+    can_be_parsed = full_df['can_be_parsed'].shape[0]
+    print(f'Cases when insertion was made '
+          f'but it cannot be parsed {can_be_parsed}')
     #################################################################################################################
     are_inlined_lines_matched = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.ERROR.name
