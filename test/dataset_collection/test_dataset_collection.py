@@ -5,7 +5,8 @@ from unittest import TestCase
 from veniq.dataset_collection.augmentation import (
     determine_algorithm_insertion_type,
     method_body_lines,
-    is_match_to_the_conditions)
+    is_match_to_the_conditions,
+    find_lines_in_changed_file)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms,
@@ -377,3 +378,21 @@ class TestDatasetCollection(TestCase):
                                                                           self.temp_filename)
         self.assertEqual([30, 34], pred_inline_rel_bounds,
                          msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
+
+    def test_check(self):
+        old_filename = self.current_directory / 'InlineExamples/PainlessParser.java'
+        new_filename = self.current_directory / 'InlineTestExamples/PainlessParser.java'
+        ast = AST.build_from_javalang(build_ast(old_filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'PainlessParser'][0]
+        inlined_function_declaration = [
+            x for x in class_decl.methods
+            if x.name == 'trailer'][0]
+        result = find_lines_in_changed_file(
+            new_full_filename=new_filename,
+            original_func=inlined_function_declaration,
+            class_name='PainlessParser')
+
+        self.assertEqual(result['invocation_method_start_line'], 1022)
+        self.assertEqual(result['invocation_method_end_line'], 1083)
