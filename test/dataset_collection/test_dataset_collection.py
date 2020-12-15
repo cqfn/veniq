@@ -372,9 +372,10 @@ class TestDatasetCollection(TestCase):
             if x.name == 'btSelectMethod'][0]
         body_start_line, body_end_line = method_body_lines(m_decl, filepath)
         self.assertEqual(body_start_line == 80, body_end_line == 85)
+        invocation_line = 111
         algorithm_for_inlining().inline_function(
             filepath,
-            111,
+            invocation_line,
             body_start_line,
             body_end_line,
             self.temp_filename
