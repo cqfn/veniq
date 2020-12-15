@@ -447,31 +447,38 @@ def analyze_file(
     ]
     for class_ast in classes_declaration:
         class_declaration = class_ast.get_root()
-        collect_info_about_functions_without_params(class_declaration, method_declarations)
+        methods_list: List[ASTNode] = \
+            list(class_declaration.methods) \
+            + list(class_declaration.constructors)
+        collect_info_about_functions_without_params(method_declarations, methods_list)
 
-        methods_list = list(class_declaration.methods) + list(class_declaration.constructors)
         for method_node in methods_list:
             method_decl = ast.get_subtree(method_node)
-            for method_invoked in method_decl.get_proxy_nodes(
-                    ASTNodeType.METHOD_INVOCATION):
-                found_method_decl = method_declarations.get(method_invoked.member, [])
-                # ignore overloaded extracted functions
-                if len(found_method_decl) == 1:
-                    try:
-                        make_insertion(
-                            ast,
-                            class_declaration,
-                            dst_filename,
-                            found_method_decl,
-                            method_declarations,
-                            method_invoked,
-                            method_node,
-                            output_path,
-                            file_path,
-                            results
-                        )
-                    except Exception as e:
-                        print('Error has happened during file analyze: ' + str(e))
+            found_functions = method_declarations.get(method_node.name, [])
+            # we do not consider overloaded constructors and functions
+            # as target functions
+            if len(found_functions) == 1:
+                for invocation_node in method_decl.get_proxy_nodes(
+                        ASTNodeType.METHOD_INVOCATION):
+                    extracted_function = method_declarations.get(invocation_node.member, [])
+                    # ignore overloaded extracted functions
+                    if len(extracted_function) == 1:
+                        if not extracted_function[0].parameters:
+                            try:
+                                make_insertion(
+                                    ast,
+                                    class_declaration,
+                                    dst_filename,
+                                    extracted_function,
+                                    method_declarations,
+                                    invocation_node,
+                                    method_node,
+                                    output_path,
+                                    file_path,
+                                    results
+                                )
+                            except Exception as e:
+                                print('Error has happened during file analyze: ' + str(e))
 
     if not results:
         dst_filename.unlink()
@@ -503,22 +510,10 @@ def make_insertion(ast, class_declaration, dst_filename, found_method_decl, meth
 
 
 def collect_info_about_functions_without_params(
-        class_declaration: ASTNode,
-        method_declarations: Dict[str, List[ASTNode]]) -> None:
-    for method in class_declaration.methods:
-        if not method.parameters:
-            method_declarations[method.name].append(method)
-
-
-# def save_input_file(input_dir: Path, filename: Path) -> Path:
-#     # need to avoid situation when filenames are the same
-#     hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
-#     dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
-#     if not dst_filename.parent.exists():
-#         dst_filename.parent.mkdir(parents=True)
-#     if not dst_filename.exists():
-#         shutil.copyfile(filename, dst_filename)
-#     return dst_filename
+        method_declarations: Dict[str, List[ASTNode]],
+        list_of_considered_nodes: List[ASTNode]) -> None:
+    for node in list_of_considered_nodes:
+        method_declarations[node.name].append(node)
 
 
 def save_text_to_new_file(input_dir: Path, text: str, filename: Path) -> Path:
