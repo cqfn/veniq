@@ -47,7 +47,7 @@ def check_function_start_end_line(
         return FunctionExist.CLASS_NOT_FOUND
     else:
         class_decl = class_decl[0]
-        ctrs = [x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)]
+        ctrs = [x for x in ast.get_proxy_nodes(ASTNodeType.CONSTRUCTOR_DECLARATION)]
 
         all_considered_methods = list([x for x in class_decl.methods]) + ctrs
         functions = [x for x in all_considered_methods if x.name == function_name]
@@ -163,7 +163,7 @@ if __name__ == '__main__':  # noqa: C901
                  ]
     new_df = pd.DataFrame(columns=columns)
 
-    with ProcessPool(system_cores_qty) as executor:
+    with ProcessPool(1) as executor:
         p_check = partial(
             make_check,
             output_path=args.dir,
