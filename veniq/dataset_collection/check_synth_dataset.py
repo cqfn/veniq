@@ -163,7 +163,7 @@ if __name__ == '__main__':  # noqa: C901
                  ]
     new_df = pd.DataFrame(columns=columns)
 
-    with ProcessPool(1) as executor:
+    with ProcessPool(system_cores_qty) as executor:
         p_check = partial(
             make_check,
             output_path=args.dir,
