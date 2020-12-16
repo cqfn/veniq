@@ -343,10 +343,11 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                     instead_of_return = space_for_var_decl_line + variable_declaration + '= ' + return_statement[1]
                     new_body_line = spaces_in_body + instead_of_return
                 else:
-                    instead_of_return = return_statement[1].replace('\t', ' ' * 4)
-                    tabs_before_return = return_statement[0]
-                    new_body_line = spaces_in_body + tabs_before_return + instead_of_return
+                    # do not write return cause we are not assigning value
+                    break
             else:
                 new_body_line = spaces_in_body + line
             body_lines.append(self.get_line_for_body(new_body_line, lines[invocation_line - 2]))
+
+        original_file.close()
         return body_lines
