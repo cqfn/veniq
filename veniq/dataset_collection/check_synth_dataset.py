@@ -2,7 +2,7 @@ import os
 from argparse import ArgumentParser
 from functools import partial
 from pathlib import Path
-
+import ast
 import pandas as pd
 from enum import Enum
 
@@ -29,7 +29,7 @@ class FunctionExist(Enum):
 def was_not_inlined(inline_insertion_line_start, invocation_text_string, output_filename):
     text = read_text_with_autodetected_encoding(output_filename).split('\n')
     invocation_text_line = text[inline_insertion_line_start - 1]
-    return invocation_text_line.strip() == invocation_text_string.strip()
+    return invocation_text_line.strip() == invocation_text_string.decode('utf-8').strip()
 
 
 def check_function_start_end_line(
@@ -154,6 +154,8 @@ if __name__ == '__main__':  # noqa: C901
 
     full_df = pd.read_csv(args.csv)
     df = full_df[full_df['can_be_parsed']]
+    df['invocation_text_string'] = df['invocation_text_string'].apply(ast.literal_eval)
+
     columns = [x for x in df.columns if x.find('Unnamed') < 0] \
               + ['are_target_lines_matched',
                  'are_inlined_lines_matched',
@@ -163,7 +165,7 @@ if __name__ == '__main__':  # noqa: C901
                  ]
     new_df = pd.DataFrame(columns=columns)
 
-    with ProcessPool(system_cores_qty) as executor:
+    with ProcessPool(1) as executor:
         p_check = partial(
             make_check,
             output_path=args.dir,
@@ -287,7 +289,7 @@ if __name__ == '__main__':  # noqa: C901
     print(f'Samples where lines of target function were matched '
           f'when checking target\'s range {temp_df.shape[0]}')
 
-    filtered_size = filtered_df.shape[0] - can_be_parsed.shape[0]
+    filtered_size = filtered_df.shape[0]
     print(f'After filtering we\'ve got {filtered_size} of {new_df.shape[0]}')
     ratio = float(filtered_size)/new_df.shape[0]
     print(f'We have {ratio}% correct samples of all dataset')
