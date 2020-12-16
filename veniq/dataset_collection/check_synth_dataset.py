@@ -29,7 +29,7 @@ class FunctionExist(Enum):
 def was_not_inlined(inline_insertion_line_start, invocation_text_string, output_filename):
     text = read_text_with_autodetected_encoding(output_filename).split('\n')
     invocation_text_line = text[inline_insertion_line_start - 1]
-    return invocation_text_line == invocation_text_string
+    return invocation_text_line.strip() == invocation_text_string.strip()
 
 
 def check_function_start_end_line(
@@ -183,11 +183,11 @@ if __name__ == '__main__':  # noqa: C901
 
     filtered_df = new_df.copy()
 
-
     def remove_indices(df_to_filter: pd.DataFrame):
-        rows = filtered_df.index[df_to_filter.index]
-        filtered_df.drop(rows, inplace=True)
+        rows = filtered_df[filtered_df.index.isin(df_to_filter.index)]
+        filtered_df.drop(rows.index, inplace=True)
 
+    print(f'Total lines: {new_df.shape[0]}')
     duplicateRowsDF = new_df[new_df.duplicated()]
     print(f'Duplicated rows: {duplicateRowsDF.shape[0]}')
     remove_indices(duplicateRowsDF)
@@ -212,68 +212,82 @@ if __name__ == '__main__':  # noqa: C901
     can_be_parsed = full_df[~full_df['can_be_parsed']]
     print(f'Cases when insertion was made '
           f'but it cannot be parsed {can_be_parsed.shape[0]}')
-    remove_indices(can_be_parsed)
     #################################################################################################################
-    are_inlined_lines_matched = new_df[
+    temp_df = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.ERROR.name
     ]
-    remove_indices(are_inlined_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where error happened '
-          f'when checking inlined\'s range {are_inlined_lines_matched.shape[0]}')
-    are_inlined_lines_matched = new_df[
+          f'when checking inlined\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.CLASS_NOT_FOUND.name
     ]
-    remove_indices(are_inlined_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where class was not found '
-          f'when checking inlines\'s range {are_inlined_lines_matched.shape[0]}')
-    are_inlined_lines_matched = new_df[
+          f'when checking inlines\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.OVERLOADED_FUNC.name
     ]
-    remove_indices(are_inlined_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where inlined function is overloaded '
-          f'when checking inlines\'s range {are_inlined_lines_matched.shape[0]}')
-    are_inlined_lines_matched = new_df[
+          f'when checking inlines\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_NO_FOUND.name
     ]
-    remove_indices(are_inlined_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where inlined function was not found '
-          f'when checking inlines\'s range {are_inlined_lines_matched.shape[0]}')
-    are_inlined_lines_matched = new_df[
+          f'when checking inlines\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
+        new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_LINES_NOT_MATCHED.name
+        ]
+    print(f'Samples where lines of inlined function were not matched '
+          f'when checking inlines\'s range {temp_df.shape[0]}')
+    remove_indices(temp_df)
+    temp_df = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_LINES_MATCHED.name
     ]
-    print(f'Samples where lines of inlined function matched '
-          f'when checking inlines\'s range {are_inlined_lines_matched.shape[0]}')
+    print(f'Samples where lines of inlined function were matched '
+          f'when checking inlines\'s range {temp_df.shape[0]}')
     #########################################################################################
-    target_lines_matched = new_df[
+    temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.ERROR.name
     ]
-    remove_indices(target_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where error happened '
-          f'when checking target\'s range {target_lines_matched.shape[0]}')
-    target_lines_matched = new_df[
+          f'when checking target\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.CLASS_NOT_FOUND.name
     ]
-    remove_indices(target_lines_matched)
+    remove_indices(temp_df)
     print(f'Samples where class was not found '
-          f'when checking target\'s range {target_lines_matched.shape[0]}')
-    target_lines_matched = new_df[
+          f'when checking target\'s range {temp_df.shape[0]}')
+    temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.OVERLOADED_FUNC.name
     ]
-    remove_indices(target_lines_matched)
-    print(f'Samples where target function is overloaded'
-          f'when checking target\'s range {target_lines_matched.shape[0]}')
+    remove_indices(temp_df)
+    print(f'Samples where target function is overloaded '
+          f'when checking target\'s range {temp_df.shape[0]}')
     target_lines_matched = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_NO_FOUND.name
     ]
-    remove_indices(target_lines_matched)
-    print(f'Samples where target function was not found'
-          f'when checking target\'s range {target_lines_matched.shape[0]}')
-    target_lines_matched = new_df[
+    remove_indices(temp_df)
+    print(f'Samples where target function was not found '
+          f'when checking target\'s range {temp_df.shape[0]}')
+
+    temp_df = new_df[
+        new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_LINES_NOT_MATCHED.name
+        ]
+    print(f'Samples where lines of target function were not matched '
+          f'when checking inlines\'s range {temp_df.shape[0]}')
+    remove_indices(temp_df)
+    temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_LINES_MATCHED.name
     ]
-    print(f'Samples where lines of target function matched '
-          f'when checking target\'s range {target_lines_matched.shape[0]}')
 
-    print(f'After filtering we\'ve got {filtered_df.shape[0]} of {new_df.shape[0]}')
-    ratio = float(filtered_df.shape[0])/new_df.shape[0]
-    print(f'We have {ratio}% of all dataset')
+    print(f'Samples where lines of target function were matched '
+          f'when checking target\'s range {temp_df.shape[0]}')
+
+    filtered_size = filtered_df.shape[0] - can_be_parsed.shape[0]
+    print(f'After filtering we\'ve got {filtered_size} of {new_df.shape[0]}')
+    ratio = float(filtered_size)/new_df.shape[0]
+    print(f'We have {ratio}% correct samples of all dataset')
