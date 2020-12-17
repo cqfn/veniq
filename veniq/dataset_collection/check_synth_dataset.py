@@ -21,7 +21,7 @@ class FunctionExist(Enum):
     ERROR = -1
     CLASS_NOT_FOUND = 0
     OVERLOADED_FUNC = 1
-    FUNCTION_NO_FOUND = 2
+    FUNCTION_NOT_FOUND = 2
     FUNCTION_LINES_NOT_MATCHED = 3
     FUNCTION_LINES_MATCHED = 4
 
@@ -46,14 +46,14 @@ def check_function_start_end_line(
     if len(class_decl) == 0:
         return FunctionExist.CLASS_NOT_FOUND
     else:
-        class_decl = class_decl[0]
+        class_decl = class_decl[0]  # type: ignore
         ctrs = [x for x in ast.get_proxy_nodes(ASTNodeType.CONSTRUCTOR_DECLARATION)]
 
-        all_considered_methods = list([x for x in class_decl.methods]) + ctrs
+        all_considered_methods = list([x for x in class_decl.methods]) + ctrs  # type: ignore
         functions = [x for x in all_considered_methods if x.name == function_name]
 
         if len(functions) == 0:
-            return (None, None), FunctionExist.FUNCTION_EXISTS.name
+            return (None, None), FunctionExist.FUNCTION_NOT_FOUND.name
         elif len(functions) > 1:
             return (None, None), FunctionExist.OVERLOADED_FUNC.name
         else:
@@ -234,7 +234,7 @@ if __name__ == '__main__':  # noqa: C901
     print(f'Samples where inlined function is overloaded '
           f'when checking inlines\'s range {temp_df.shape[0]}')
     temp_df = new_df[
-        new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_NO_FOUND.name
+        new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_NOT_FOUND.name
     ]
     remove_indices(temp_df)
     print(f'Samples where inlined function was not found '
@@ -270,7 +270,7 @@ if __name__ == '__main__':  # noqa: C901
     print(f'Samples where target function is overloaded '
           f'when checking target\'s range {temp_df.shape[0]}')
     target_lines_matched = new_df[
-        new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_NO_FOUND.name
+        new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_NOT_FOUND.name
     ]
     remove_indices(temp_df)
     print(f'Samples where target function was not found '
