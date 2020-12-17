@@ -156,13 +156,13 @@ if __name__ == '__main__':  # noqa: C901
     df = full_df[full_df['can_be_parsed']]
     df['invocation_text_string'] = df['invocation_text_string'].apply(ast.literal_eval)
 
-    columns = [x for x in df.columns if x.find('Unnamed') < 0] \
-              + ['are_target_lines_matched',
-                 'are_inlined_lines_matched',
-                 'was_not_inlined',
-                 'insertion_start_line_inside_target',
-                 'insertion_end_line_inside_target'
-                 ]
+    columns = [x for x in df.columns if x.find('Unnamed') < 0] + [
+        'are_target_lines_matched',
+        'are_inlined_lines_matched',
+        'was_not_inlined',
+        'insertion_start_line_inside_target',
+        'insertion_end_line_inside_target'
+    ]
     new_df = pd.DataFrame(columns=columns)
 
     with ProcessPool(system_cores_qty) as executor:
@@ -179,7 +179,7 @@ if __name__ == '__main__':  # noqa: C901
                 new_df = new_df.append(res[columns], ignore_index=True)
 
                 new_df.to_csv('checked.csv')
-            except Exception as e:
+            except Exception:
                 print(f'Exception in {_} case')
                 traceback.print_exc()
 
@@ -241,7 +241,7 @@ if __name__ == '__main__':  # noqa: C901
           f'when checking inlines\'s range {temp_df.shape[0]}')
     temp_df = new_df[
         new_df['are_inlined_lines_matched'] == FunctionExist.FUNCTION_LINES_NOT_MATCHED.name
-        ]
+    ]
     print(f'Samples where lines of inlined function were not matched '
           f'when checking inlines\'s range {temp_df.shape[0]}')
     remove_indices(temp_df)
@@ -278,7 +278,7 @@ if __name__ == '__main__':  # noqa: C901
 
     temp_df = new_df[
         new_df['are_target_lines_matched'] == FunctionExist.FUNCTION_LINES_NOT_MATCHED.name
-        ]
+    ]
     print(f'Samples where lines of target function were not matched '
           f'when checking inlines\'s range {temp_df.shape[0]}')
     remove_indices(temp_df)
@@ -291,5 +291,5 @@ if __name__ == '__main__':  # noqa: C901
 
     filtered_size = filtered_df.shape[0]
     print(f'After filtering we\'ve got {filtered_size} of {new_df.shape[0]}')
-    ratio = float(filtered_size)/new_df.shape[0]
+    ratio = float(filtered_size) / new_df.shape[0]
     print(f'We have {ratio}% correct samples of all dataset')
