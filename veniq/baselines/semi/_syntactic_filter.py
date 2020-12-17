@@ -4,8 +4,8 @@ from ._common_types import ExtractionOpportunity
 from veniq.ast_framework.block_statement_graph import Block, Statement
 
 
-def syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Block) -> bool:
-    syntactic_filter_callbacks = _SyntacticFilterCallbacks(statements, method_block_statement_graph)
+def syntactic_filter(statements: ExtractionOpportunity, method_block_statement_graph: Statement) -> bool:
+    syntactic_filter_callbacks = _SyntacticFilterCallbacks(statements, next(method_block_statement_graph.nested_blocks))
     method_block_statement_graph.traverse(
         syntactic_filter_callbacks.on_node_entering, syntactic_filter_callbacks.on_node_leaving
     )
