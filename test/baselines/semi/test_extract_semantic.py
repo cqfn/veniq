@@ -59,6 +59,7 @@ class ExtractStatementSemanticTestCase(TestCase):
             "tryBlock",
             [
                 StatementSemantic(),
+                StatementSemantic(),
                 objects_semantic("x", "resource"),
                 StatementSemantic(),
                 StatementSemantic(),
@@ -129,6 +130,7 @@ class ExtractStatementSemanticTestCase(TestCase):
             [
                 objects_semantic("i"),
                 objects_semantic("i"),
+                StatementSemantic(),
                 StatementSemantic(),
                 StatementSemantic(used_objects={"System.out", "i"}, used_methods={"println"}),
                 StatementSemantic(),

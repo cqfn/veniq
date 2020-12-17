@@ -38,6 +38,8 @@ class _SemanticExtractor:
             ASTNodeType.CONTINUE_STATEMENT: lambda _: StatementSemantic(),
             # Inner class declarations are currently not supported
             ASTNodeType.CLASS_DECLARATION: lambda _: StatementSemantic(),
+            # Try by itself does not has any semantic
+            ASTNodeType.TRY_STATEMENT: lambda _: StatementSemantic(),
         }
 
     def on_node_entering(self, node: Union[Block, Statement]) -> None:
@@ -64,7 +66,6 @@ class _SemanticExtractor:
         if extraction_statement.node_type in {
             ASTNodeType.METHOD_DECLARATION,
             ASTNodeType.BLOCK_STATEMENT,
-            ASTNodeType.TRY_STATEMENT,
             ASTNodeType.IF_STATEMENT,
         }:
             return
