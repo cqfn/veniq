@@ -17,7 +17,7 @@ def objects_semantic(*objects_names: str) -> StatementSemantic:
 
 def create_extraction_opportunity(
     method_ast: AST, statements_lines: List[int]
-) -> Tuple[ExtractionOpportunity, Block]:
+) -> Tuple[ExtractionOpportunity, Statement]:
     extraction_opportunity_list: List[ExtractionStatement] = []
     block_statement_graph = build_block_statement_graph(method_ast)
 

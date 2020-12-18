@@ -317,7 +317,7 @@ class BlockStatementTestCase(TestCase):
 
         return filename, class_name, class_declaration, ast
 
-    def _get_block_statement_graph_from_method(self, method_name: str) -> Block:
+    def _get_block_statement_graph_from_method(self, method_name: str) -> Statement:
         filename, class_name, class_declaration, ast = self._get_class_declaration()
 
         try:
@@ -327,7 +327,7 @@ class BlockStatementTestCase(TestCase):
 
         return build_block_statement_graph(ast.get_subtree(method_declaration))
 
-    def _get_block_statement_graph_from_constructor(self, constructor_index: int = 1) -> Block:
+    def _get_block_statement_graph_from_constructor(self, constructor_index: int = 1) -> Statement:
         filename, class_name, class_declaration, ast = self._get_class_declaration()
 
         try:

@@ -8,7 +8,7 @@ from veniq.ast_framework import ASTNode, ASTNodeType
 def semantic_filter(
     statements: ExtractionOpportunity,
     statements_semantic: Dict[ASTNode, StatementSemantic],
-    method_block_statement_graph: Block,
+    method_block_statement_graph: Statement,
 ) -> bool:
     symantic_filter_callbacks = _SymanticFilterCallbacks(
         statements, statements_semantic, method_block_statement_graph
@@ -24,7 +24,7 @@ class _SymanticFilterCallbacks:
         self,
         statements: ExtractionOpportunity,
         statements_semantic: Dict[ASTNode, StatementSemantic],
-        method_block_statement_graph: Block,
+        method_block_statement_graph: Statement,
     ):
         self._statements = statements
         self._statements_semantic = statements_semantic

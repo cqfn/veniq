@@ -7,13 +7,13 @@ from ._nodes_factory import NodesFactory
 from ._block_extractors import BlockInfo, extract_blocks_from_statement
 
 if TYPE_CHECKING:
-    from .block import Block
+    from .statement import Statement
 
 
-def build_block_statement_graph(method_ast: AST) -> "Block":
+def build_block_statement_graph(method_ast: AST) -> "Statement":
     graph = DiGraph()
     root_index = _build_graph_from_statement(method_ast.get_root(), graph)
-    return NodesFactory.create_block_node(graph, root_index)
+    return NodesFactory.create_statement_node(graph, root_index)
 
 
 def _build_graph_from_statement(statement: ASTNode, graph: DiGraph) -> NodeId:
