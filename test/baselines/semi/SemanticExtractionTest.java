@@ -155,4 +155,8 @@ class SimpleMethods {
     void multipleStatementsPerLine(int x, int y) {
         localMethod(x); localMethod(y);
     }
+
+    SimpleMethods() { // first constructor
+        init();
+    }
 }
