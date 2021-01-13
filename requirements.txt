@@ -13,3 +13,6 @@ tqdm == 4.32.1
 bs4==0.0.1
 pebble==4.5.3
 pandas==1.1.2
+sortedcontainers==2.3.0
+textdistance==4.2.0
+requests==2.25.0
