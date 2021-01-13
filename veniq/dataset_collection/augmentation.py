@@ -136,7 +136,9 @@ class InvocationType(Enum):
     SEVERAL_RETURNS = 15
     IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 16
     IS_NOT_PARENT_MEMBER_REF = 17
-    METHOD_WITH_ARGUMENTS = 18
+    EXTRACTED_NCSS_LARGE = 18
+    METHOD_WITH_ARGUMENTS = 19
+
 
     @classmethod
     def list_types(cls):
@@ -257,43 +259,43 @@ def get_stats_for_pruned_cases(
         is_not_several_returns, is_not_ternary, method_invoked) -> List[str]:
     invocation_types_to_ignore: List[str] = []
 
-    if is_not_chain_before:
+    if not is_not_chain_before:
         invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_BEFORE.name)
-    if is_actual_parameter_simple:
+    if not is_actual_parameter_simple:
         invocation_types_to_ignore.append(InvocationType.SIMPLE_ACTUAL_PARAMETER.name)
-    if is_not_chain_after:
+    if not is_not_chain_after:
         invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_AFTER.name)
-    if is_not_inside_if:
+    if not is_not_inside_if:
         invocation_types_to_ignore.append(InvocationType.INSIDE_IF.name)
-    if is_not_inside_while:
+    if not is_not_inside_while:
         invocation_types_to_ignore.append(InvocationType.INSIDE_WHILE.name)
-    if is_not_binary_operation:
+    if not is_not_binary_operation:
         invocation_types_to_ignore.append(InvocationType.INSIDE_BINARY_OPERATION.name)
-    if is_not_ternary:
+    if not is_not_ternary:
         invocation_types_to_ignore.append(InvocationType.INSIDE_TERNARY.name)
-    if is_not_class_creator:
+    if not is_not_class_creator:
         invocation_types_to_ignore.append(InvocationType.INSIDE_CLASS_CREATOR.name)
-    if is_not_cast:
+    if not is_not_cast:
         invocation_types_to_ignore.append(InvocationType.TYPE_CAST.name)
-    if is_not_array_creator:
+    if not is_not_array_creator:
         invocation_types_to_ignore.append(InvocationType.INSIDE_ARRAY_CREATOR.name)
-    if is_not_parent_member_ref:
+    if not is_not_parent_member_ref:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_PARENT_MEMBER_REF.name)
-    if is_not_inside_for:
+    if not is_not_inside_for:
         invocation_types_to_ignore.append(InvocationType.INSIDE_FOR.name)
-    if is_not_enhanced_for_control:
+    if not is_not_enhanced_for_control:
         invocation_types_to_ignore.append(InvocationType.INSIDE_FOREACH.name)
-    if is_not_lambda:
+    if not is_not_lambda:
         invocation_types_to_ignore.append(InvocationType.INSIDE_LAMBDA.name)
-    if is_not_method_inv_single_statement_in_if:
+    if not is_not_method_inv_single_statement_in_if:
         invocation_types_to_ignore.append(InvocationType.SINGLE_STATEMENT_IN_IF.name)
-    if is_not_assign_value_with_return_type:
+    if not is_not_assign_value_with_return_type:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_ASSIGN_VALUE_WITH_RETURN_TYPE.name)
-    if is_not_several_returns:
+    if not is_not_several_returns:
         invocation_types_to_ignore.append(InvocationType.SEVERAL_RETURNS.name)
-    if is_not_at_the_same_line_as_prohibited_stats:
+    if not is_not_at_the_same_line_as_prohibited_stats:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS.name)
-    if not method_invoked.argument:
+    if method_invoked.arguments:
         invocation_types_to_ignore.append(InvocationType.METHOD_WITH_ARGUMENTS.name)
 
     return invocation_types_to_ignore
@@ -399,60 +401,57 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
+    # ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
     line_to_csv = {}
     # @acheshkov asked to consider only methods with ncss > 3, that's all.
-    if ncss_extracted >= 3:
-        ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
-        body_start_line, body_end_line = method_body_lines(original_func, file_path)
-        text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
-        # we do not inline one-line methods like
-        # public String getRemainingString() {return str.substring(index);}
-        if body_start_line != body_end_line:
-            algorithm_type = determine_algorithm_insertion_type(
-                ast,
-                method_node,
-                invocation_node,
-                dict_original_invocations
+    # ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
+    body_start_line, body_end_line = method_body_lines(original_func, file_path)
+    text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
+    # we do not inline one-line methods like
+    # public String getRemainingString() {return str.substring(index);}
+    if body_start_line != body_end_line:
+        algorithm_type = determine_algorithm_insertion_type(
+            ast,
+            method_node,
+            invocation_node,
+            dict_original_invocations
+        )
+        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
+        if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
+            line_to_csv = {
+                'original_filename': file_path,
+                'class_name': class_name,
+                'invocation_line_string': text_lines[invocation_node.line - 1].lstrip().encode('utf-8').decode('utf-8'),
+                'target_method': method_node.name,
+                'extract_method_name': original_func.name,
+                'output_filename': Path(new_full_filename).name,
+                'target_method_start_line': method_node.line,
+                # 'ncss_extracted': ncss_extracted,
+                # 'ncss_target': ncss_target
+            }
+
+            inline_method_bounds = algorithm_for_inlining().inline_function(
+                file_path,
+                invocation_node.line,
+                body_start_line,
+                body_end_line,
+                new_full_filename,
             )
-            algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-            if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-                Path(source_filepath)
-                line_to_csv = {
-                    'project_id': source_filepath,
-                    'original_filename': file_path,
-                    'class_name': class_name,
-                    'invocation_line_string': text_lines[invocation_node.line - 1].lstrip(),
-                    'target_method': method_node.name,
-                    'extract_method_name': original_func.name,
-                    'output_filename': new_full_filename,
-                    'target_method_start_line': method_node.line,
-                    'ncss_extracted': ncss_extracted,
-                    'ncss_target': ncss_extracted
-                }
+            if inline_method_bounds is not None:
+                line_to_csv['insertion_start'] = inline_method_bounds[0]
+                line_to_csv['insertion_end'] = inline_method_bounds[1]
 
-                inline_method_bounds = algorithm_for_inlining().inline_function(
-                    file_path,
-                    invocation_node.line,
-                    body_start_line,
-                    body_end_line,
-                    new_full_filename,
-                )
-                if inline_method_bounds is not None:
-                    line_to_csv['insertion_start'] = inline_method_bounds[0]
-                    line_to_csv['insertion_end'] = inline_method_bounds[1]
+                if get_ast_if_possible(new_full_filename):
+                    rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
+                        class_name=class_name,
+                        new_full_filename=new_full_filename,
+                        original_func=original_func)
+                    is_valid_ast = True
+                    line_to_csv.update(rest_of_csv_row_for_changed_file)
+                else:
+                    is_valid_ast = False
 
-                    if get_ast_if_possible(new_full_filename):
-                        rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
-                            class_name=class_name,
-                            new_full_filename=new_full_filename,
-                            original_func=original_func)
-                        is_valid_ast = True
-                        line_to_csv.update(rest_of_csv_row_for_changed_file)
-                    else:
-                        is_valid_ast = False
-
-                    line_to_csv['is_valid_ast'] = is_valid_ast
+                line_to_csv['is_valid_ast'] = is_valid_ast
 
     return line_to_csv
 
@@ -528,7 +527,8 @@ def remove_comments(string):
 def analyze_file(
         file_path: Path,
         output_path: Path,
-        input_dir: Path
+        input_dir: Path,
+        dataset_dir: str
 ) -> List[Any]:
     """
     In this function we process each file.
@@ -544,10 +544,6 @@ def analyze_file(
     text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
     dst_filename = save_text_to_new_file(input_dir, text, file_path)
 
-    # remove full_dataset/input prefix
-    # real_input_dataset_path = Path('/'.join(Path(input_dir).absolute().parts[:-2]))
-    project_id = Path(dst_filename.absolute()).relative_to(input_dir.absolute()).parts[:2]
-    print(project_id)
     ast = get_ast_if_possible(dst_filename)
     if ast is None:
         dst_filename.unlink()
@@ -574,26 +570,25 @@ def analyze_file(
             if len(found_functions) == 1:
                 for invocation_node in method_decl.get_proxy_nodes(
                         ASTNodeType.METHOD_INVOCATION):
-                    extracted_function = method_declarations.get(invocation_node.member, [])
+                    extracted_function_method_decl = method_declarations.get(invocation_node.member, [])
                     # ignore overloaded extracted functions
-                    if len(extracted_function) == 1:
-                        if not extracted_function[0].parameters:
-                            try:
-                                make_insertion(
-                                    ast,
-                                    class_declaration,
-                                    dst_filename,
-                                    extracted_function,
-                                    method_declarations,
-                                    invocation_node,
-                                    method_node,
-                                    output_path,
-                                    file_path,
-                                    results,
-                                    input_dir
-                                )
-                            except Exception as e:
-                                print('Error has happened during file analyze: ' + str(e))
+                    if len(extracted_function_method_decl) == 1:
+                        try:
+                            make_insertion(
+                                ast,
+                                class_declaration,
+                                dst_filename,
+                                extracted_function_method_decl,
+                                method_declarations,
+                                invocation_node,
+                                method_node,
+                                output_path,
+                                file_path,
+                                results,
+                                dataset_dir
+                            )
+                        except Exception as e:
+                            print('Error has happened during file analyze: ' + str(e))
 
     if not results:
         dst_filename.unlink()
@@ -602,28 +597,54 @@ def analyze_file(
 
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, source_filepath, results, input_dir):
+                   method_node, output_path, source_filepath, results, dataset_dir):
     ignored_cases = is_match_to_the_conditions(
         ast,
         method_invoked,
         found_method_decl[0]
     )
-    # if ignored_cases:
-    log_of_inline = insert_code_with_new_file_creation(
-        class_declaration.name,
-        ast,
-        method_node,
-        method_invoked,
-        dst_filename,
-        output_path,
-        method_declarations,
-        source_filepath)
+
+    original_func = method_declarations.get(method_invoked.member)[0]  # type: ignore
+    ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
+    ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
+    log_of_inline = {
+        'extracted_method': method_invoked.member,
+        'target_method': method_node.name,
+        'ncss_extracted': ncss_extracted,
+        'ncss_target': ncss_target,
+    }
+
+    if not ignored_cases:
+        if ncss_extracted >= 3:
+            log_of_inline['EXTRACTED_NCSS_LARGE'] = True
+            log_of_inline = insert_code_with_new_file_creation(
+                class_declaration.name,
+                ast,
+                method_node,
+                method_invoked,
+                dst_filename,
+                output_path,
+                method_declarations,
+                source_filepath)
+
+            if log_of_inline:
+                log_of_inline['OK'] = True
+    # default initialization
+    for case_name in InvocationType.list_types():
+        log_of_inline[case_name] = False
+
+    # found ignored cases
     for case_name in ignored_cases:
         log_of_inline[case_name] = True
 
     if log_of_inline:
         # change source filename, since it will be changed
-        log_of_inline['original_filename'] = str(dst_filename.as_posix())
+        log_of_inline['original_filename'] = dst_filename.name
+        # remove full_dataset/input prefix
+        # real_input_dataset_path = Path('/'.join(Path(input_dir).absolute().parts[:-2]))
+        project_id = '/'.join(Path(source_filepath.absolute()).relative_to(Path(dataset_dir).absolute()).parts[:2])
+        # print(dst_filename.absolute(), input_dir.absolute(), project_id)
+        log_of_inline['project_id'] = project_id
         results.append(log_of_inline)
 
 
@@ -721,13 +742,14 @@ if __name__ == '__main__':  # noqa: C901
         p_analyze = partial(
             analyze_file,
             output_path=output_dir.absolute(),
-            input_dir=input_dir
+            input_dir=input_dir,
+            dataset_dir=args.dir
         )
         future = executor.map(p_analyze, files_without_tests, timeout=1000, )
         result = future.result()
 
         # each 100 cycles we dump the results
-        iteration_cycle = 1000
+        iteration_cycle = 10
         iteration_number = 0
         for filename in tqdm(files_without_tests):
             try:
@@ -736,10 +758,7 @@ if __name__ == '__main__':  # noqa: C901
                     for i in single_file_features:
                         #  get local path for inlined filename
                         # i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
-                        i['output_filename'] = i['output_filename'].name
-                        i['original_filename'] = i['original_filename'].name
                         # print(i['output_filename'], filename)
-                        i['invocation_line_string'] = str(i['invocation_line_string']).encode('utf8')
                         df = df.append(i, ignore_index=True)
 
                 if (iteration_number % iteration_cycle) == 0:
@@ -747,6 +766,8 @@ if __name__ == '__main__':  # noqa: C901
                 iteration_number += 1
             except Exception as e:
                 print(str(e))
+                import traceback
+                traceback.print_exc()
 
     df.to_csv(csv_output)
     if args.zip:
