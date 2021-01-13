@@ -10,6 +10,7 @@ from collections import defaultdict
 from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
+from enum import Enum
 
 import javalang
 import pandas as pd
@@ -114,11 +115,40 @@ def check_nesting_statements(
     return True
 
 
+class InvocationType(Enum):
+
+    OK = 0
+    METHOD_CHAIN_BEFORE = 1
+    SIMPLE_ACTUAL_PARAMETER = 2
+    METHOD_CHAIN_AFTER = 3
+    INSIDE_IF = 3
+    INSIDE_WHILE = 4
+    INSIDE_FOR = 5
+    INSIDE_FOREACH = 6
+    INSIDE_BINARY_OPERATION = 7
+    INSIDE_TERNARY = 8
+    INSIDE_CLASS_CREATOR = 9
+    TYPE_CAST = 10
+    INSIDE_ARRAY_CREATOR = 11
+    SINGLE_STATEMENT_IN_IF = 12
+    INSIDE_LAMBDA = 13
+    IS_NOT_ASSIGN_VALUE_WITH_RETURN_TYPE = 14
+    SEVERAL_RETURNS = 15
+    IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 16
+    IS_NOT_PARENT_MEMBER_REF = 17
+    METHOD_WITH_ARGUMENTS = 18
+
+    @classmethod
+    def list_types(cls):
+        types = [member.name for role, member in cls.__members__.items()]
+        return types
+
+
 @typing.no_type_check
 def is_match_to_the_conditions(
         ast: AST,
         method_invoked: ASTNode,
-        found_method_decl=None) -> bool:
+        found_method_decl=None) -> List[str]:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
         parent = method_invoked.parent.parent
         class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
@@ -166,32 +196,107 @@ def is_match_to_the_conditions(
     is_not_array_creator = not (parent.node_type == ASTNodeType.ARRAY_CREATOR)
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
     is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
-    other_requirements = all([
-        is_not_chain_before,
+
+    ignored_cases = get_stats_for_pruned_cases(
         is_actual_parameter_simple,
+        is_not_array_creator,
+        is_not_assign_value_with_return_type,
+        is_not_at_the_same_line_as_prohibited_stats,
+        is_not_binary_operation,
+        is_not_cast,
         is_not_chain_after,
+        is_not_chain_before,
+        is_not_class_creator,
+        is_not_enhanced_for_control,
+        is_not_inside_for,
         is_not_inside_if,
         is_not_inside_while,
-        is_not_binary_operation,
-        is_not_ternary,
-        is_not_class_creator,
-        is_not_cast,
-        is_not_array_creator,
-        is_not_parent_member_ref,
-        is_not_inside_for,
-        is_not_enhanced_for_control,
         is_not_lambda,
         is_not_method_inv_single_statement_in_if,
-        is_not_assign_value_with_return_type,
+        is_not_parent_member_ref,
         is_not_several_returns,
-        is_not_at_the_same_line_as_prohibited_stats,
-        not method_invoked.arguments])
+        is_not_ternary,
+        method_invoked
+    )
 
-    if (not method_invoked.qualifier and other_requirements) or \
-            (method_invoked.qualifier == 'this' and other_requirements):
-        return True
+    # other_requirements = all([
+    #     is_not_chain_before,
+    #     is_actual_parameter_simple,
+    #     is_not_chain_after,
+    #     is_not_inside_if,
+    #     is_not_inside_while,
+    #     is_not_binary_operation,
+    #     is_not_ternary,
+    #     is_not_class_creator,
+    #     is_not_cast,
+    #     is_not_array_creator,
+    #     is_not_parent_member_ref,
+    #     is_not_inside_for,
+    #     is_not_enhanced_for_control,
+    #     is_not_lambda,
+    #     is_not_method_inv_single_statement_in_if,
+    #     is_not_assign_value_with_return_type,
+    #     is_not_several_returns,
+    #     is_not_at_the_same_line_as_prohibited_stats,
+    #     not method_invoked.arguments])
+
+    # if (not method_invoked.qualifier and other_requirements) or \
+    #         (method_invoked.qualifier == 'this' and other_requirements):
+    if (not method_invoked.qualifier) or (method_invoked.qualifier == 'this'):
+        return ignored_cases
     else:
-        return False
+        return []
+
+
+def get_stats_for_pruned_cases(
+        is_actual_parameter_simple, is_not_array_creator, is_not_assign_value_with_return_type,
+        is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation, is_not_cast,
+        is_not_chain_after, is_not_chain_before, is_not_class_creator,
+        is_not_enhanced_for_control, is_not_inside_for, is_not_inside_if, is_not_inside_while,
+        is_not_lambda, is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
+        is_not_several_returns, is_not_ternary, method_invoked) -> List[str]:
+    invocation_types_to_ignore: List[str] = []
+
+    if is_not_chain_before:
+        invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_BEFORE.name)
+    if is_actual_parameter_simple:
+        invocation_types_to_ignore.append(InvocationType.SIMPLE_ACTUAL_PARAMETER.name)
+    if is_not_chain_after:
+        invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_AFTER.name)
+    if is_not_inside_if:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_IF.name)
+    if is_not_inside_while:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_WHILE.name)
+    if is_not_binary_operation:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_BINARY_OPERATION.name)
+    if is_not_ternary:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_TERNARY.name)
+    if is_not_class_creator:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_CLASS_CREATOR.name)
+    if is_not_cast:
+        invocation_types_to_ignore.append(InvocationType.TYPE_CAST.name)
+    if is_not_array_creator:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_ARRAY_CREATOR.name)
+    if is_not_parent_member_ref:
+        invocation_types_to_ignore.append(InvocationType.IS_NOT_PARENT_MEMBER_REF.name)
+    if is_not_inside_for:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_FOR.name)
+    if is_not_enhanced_for_control:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_FOREACH.name)
+    if is_not_lambda:
+        invocation_types_to_ignore.append(InvocationType.INSIDE_LAMBDA.name)
+    if is_not_method_inv_single_statement_in_if:
+        invocation_types_to_ignore.append(InvocationType.SINGLE_STATEMENT_IN_IF.name)
+    if is_not_assign_value_with_return_type:
+        invocation_types_to_ignore.append(InvocationType.IS_NOT_ASSIGN_VALUE_WITH_RETURN_TYPE.name)
+    if is_not_several_returns:
+        invocation_types_to_ignore.append(InvocationType.SEVERAL_RETURNS.name)
+    if is_not_at_the_same_line_as_prohibited_stats:
+        invocation_types_to_ignore.append(InvocationType.IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS.name)
+    if not method_invoked.argument:
+        invocation_types_to_ignore.append(InvocationType.METHOD_WITH_ARGUMENTS.name)
+
+    return invocation_types_to_ignore
 
 
 def check_whether_method_has_return_type(
@@ -294,10 +399,11 @@ def insert_code_with_new_file_creation(
 
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
-    ncss = NCSSMetric().value(ast.get_subtree(original_func))
+    ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
     line_to_csv = {}
     # @acheshkov asked to consider only methods with ncss > 3, that's all.
-    if ncss > 3:
+    if ncss_extracted >= 3:
+        ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
         body_start_line, body_end_line = method_body_lines(original_func, file_path)
         text_lines = read_text_with_autodetected_encoding(str(file_path)).split('\n')
         # we do not inline one-line methods like
@@ -311,15 +417,18 @@ def insert_code_with_new_file_creation(
             )
             algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
             if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
+                Path(source_filepath)
                 line_to_csv = {
-                    'project': source_filepath,
-                    'input_filename': file_path,
+                    'project_id': source_filepath,
+                    'original_filename': file_path,
                     'class_name': class_name,
-                    'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
-                    'method_where_invocation_occurred': method_node.name,
-                    'invocation_method_name': original_func.name,
+                    'invocation_line_string': text_lines[invocation_node.line - 1].lstrip(),
+                    'target_method': method_node.name,
+                    'extract_method_name': original_func.name,
                     'output_filename': new_full_filename,
-                    'start_line_of_function_where_invocation_occurred': method_node.line
+                    'target_method_start_line': method_node.line,
+                    'ncss_extracted': ncss_extracted,
+                    'ncss_target': ncss_extracted
                 }
 
                 inline_method_bounds = algorithm_for_inlining().inline_function(
@@ -330,20 +439,20 @@ def insert_code_with_new_file_creation(
                     new_full_filename,
                 )
                 if inline_method_bounds is not None:
-                    line_to_csv['inline_insertion_line_start'] = inline_method_bounds[0]
-                    line_to_csv['inline_insertion_line_end'] = inline_method_bounds[1]
+                    line_to_csv['insertion_start'] = inline_method_bounds[0]
+                    line_to_csv['insertion_end'] = inline_method_bounds[1]
 
                     if get_ast_if_possible(new_full_filename):
                         rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
                             class_name=class_name,
                             new_full_filename=new_full_filename,
                             original_func=original_func)
-                        can_be_parsed = True
+                        is_valid_ast = True
                         line_to_csv.update(rest_of_csv_row_for_changed_file)
                     else:
-                        can_be_parsed = False
+                        is_valid_ast = False
 
-                    line_to_csv['can_be_parsed'] = can_be_parsed
+                    line_to_csv['is_valid_ast'] = is_valid_ast
 
     return line_to_csv
 
@@ -372,8 +481,8 @@ def find_lines_in_changed_file(
 
         body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
         return {
-            'invocation_method_start_line': body_start_line,
-            'invocation_method_end_line': body_end_line
+            'extract_method_start_line': body_start_line,
+            'extract_method_end_line': body_end_line
         }
     else:
         return {}
@@ -435,6 +544,10 @@ def analyze_file(
     text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
     dst_filename = save_text_to_new_file(input_dir, text, file_path)
 
+    # remove full_dataset/input prefix
+    # real_input_dataset_path = Path('/'.join(Path(input_dir).absolute().parts[:-2]))
+    project_id = Path(dst_filename.absolute()).relative_to(input_dir.absolute()).parts[:2]
+    print(project_id)
     ast = get_ast_if_possible(dst_filename)
     if ast is None:
         dst_filename.unlink()
@@ -476,7 +589,8 @@ def analyze_file(
                                     method_node,
                                     output_path,
                                     file_path,
-                                    results
+                                    results,
+                                    input_dir
                                 )
                             except Exception as e:
                                 print('Error has happened during file analyze: ' + str(e))
@@ -488,26 +602,29 @@ def analyze_file(
 
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, source_filepath, results):
-    is_matched = is_match_to_the_conditions(
+                   method_node, output_path, source_filepath, results, input_dir):
+    ignored_cases = is_match_to_the_conditions(
         ast,
         method_invoked,
         found_method_decl[0]
     )
-    if is_matched:
-        log_of_inline = insert_code_with_new_file_creation(
-            class_declaration.name,
-            ast,
-            method_node,
-            method_invoked,
-            dst_filename,
-            output_path,
-            method_declarations,
-            source_filepath)
-        if log_of_inline:
-            # change source filename, since it will be changed
-            log_of_inline['input_filename'] = str(dst_filename.as_posix())
-            results.append(log_of_inline)
+    # if ignored_cases:
+    log_of_inline = insert_code_with_new_file_creation(
+        class_declaration.name,
+        ast,
+        method_node,
+        method_invoked,
+        dst_filename,
+        output_path,
+        method_declarations,
+        source_filepath)
+    for case_name in ignored_cases:
+        log_of_inline[case_name] = True
+
+    if log_of_inline:
+        # change source filename, since it will be changed
+        log_of_inline['original_filename'] = str(dst_filename.as_posix())
+        results.append(log_of_inline)
 
 
 def collect_info_about_functions_without_params(
@@ -534,7 +651,10 @@ if __name__ == '__main__':  # noqa: C901
     system_cores_qty = os.cpu_count() or 1
     parser = ArgumentParser()
     parser.add_argument(
-        "-d", "--dir", required=True, help="File path to JAVA source code for methods augmentations"
+        "-d",
+        "--dir",
+        required=True,
+        help="File path to JAVA source code for methods augmentations"
     )
     parser.add_argument(
         "-o", "--output",
@@ -578,24 +698,26 @@ if __name__ == '__main__':  # noqa: C901
         input_dir.mkdir(parents=True)
     csv_output = Path(full_dataset_folder, 'out.csv')
 
-    df = pd.DataFrame(
-        columns=[
-            'project',
-            'input_filename',
-            'class_name',
-            'invocation_text_string',
-            'method_where_invocation_occurred',
-            'start_line_of_function_where_invocation_occurred',
-            'invocation_method_name',
-            'invocation_method_start_line',
-            'invocation_method_end_line',
-            'output_filename',
-            'can_be_parsed',
-            'inline_insertion_line_start',
-            'inline_insertion_line_end'
-        ])
+    columns = [
+        'project_id',
+        'original_filename',
+        'class_name',
+        'invocation_line_string',
+        'target_method',
+        'target_method_start_line',
+        'extract_method_name',
+        'extract_method_start_line',
+        'extract_method_end_line',
+        'output_filename',
+        'is_valid_ast',
+        'insertion_start',
+        'insertion_end',
+        'ncss_target',
+        'ncss_extracted'
+    ] + [x for x in InvocationType.list_types()]
+    df = pd.DataFrame(columns=columns)
 
-    with ProcessPool(system_cores_qty) as executor:
+    with ProcessPool(1) as executor:
         p_analyze = partial(
             analyze_file,
             output_path=output_dir.absolute(),
@@ -613,9 +735,11 @@ if __name__ == '__main__':  # noqa: C901
                 if single_file_features:
                     for i in single_file_features:
                         #  get local path for inlined filename
-                        i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
-                        print(i['output_filename'], filename)
-                        i['invocation_text_string'] = str(i['invocation_text_string']).encode('utf8')
+                        # i['output_filename'] = i['output_filename'].relative_to(os.getcwd()).as_posix()
+                        i['output_filename'] = i['output_filename'].name
+                        i['original_filename'] = i['original_filename'].name
+                        # print(i['output_filename'], filename)
+                        i['invocation_line_string'] = str(i['invocation_line_string']).encode('utf8')
                         df = df.append(i, ignore_index=True)
 
                 if (iteration_number % iteration_cycle) == 0:
@@ -639,9 +763,9 @@ if __name__ == '__main__':  # noqa: C901
 
         samples.to_csv(small_dataset_folder / 'out.csv')
         for index, row in samples.iterrows():
-            input_filename = row['input_filename']
-            dst_filename = small_input_dir / Path(input_filename).name
-            shutil.copyfile(input_filename, dst_filename)
+            original_filename = row['original_filename']
+            dst_filename = small_input_dir / Path(original_filename).name
+            shutil.copyfile(original_filename, dst_filename)
             output_filename = row['output_filename']
             dst_filename = small_output_dir / Path(output_filename).name
             shutil.copyfile(output_filename, dst_filename)

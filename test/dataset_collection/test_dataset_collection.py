@@ -341,25 +341,6 @@ class TestDatasetCollection(TestCase):
         self.assertEqual([30, 34], pred_inline_rel_bounds,
                          msg='Wrong inline bounds: {}'.format(pred_inline_rel_bounds))
 
-    def test_inline_with_return_without_assigning(self):
-        filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
-        test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_without_return.java'
-        algorithm_type = InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
-        algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
-        body_start_line, body_end_line = self._get_lines(filepath, 'btSelectMethod')
-        self.assertEqual(body_start_line == 80, body_end_line == 85)
-        invocation_line = 111
-        algorithm_for_inlining().inline_function(
-            filepath,
-            invocation_line,
-            body_start_line,
-            body_end_line,
-            self.temp_filename
-        )
-        with open(self.temp_filename, encoding='utf-8') as actual_file, \
-                open(test_filepath, encoding='utf-8') as test_ex:
-            self.assertMultiLineEqual(actual_file.read(), test_ex.read(), 'File are not matched')
-
     def test_inline_with_return_with_var_declaration(self):
         filepath = self.current_directory / 'InlineExamples' / 'Parameters.java'
         test_filepath = self.current_directory / 'InlineTestExamples' / 'Parameters_with_var_declaration.java'
