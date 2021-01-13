@@ -1,3 +1,4 @@
+from itertools import islice
 from pathlib import Path
 from typing import List, Tuple, Union
 
@@ -30,7 +31,7 @@ def create_extraction_opportunity(
     return tuple(extraction_opportunity_list), block_statement_graph
 
 
-def get_method_ast(filename: str, class_name: str, method_name: str) -> AST:
+def get_class_ast(filename: str, class_name: str) -> Tuple[AST, Path]:
     current_directory = Path(__file__).absolute().parent
     filepath = current_directory / filename
     ast = AST.build_from_javalang(build_ast(str(filepath)))
@@ -41,9 +42,31 @@ def get_method_ast(filename: str, class_name: str, method_name: str) -> AST:
             for node in ast.get_root().types
             if node.node_type == ASTNodeType.CLASS_DECLARATION and node.name == class_name
         )
+    except StopIteration:
+        raise RuntimeError(f"Failed to find class {class_name} in file {filepath}")
 
-        method_declaration = next(node for node in class_declaration.methods if node.name == method_name)
+    return ast.get_subtree(class_declaration), filepath
+
+
+def get_method_ast(filename: str, class_name: str, method_name: str) -> AST:
+    class_ast, filepath = get_class_ast(filename, class_name)
+
+    try:
+        method_declaration = next(node for node in class_ast.get_root().methods if node.name == method_name)
     except StopIteration:
         raise RuntimeError(f"Failed to find method {method_name} in class {class_name} in file {filepath}")
 
-    return ast.get_subtree(method_declaration)
+    return class_ast.get_subtree(method_declaration)
+
+
+def get_constructor_ast(filename: str, class_name: str, constructor_index: int) -> AST:
+    class_ast, filepath = get_class_ast(filename, class_name)
+
+    try:
+        constructor_declaration = next(islice(class_ast.get_root().constructors, constructor_index - 1, None))
+    except StopIteration:
+        raise RuntimeError(
+            f"Failed to find {constructor_index}th constructor in class {class_name} in file {filepath}"
+        )
+
+    return class_ast.get_subtree(constructor_declaration)
