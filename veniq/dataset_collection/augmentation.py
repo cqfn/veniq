@@ -177,14 +177,15 @@ def is_match_to_the_conditions(
 
     is_not_assign_value_with_return_type = True
     is_not_several_returns = True
-    if found_method_decl.return_type:
-        if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
-            is_not_assign_value_with_return_type = False
+    if hasattr(found_method_decl, 'return_type'):
+        if found_method_decl.return_type:
+            if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
+                is_not_assign_value_with_return_type = False
 
-        ast_subtree = ast.get_subtree(found_method_decl)
-        stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
-        if len(stats) > 1:
-            is_not_several_returns = False
+            ast_subtree = ast.get_subtree(found_method_decl)
+            stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
+            if len(stats) > 1:
+                is_not_several_returns = False
 
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
@@ -389,18 +390,29 @@ def determine_algorithm_insertion_type(
     else:
         original_method = original_invoked_method[0]
         if not original_method.parameters:
-            if not original_method.return_type:
-                # Find the original method declaration by the name of method invocation
-                var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
-                return check_whether_method_has_return_type(
-                    ast.get_subtree(method_node),
-                    var_decls,
-                    line_to_csv
-                )
+
+            has_attr_return_type = hasattr(original_method, 'return_type')
+            if has_attr_return_type:
+                if not original_method.return_type:
+                    return run_var_crossing_check(ast, line_to_csv, method_node, original_method)
+                else:
+                    return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+            #  Else if we have constructor, it doesn't have return type
             else:
-                return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+                return run_var_crossing_check(ast, line_to_csv, method_node, original_method)
+
         else:
             return InlineTypesAlgorithms.DO_NOTHING
+
+
+def run_var_crossing_check(ast, line_to_csv, method_node, original_method):
+    # Find the original method declaration by the name of method invocation
+    var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
+    return check_whether_method_has_return_type(
+        ast.get_subtree(method_node),
+        var_decls,
+        line_to_csv
+    )
 
 
 def insert_code_with_new_file_creation(
