@@ -89,9 +89,9 @@ def check_nesting_statements(
     at the same line as prohibited statements.
     """
     prohibited_statements = [
-        ASTNodeType.IF_STATEMENT,
-        ASTNodeType.WHILE_STATEMENT,
-        ASTNodeType.FOR_STATEMENT,
+        # ASTNodeType.IF_STATEMENT,
+        # ASTNodeType.WHILE_STATEMENT,
+        # ASTNodeType.FOR_STATEMENT,
         ASTNodeType.SYNCHRONIZED_STATEMENT,
         ASTNodeType.CATCH_CLAUSE,
         ASTNodeType.SUPER_CONSTRUCTOR_INVOCATION,
@@ -117,27 +117,30 @@ def check_nesting_statements(
 
 class InvocationType(Enum):
 
-    OK = 0
+    # OK = 0
     METHOD_CHAIN_BEFORE = 1
-    SIMPLE_ACTUAL_PARAMETER = 2
+    NOT_SIMPLE_ACTUAL_PARAMETER = 2
     METHOD_CHAIN_AFTER = 3
-    INSIDE_IF = 3
-    INSIDE_WHILE = 4
-    INSIDE_FOR = 5
-    INSIDE_FOREACH = 6
-    INSIDE_BINARY_OPERATION = 7
-    INSIDE_TERNARY = 8
-    INSIDE_CLASS_CREATOR = 9
-    TYPE_CAST = 10
-    INSIDE_ARRAY_CREATOR = 11
-    SINGLE_STATEMENT_IN_IF = 12
-    INSIDE_LAMBDA = 13
-    IS_NOT_ASSIGN_VALUE_WITH_RETURN_TYPE = 14
-    SEVERAL_RETURNS = 15
-    IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 16
-    IS_NOT_PARENT_MEMBER_REF = 17
-    EXTRACTED_NCSS_LARGE = 18
-    METHOD_WITH_ARGUMENTS = 19
+    INSIDE_IF = 4
+    INSIDE_WHILE = 5
+    INSIDE_FOR = 6
+    INSIDE_FOREACH = 7
+    INSIDE_BINARY_OPERATION = 8
+    INSIDE_TERNARY = 9
+    INSIDE_CLASS_CREATOR = 10
+    CAST_OF_RETURN_TYPE = 11
+    INSIDE_ARRAY_CREATOR = 12
+    SINGLE_STATEMENT_IN_IF = 13
+    INSIDE_LAMBDA = 14
+    ALREADY_ASSIGNED_VALUE_IN_INVOCATION = 15
+    SEVERAL_RETURNS = 16
+    IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 17
+    IS_NOT_PARENT_MEMBER_REF = 18
+    # EXTRACTED_NCSS_SMALL = 19
+    CROSSED_VAR_NAMES = 20
+    CAST_IN_ACTUAL_PARAMS = 21
+    ABSTRACT_METHOD = 22
+    METHOD_WITH_ARGUMENTS = 999
 
 
     @classmethod
@@ -160,6 +163,10 @@ def is_match_to_the_conditions(
     else:
         parent = method_invoked.parent
         no_children = True
+
+    is_not_is_extract_method_abstract = True
+    if 'abstract' in found_method_decl.modifiers:
+        is_not_is_extract_method_abstract = False
 
     maybe_if = parent.parent
     is_not_method_inv_single_statement_in_if = True
@@ -193,8 +200,14 @@ def is_match_to_the_conditions(
     # if a parameter is any expression, we ignore it,
     # since it is difficult to extract with AST
     is_actual_parameter_simple = all([hasattr(x, 'member') for x in method_invoked.arguments])
+    is_not_actual_param_cast = True
+    if not is_actual_parameter_simple:
+        found_casts = [x for x in method_invoked.arguments if x.node_type == ASTNodeType.CAST]
+        if len(found_casts) > 0:
+            is_not_actual_param_cast = False
+
     is_not_class_creator = not (parent.node_type == ASTNodeType.CLASS_CREATOR)
-    is_not_cast = not (parent.node_type == ASTNodeType.CAST)
+    is_not_cast_of_return_type = not (parent.node_type == ASTNodeType.CAST)
     is_not_array_creator = not (parent.node_type == ASTNodeType.ARRAY_CREATOR)
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
     is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
@@ -205,7 +218,7 @@ def is_match_to_the_conditions(
         is_not_assign_value_with_return_type,
         is_not_at_the_same_line_as_prohibited_stats,
         is_not_binary_operation,
-        is_not_cast,
+        is_not_cast_of_return_type,
         is_not_chain_after,
         is_not_chain_before,
         is_not_class_creator,
@@ -218,6 +231,8 @@ def is_match_to_the_conditions(
         is_not_parent_member_ref,
         is_not_several_returns,
         is_not_ternary,
+        is_not_actual_param_cast,
+        is_not_is_extract_method_abstract,
         method_invoked
     )
 
@@ -244,25 +259,27 @@ def is_match_to_the_conditions(
 
     # if (not method_invoked.qualifier and other_requirements) or \
     #         (method_invoked.qualifier == 'this' and other_requirements):
-    if (not method_invoked.qualifier) or (method_invoked.qualifier == 'this'):
-        return ignored_cases
-    else:
-        return []
+    return ignored_cases
 
 
 def get_stats_for_pruned_cases(
         is_actual_parameter_simple, is_not_array_creator, is_not_assign_value_with_return_type,
-        is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation, is_not_cast,
-        is_not_chain_after, is_not_chain_before, is_not_class_creator,
+        is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation,
+        is_not_cast_of_return_type, is_not_chain_after, is_not_chain_before, is_not_class_creator,
         is_not_enhanced_for_control, is_not_inside_for, is_not_inside_if, is_not_inside_while,
         is_not_lambda, is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
-        is_not_several_returns, is_not_ternary, method_invoked) -> List[str]:
+        is_not_several_returns, is_not_ternary, is_not_actual_param_cast,
+        is_not_is_extract_method_abstract, method_invoked) -> List[str]:
     invocation_types_to_ignore: List[str] = []
 
+    if not is_not_is_extract_method_abstract:
+        invocation_types_to_ignore.append(InvocationType.ABSTRACT_METHOD.name)
     if not is_not_chain_before:
         invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_BEFORE.name)
     if not is_actual_parameter_simple:
-        invocation_types_to_ignore.append(InvocationType.SIMPLE_ACTUAL_PARAMETER.name)
+        invocation_types_to_ignore.append(InvocationType.NOT_SIMPLE_ACTUAL_PARAMETER.name)
+    if not is_not_actual_param_cast:
+        invocation_types_to_ignore.append(InvocationType.CAST_IN_ACTUAL_PARAMS.name)
     if not is_not_chain_after:
         invocation_types_to_ignore.append(InvocationType.METHOD_CHAIN_AFTER.name)
     if not is_not_inside_if:
@@ -275,8 +292,8 @@ def get_stats_for_pruned_cases(
         invocation_types_to_ignore.append(InvocationType.INSIDE_TERNARY.name)
     if not is_not_class_creator:
         invocation_types_to_ignore.append(InvocationType.INSIDE_CLASS_CREATOR.name)
-    if not is_not_cast:
-        invocation_types_to_ignore.append(InvocationType.TYPE_CAST.name)
+    if not is_not_cast_of_return_type:
+        invocation_types_to_ignore.append(InvocationType.CAST_OF_RETURN_TYPE.name)
     if not is_not_array_creator:
         invocation_types_to_ignore.append(InvocationType.INSIDE_ARRAY_CREATOR.name)
     if not is_not_parent_member_ref:
@@ -290,7 +307,7 @@ def get_stats_for_pruned_cases(
     if not is_not_method_inv_single_statement_in_if:
         invocation_types_to_ignore.append(InvocationType.SINGLE_STATEMENT_IN_IF.name)
     if not is_not_assign_value_with_return_type:
-        invocation_types_to_ignore.append(InvocationType.IS_NOT_ASSIGN_VALUE_WITH_RETURN_TYPE.name)
+        invocation_types_to_ignore.append(InvocationType.ALREADY_ASSIGNED_VALUE_IN_INVOCATION.name)
     if not is_not_several_returns:
         invocation_types_to_ignore.append(InvocationType.SEVERAL_RETURNS.name)
     if not is_not_at_the_same_line_as_prohibited_stats:
@@ -303,9 +320,11 @@ def get_stats_for_pruned_cases(
 
 def check_whether_method_has_return_type(
         method_decl: AST,
-        var_decls: Set[str]) -> InlineTypesAlgorithms:
+        var_decls: Set[str],
+        line_to_csv: Dict[str, Any]) -> InlineTypesAlgorithms:
     """
     Run function to check whether Method declaration can be inlined
+    :param line_to_csv: dict of insertion result as row for DataFrame
     :param method_decl: method, where invocation occurred
     :param var_decls: set of variables for found invoked method
     :return: enum InlineTypesAlgorithms
@@ -318,6 +337,9 @@ def check_whether_method_has_return_type(
     # and if we do not have var declarations at all
     if not var_decls or not intersected_names:
         return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
+
+    if intersected_names:
+        line_to_csv[InvocationType.CROSSED_VAR_NAMES.name] = True
 
     return InlineTypesAlgorithms.DO_NOTHING
 
@@ -347,7 +369,8 @@ def determine_algorithm_insertion_type(
         ast: AST,
         method_node: ASTNode,
         invocation_node: ASTNode,
-        dict_original_nodes: Dict[str, List[ASTNode]]
+        dict_original_nodes: Dict[str, List[ASTNode]],
+        line_to_csv
 ) -> InlineTypesAlgorithms:
     """
 
@@ -371,7 +394,8 @@ def determine_algorithm_insertion_type(
                 var_decls = set(get_variables_decl_in_node(ast.get_subtree(original_method)))
                 return check_whether_method_has_return_type(
                     ast.get_subtree(method_node),
-                    var_decls
+                    var_decls,
+                    line_to_csv
                 )
             else:
                 return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
@@ -387,7 +411,7 @@ def insert_code_with_new_file_creation(
         file_path: Path,
         output_path: Path,
         dict_original_invocations: Dict[str, List[ASTNode]],
-        source_filepath: str
+        row_dict: Dict[str, Any]
 ) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
@@ -402,7 +426,7 @@ def insert_code_with_new_file_creation(
     new_full_filename = Path(output_path, f'{file_name}_{method_node.name}_{invocation_node.line}.java')
     original_func = dict_original_invocations.get(invocation_node.member)[0]  # type: ignore
     # ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
-    line_to_csv = {}
+    # line_to_csv = {}
     # @acheshkov asked to consider only methods with ncss > 3, that's all.
     # ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
     body_start_line, body_end_line = method_body_lines(original_func, file_path)
@@ -414,21 +438,23 @@ def insert_code_with_new_file_creation(
             ast,
             method_node,
             invocation_node,
-            dict_original_invocations
+            dict_original_invocations,
+            row_dict
         )
         algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
         if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-            line_to_csv = {
+            row_dict.update({
                 'original_filename': file_path,
                 'class_name': class_name,
                 'invocation_line_string': text_lines[invocation_node.line - 1].lstrip().encode('utf-8').decode('utf-8'),
                 'target_method': method_node.name,
-                'extract_method_name': original_func.name,
+                'extract_method': original_func.name,
                 'output_filename': Path(new_full_filename).name,
                 'target_method_start_line': method_node.line,
+                'do_nothing': False,
                 # 'ncss_extracted': ncss_extracted,
                 # 'ncss_target': ncss_target
-            }
+            })
 
             inline_method_bounds = algorithm_for_inlining().inline_function(
                 file_path,
@@ -438,8 +464,8 @@ def insert_code_with_new_file_creation(
                 new_full_filename,
             )
             if inline_method_bounds is not None:
-                line_to_csv['insertion_start'] = inline_method_bounds[0]
-                line_to_csv['insertion_end'] = inline_method_bounds[1]
+                row_dict['insertion_start'] = inline_method_bounds[0]
+                row_dict['insertion_end'] = inline_method_bounds[1]
 
                 if get_ast_if_possible(new_full_filename):
                     rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
@@ -447,13 +473,15 @@ def insert_code_with_new_file_creation(
                         new_full_filename=new_full_filename,
                         original_func=original_func)
                     is_valid_ast = True
-                    line_to_csv.update(rest_of_csv_row_for_changed_file)
+                    row_dict.update(rest_of_csv_row_for_changed_file)
                 else:
                     is_valid_ast = False
 
-                line_to_csv['is_valid_ast'] = is_valid_ast
+                row_dict['is_valid_ast'] = is_valid_ast
+        else:
+            row_dict['do_nothing'] = True
 
-    return line_to_csv
+    return row_dict
 
 
 # type: ignore
@@ -562,6 +590,8 @@ def analyze_file(
             + list(class_declaration.constructors)
         collect_info_about_functions_without_params(method_declarations, methods_list)
 
+        if file_path.name.endswith('RedisRegistry.java'):
+            print(1)
         for method_node in methods_list:
             method_decl = ast.get_subtree(method_node)
             found_functions = method_declarations.get(method_node.name, [])
@@ -598,26 +628,30 @@ def analyze_file(
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
                    method_node, output_path, source_filepath, results, dataset_dir):
-    ignored_cases = is_match_to_the_conditions(
-        ast,
-        method_invoked,
-        found_method_decl[0]
-    )
 
-    original_func = method_declarations.get(method_invoked.member)[0]  # type: ignore
-    ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
-    ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
-    log_of_inline = {
-        'extracted_method': method_invoked.member,
-        'target_method': method_node.name,
-        'ncss_extracted': ncss_extracted,
-        'ncss_target': ncss_target,
-    }
+    if (not method_invoked.qualifier) or (method_invoked.qualifier == 'this'):
+        ignored_cases = is_match_to_the_conditions(
+            ast,
+            method_invoked,
+            found_method_decl[0]
+        )
 
-    if not ignored_cases:
-        if ncss_extracted >= 3:
-            log_of_inline['EXTRACTED_NCSS_LARGE'] = True
-            log_of_inline = insert_code_with_new_file_creation(
+        original_func = method_declarations.get(method_invoked.member)[0]  # type: ignore
+        ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
+        ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
+        log_of_inline = {
+            'extract_method': method_invoked.member,
+            'target_method': method_node.name,
+            'ncss_extracted': ncss_extracted,
+            'ncss_target': ncss_target,
+            'invocation_line_number_in_original_file': method_invoked.line
+        }
+        # default init
+        for case_name in InvocationType.list_types():
+            log_of_inline[case_name] = False
+
+        if not ignored_cases:
+            insert_code_with_new_file_creation(
                 class_declaration.name,
                 ast,
                 method_node,
@@ -625,19 +659,15 @@ def make_insertion(ast, class_declaration, dst_filename, found_method_decl, meth
                 dst_filename,
                 output_path,
                 method_declarations,
-                source_filepath)
+                log_of_inline)
+            log_of_inline['NO_IGNORED_CASES'] = True
+        else:
+            log_of_inline['NO_IGNORED_CASES'] = False
 
-            if log_of_inline:
-                log_of_inline['OK'] = True
-    # default initialization
-    for case_name in InvocationType.list_types():
-        log_of_inline[case_name] = False
+        # found ignored cases
+        for case_name in ignored_cases:
+            log_of_inline[case_name] = True
 
-    # found ignored cases
-    for case_name in ignored_cases:
-        log_of_inline[case_name] = True
-
-    if log_of_inline:
         # change source filename, since it will be changed
         log_of_inline['original_filename'] = dst_filename.name
         # remove full_dataset/input prefix
@@ -724,9 +754,10 @@ if __name__ == '__main__':  # noqa: C901
         'original_filename',
         'class_name',
         'invocation_line_string',
+        'invocation_line_number_in_original_file',
         'target_method',
         'target_method_start_line',
-        'extract_method_name',
+        'extract_method',
         'extract_method_start_line',
         'extract_method_end_line',
         'output_filename',
@@ -734,11 +765,13 @@ if __name__ == '__main__':  # noqa: C901
         'insertion_start',
         'insertion_end',
         'ncss_target',
-        'ncss_extracted'
+        'ncss_extracted',
+        'do_nothing',
+        'NO_IGNORED_CASES'
     ] + [x for x in InvocationType.list_types()]
     df = pd.DataFrame(columns=columns)
 
-    with ProcessPool(1) as executor:
+    with ProcessPool(system_cores_qty) as executor:
         p_analyze = partial(
             analyze_file,
             output_path=output_dir.absolute(),
@@ -749,7 +782,7 @@ if __name__ == '__main__':  # noqa: C901
         result = future.result()
 
         # each 100 cycles we dump the results
-        iteration_cycle = 10
+        iteration_cycle = 100
         iteration_number = 0
         for filename in tqdm(files_without_tests):
             try:
