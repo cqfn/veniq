@@ -492,7 +492,8 @@ def insert_code_with_new_file_creation(
                 row_dict['is_valid_ast'] = is_valid_ast
         else:
             row_dict['do_nothing'] = True
-
+    else:
+        row_dict['ONE_LINE_FUNCTION'] = True
     return row_dict
 
 
@@ -602,8 +603,6 @@ def analyze_file(
             + list(class_declaration.constructors)
         collect_info_about_functions_without_params(method_declarations, methods_list)
 
-        if file_path.name.endswith('RedisRegistry.java'):
-            print(1)
         for method_node in methods_list:
             method_decl = ast.get_subtree(method_node)
             found_functions = method_declarations.get(method_node.name, [])
@@ -779,6 +778,7 @@ if __name__ == '__main__':  # noqa: C901
         'ncss_target',
         'ncss_extracted',
         'do_nothing',
+        'ONE_LINE_FUNCTION',
         'NO_IGNORED_CASES'
     ] + [x for x in InvocationType.list_types()]
     df = pd.DataFrame(columns=columns)
