@@ -1,42 +1,62 @@
 import pandas as pd
 
-df = pd.read_csv(r'd:\git\veniq\veniq\dataset_collection\new_dataset\full_dataset\out.csv')
-immutable_df = df.copy()
-
 
 def remove_indices(df_to_filter: pd.DataFrame, src_df):
     rows = src_df[src_df.index.isin(df_to_filter.index)]
     src_df.drop(rows.index, inplace=True)
 
 
-print(f'Total lines: {df.shape[0]}')
-duplicateRowsDF = immutable_df[immutable_df.duplicated()]
-print(f'Duplicated rows: {duplicateRowsDF.shape[0]}')
-remove_indices(duplicateRowsDF, df)
-ncss_target = immutable_df[immutable_df['ncss_target'] > 2]
-remove_indices(ncss_target, df)
-print(f'ncss_target > 2 {ncss_target.shape[0]}')
+def make_filtration():
+    df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\out.csv')
+    immutable_df = df.copy()
+    print(f'Total lines: {df.shape[0]}')
+    duplicateRowsDF = immutable_df[immutable_df.duplicated()]
+    print(f'Duplicated rows: {duplicateRowsDF.shape[0]}')
+    remove_indices(duplicateRowsDF, df)
 
-# exclude abstract extract methods
-abstract_method = immutable_df[immutable_df['ABSTRACT_METHOD'] == True]
-remove_indices(abstract_method, df)
+    method_with_arguments = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == True]
+    percent_without = (method_with_arguments.shape[0] / float(immutable_df.shape[0])) * 100
+    print(f'Samples where extracted method has parameters: '
+          f'{method_with_arguments.shape[0]}; {percent_without}')
 
-# REMOVE METHOD CHAINING SINCE IT IS not correct
-# to inline them, we have different type objects,
-# it's not a function of the original class
-method_chain_before = immutable_df[immutable_df['METHOD_CHAIN_BEFORE'] == True]
-remove_indices(method_chain_before, df)
-method_chain_after = immutable_df[immutable_df['METHOD_CHAIN_AFTER'] == True]
-remove_indices(method_chain_after, df)
+    without_arguments_df = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == False]
+    percent_with = (without_arguments_df.shape[0] / float(immutable_df.shape[0])) * 100
+    print(f'Samples where extracted method doesn\'t parameters: '
+          f'{without_arguments_df.shape[0]}; {percent_with}')
 
-method_with_arguments = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == True]
-print(f'Samples where extracted method has parameters: '
-      f'{method_with_arguments.shape[0]}. We prune such methods')
-with_arguments_df = df[df['METHOD_WITH_ARGUMENTS'] == True]
-remove_indices(method_with_arguments, df)
+    print('Analyzing methods without arguments')
+    must_have_filtration(without_arguments_df.copy(), df.copy())
+    print('Analyzing methods with arguments')
+    must_have_filtration(method_with_arguments.copy(), df.copy())
+
+
+def must_have_filtration(immutable_df, df):
+    filter_with_indices_exclusion(df, immutable_df, immutable_df['ncss_target'] > 2, 'ncss_target > 2')
+    # exclude abstract extract methods
+    abstract_method = immutable_df[immutable_df['ABSTRACT_METHOD'] == True]
+    remove_indices(abstract_method, df)
+    # REMOVE METHOD CHAINING SINCE IT IS not correct
+    # to inline them, we have different type objects,
+    # it's not a function of the original class
+    method_chain_before = immutable_df[immutable_df['METHOD_CHAIN_BEFORE'] == True]
+    remove_indices(method_chain_before, df)
+    method_chain_after = immutable_df[immutable_df['METHOD_CHAIN_AFTER'] == True]
+    remove_indices(method_chain_after, df)
+
+    count_filters_for_df(immutable_df, df)
+
+
+def filter_with_indices_exclusion(df, immutable_df, lambda_f, str_to_print):
+    filtered_df = immutable_df[lambda_f]
+    remove_indices(filtered_df, df)
+    percent = (filtered_df.shape[0] / float(immutable_df.shape[0])) * 100
+    print(f'{str_to_print} {filtered_df.shape[0]}; {percent}')
 
 
 def count_filters_for_df(immutable_df, df_changed):
+
+    is_valid_ast = immutable_df[immutable_df['is_valid_ast'] == True]
+
     crossed_var_names = immutable_df[immutable_df['CROSSED_VAR_NAMES'] == True]
     remove_indices(crossed_var_names, df_changed)
     print(f'Samples where var names of extracted function is crossed with target method'
@@ -133,14 +153,8 @@ def count_filters_for_df(immutable_df, df_changed):
     print(f'Samples where is_not_parent_member_ref:'
           f'{is_not_parent_member_ref.shape[0]}')
 
+    print(f'Remained cases: {df_changed.shape[0]}')
+    print(f'is_valid_ast cases: {is_valid_ast.shape[0]}')
 
-count_filters_for_df(immutable_df, df)
-count_filters_for_df(immutable_df, with_arguments_df)
-
-# immutable_df['score_diff'] = immutable_df['invocation_method_end_line'].sub(immutable_df['invocation_method_start_line'], axis=0)
-# negative_insertions = immutable_df[immutable_df['score_diff'] < 0]
-# remove_indices(negative_insertions)
-# print(f'Negative insertions: {negative_insertions.shape[0]}')
-#
-# print(f'Total cases: {df.shape[0]}')
-# print(f'Target ncss 3: {df.shape[0]}')
+if __name__ == '__main__':
+    make_filtration()
