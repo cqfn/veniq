@@ -617,7 +617,7 @@ def analyze_file(
             if len(found_functions) == 1:
                 for invocation_node in method_decl.get_proxy_nodes(
                         ASTNodeType.METHOD_INVOCATION):
-                    print(f'Method: {method_node.name} inv: {invocation_node.member}')
+                    # print(f'Method: {method_node.name} inv: {invocation_node.member}')
 
                     extracted_function_method_decl = method_declarations.get(invocation_node.member, [])
                     # ignore overloaded extracted functions
@@ -662,7 +662,7 @@ def make_insertion(
         ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
         ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
 
-        if ncss_extracted > 2:
+        if ncss_extracted > 3:
             log_of_inline = {
                 'extract_method': method_invoked.member,
                 'target_method': method_node.name,

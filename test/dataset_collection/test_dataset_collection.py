@@ -394,3 +394,15 @@ class TestDatasetCollection(TestCase):
 
         self.assertEqual(result['invocation_method_start_line'], 1022)
         self.assertEqual(result['invocation_method_end_line'], 1083)
+
+    def testInlineWithParamsWithIntersectedVars(self):
+        self.assertEqual(True, True)
+
+    def testInlineWithParamsWithoutIntersectedVars(self):
+        self.assertEqual(True, True)
+
+    def testInlineWithParamsWithIntersectedVarsWithReturn(self):
+        self.assertEqual(True, True)
+
+    def testInlineWithComplexParams(self):
+        self.assertEqual(True, True)
