@@ -132,15 +132,16 @@ class InvocationType(Enum):
     INSIDE_ARRAY_CREATOR = 12
     SINGLE_STATEMENT_IN_IF = 13
     INSIDE_LAMBDA = 14
-    ALREADY_ASSIGNED_VALUE_IN_INVOCATION = 15
+    #ALREADY_ASSIGNED_VALUE_IN_INVOCATION = 15
     SEVERAL_RETURNS = 16
     IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 17
     IS_NOT_PARENT_MEMBER_REF = 18
     # EXTRACTED_NCSS_SMALL = 19
-    CROSSED_VAR_NAMES = 20
+    #CROSSED_VAR_NAMES_INSIDE_FUNCTION = 20
     CAST_IN_ACTUAL_PARAMS = 21
     ABSTRACT_METHOD = 22
-    METHOD_WITH_ARGUMENTS = 999
+    #CROSSED_FUNC_NAMES = 23
+    #METHOD_WITH_ARGUMENTS_VAR_CROSSED = 999
 
 
     @classmethod
@@ -213,6 +214,11 @@ def is_match_to_the_conditions(
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
     is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
 
+    are_crossed_func_params = True
+    if is_actual_parameter_simple:
+        if are_not_params_crossed(method_invoked, found_method_decl):
+            are_crossed_func_params = False
+
     ignored_cases = get_stats_for_pruned_cases(
         is_actual_parameter_simple,
         is_not_array_creator,
@@ -234,43 +240,50 @@ def is_match_to_the_conditions(
         is_not_ternary,
         is_not_actual_param_cast,
         is_not_is_extract_method_abstract,
+        are_crossed_func_params,
         method_invoked
     )
 
-    # other_requirements = all([
-    #     is_not_chain_before,
-    #     is_actual_parameter_simple,
-    #     is_not_chain_after,
-    #     is_not_inside_if,
-    #     is_not_inside_while,
-    #     is_not_binary_operation,
-    #     is_not_ternary,
-    #     is_not_class_creator,
-    #     is_not_cast,
-    #     is_not_array_creator,
-    #     is_not_parent_member_ref,
-    #     is_not_inside_for,
-    #     is_not_enhanced_for_control,
-    #     is_not_lambda,
-    #     is_not_method_inv_single_statement_in_if,
-    #     is_not_assign_value_with_return_type,
-    #     is_not_several_returns,
-    #     is_not_at_the_same_line_as_prohibited_stats,
-    #     not method_invoked.arguments])
-
-    # if (not method_invoked.qualifier and other_requirements) or \
-    #         (method_invoked.qualifier == 'this' and other_requirements):
     return ignored_cases
+
+
+def are_not_params_crossed(
+        invocaton_node: ASTNode,
+        method_declaration: ASTNode) -> bool:
+    """
+    Check if names of params of invocation are matched with
+    params of method declaration:
+
+    Matched:
+    func(a, b);
+    public void func(int a, int b)
+
+    Not matched
+    func(a, e);
+    public void func(int a, int b)
+
+    :param invocaton_node: invocation of function
+    :param method_declaration: method declaration of invoked function
+    :return:
+    """
+    m_decl_names = set([x.name for x in method_declaration.parameters])
+    m_inv_names = set([x.member for x in invocaton_node.arguments])
+    intersection = m_inv_names.difference(m_decl_names)
+    if not intersection:
+        return True
+    else:
+        return False
 
 
 def get_stats_for_pruned_cases(
         is_actual_parameter_simple, is_not_array_creator, is_not_assign_value_with_return_type,
         is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation,
-        is_not_cast_of_return_type, is_not_chain_after, is_not_chain_before, is_not_class_creator,
-        is_not_enhanced_for_control, is_not_inside_for, is_not_inside_if, is_not_inside_while,
-        is_not_lambda, is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
+        is_not_cast_of_return_type, is_not_chain_after, is_not_chain_before,
+        is_not_class_creator, is_not_enhanced_for_control, is_not_inside_for,
+        is_not_inside_if, is_not_inside_while, is_not_lambda,
+        is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
         is_not_several_returns, is_not_ternary, is_not_actual_param_cast,
-        is_not_is_extract_method_abstract, method_invoked) -> List[str]:
+        is_not_is_extract_method_abstract, are_crossed_func_params, method_invoked) -> List[str]:
     invocation_types_to_ignore: List[str] = []
 
     if not is_not_is_extract_method_abstract:
@@ -307,14 +320,12 @@ def get_stats_for_pruned_cases(
         invocation_types_to_ignore.append(InvocationType.INSIDE_LAMBDA.name)
     if not is_not_method_inv_single_statement_in_if:
         invocation_types_to_ignore.append(InvocationType.SINGLE_STATEMENT_IN_IF.name)
-    if not is_not_assign_value_with_return_type:
-        invocation_types_to_ignore.append(InvocationType.ALREADY_ASSIGNED_VALUE_IN_INVOCATION.name)
+    # if not is_not_assign_value_with_return_type:
+    #     invocation_types_to_ignore.append(InvocationType.ALREADY_ASSIGNED_VALUE_IN_INVOCATION.name)
     if not is_not_several_returns:
         invocation_types_to_ignore.append(InvocationType.SEVERAL_RETURNS.name)
     if not is_not_at_the_same_line_as_prohibited_stats:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS.name)
-    if method_invoked.arguments:
-        invocation_types_to_ignore.append(InvocationType.METHOD_WITH_ARGUMENTS.name)
 
     return invocation_types_to_ignore
 
@@ -340,7 +351,7 @@ def check_whether_method_has_return_type(
         return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
 
     if intersected_names:
-        line_to_csv[InvocationType.CROSSED_VAR_NAMES.name] = True
+        line_to_csv[InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION.name] = True
 
     return InlineTypesAlgorithms.DO_NOTHING
 
@@ -389,20 +400,15 @@ def determine_algorithm_insertion_type(
         return InlineTypesAlgorithms.DO_NOTHING
     else:
         original_method = original_invoked_method[0]
-        if not original_method.parameters:
-
-            has_attr_return_type = hasattr(original_method, 'return_type')
-            if has_attr_return_type:
-                if not original_method.return_type:
-                    return run_var_crossing_check(ast, line_to_csv, method_node, original_method)
-                else:
-                    return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
-            #  Else if we have constructor, it doesn't have return type
+        has_attr_return_type = hasattr(original_method, 'return_type')
+        if has_attr_return_type:
+            if not original_method.return_type:
+                return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
             else:
-                return run_var_crossing_check(ast, line_to_csv, method_node, original_method)
-
+                return InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS
+        #  Else if we have constructor, it doesn't have return type
         else:
-            return InlineTypesAlgorithms.DO_NOTHING
+            return InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS
 
 
 def run_var_crossing_check(ast, line_to_csv, method_node, original_method):
@@ -611,10 +617,13 @@ def analyze_file(
             if len(found_functions) == 1:
                 for invocation_node in method_decl.get_proxy_nodes(
                         ASTNodeType.METHOD_INVOCATION):
+                    print(f'Method: {method_node.name} inv: {invocation_node.member}')
+
                     extracted_function_method_decl = method_declarations.get(invocation_node.member, [])
                     # ignore overloaded extracted functions
                     if len(extracted_function_method_decl) == 1:
                         try:
+                            # print(f'Method: {method_node.name} inv: {invocation_node.member}')
                             make_insertion(
                                 ast,
                                 class_declaration,
@@ -637,56 +646,60 @@ def analyze_file(
     return results
 
 
-def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, source_filepath, results, dataset_dir):
+def make_insertion(
+        ast, class_declaration, dst_filename,
+        found_method_decl, method_declarations, method_invoked,
+        method_node, output_path, source_filepath, results,
+        dataset_dir):
 
     if (not method_invoked.qualifier) or (method_invoked.qualifier == 'this'):
         ignored_cases = is_match_to_the_conditions(
             ast,
             method_invoked,
-            found_method_decl[0]
-        )
+            found_method_decl[0])
 
         original_func = method_declarations.get(method_invoked.member)[0]  # type: ignore
         ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))
         ncss_target = NCSSMetric().value(ast.get_subtree(method_node))
-        log_of_inline = {
-            'extract_method': method_invoked.member,
-            'target_method': method_node.name,
-            'ncss_extracted': ncss_extracted,
-            'ncss_target': ncss_target,
-            'invocation_line_number_in_original_file': method_invoked.line
-        }
-        # default init
-        for case_name in InvocationType.list_types():
-            log_of_inline[case_name] = False
 
-        if not ignored_cases:
-            insert_code_with_new_file_creation(
-                class_declaration.name,
-                ast,
-                method_node,
-                method_invoked,
-                dst_filename,
-                output_path,
-                method_declarations,
-                log_of_inline)
-            log_of_inline['NO_IGNORED_CASES'] = True
-        else:
-            log_of_inline['NO_IGNORED_CASES'] = False
+        if ncss_extracted > 2:
+            log_of_inline = {
+                'extract_method': method_invoked.member,
+                'target_method': method_node.name,
+                'ncss_extracted': ncss_extracted,
+                'ncss_target': ncss_target,
+                'invocation_line_number_in_original_file': method_invoked.line
+            }
+            # default init
+            for case_name in InvocationType.list_types():
+                log_of_inline[case_name] = False
 
-        # found ignored cases
-        for case_name in ignored_cases:
-            log_of_inline[case_name] = True
+            if not ignored_cases:
+                insert_code_with_new_file_creation(
+                    class_declaration.name,
+                    ast,
+                    method_node,
+                    method_invoked,
+                    dst_filename,
+                    output_path,
+                    method_declarations,
+                    log_of_inline)
+                log_of_inline['NO_IGNORED_CASES'] = True
+            else:
+                log_of_inline['NO_IGNORED_CASES'] = False
 
-        # change source filename, since it will be changed
-        log_of_inline['original_filename'] = dst_filename.name
-        # remove full_dataset/input prefix
-        # real_input_dataset_path = Path('/'.join(Path(input_dir).absolute().parts[:-2]))
-        project_id = '/'.join(Path(source_filepath.absolute()).relative_to(Path(dataset_dir).absolute()).parts[:2])
-        # print(dst_filename.absolute(), input_dir.absolute(), project_id)
-        log_of_inline['project_id'] = project_id
-        results.append(log_of_inline)
+            # found ignored cases
+            for case_name in ignored_cases:
+                log_of_inline[case_name] = True
+
+            # change source filename, since it will be changed
+            log_of_inline['original_filename'] = dst_filename.name
+            # remove full_dataset/input prefix
+            # real_input_dataset_path = Path('/'.join(Path(input_dir).absolute().parts[:-2]))
+            project_id = '/'.join(Path(source_filepath.absolute()).relative_to(Path(dataset_dir).absolute()).parts[:2])
+            # print(dst_filename.absolute(), input_dir.absolute(), project_id)
+            log_of_inline['project_id'] = project_id
+            results.append(log_of_inline)
 
 
 def collect_info_about_functions_without_params(
