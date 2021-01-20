@@ -9,9 +9,9 @@ def remove_indices(df_to_filter: pd.DataFrame, src_df):
 
 
 def make_filtration():
-    # df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\out.csv')
+    df = pd.read_csv(r'D:\git\veniq\veniq\dataset_collection\new_dataset\full_dataset\out.csv')
 
-    df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\01_19\out.csv')
+    # df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\01_19\out.csv')
     immutable_df = df.copy()
     print(f'Total lines: {df.shape[0]}')
     duplicateRowsDF = immutable_df[immutable_df.duplicated()]
@@ -39,7 +39,7 @@ def make_filtration():
 def must_have_filtration(immutable_df, df):
 
     print('Must-have filters')
-    filter_with_indices_exclusion(df, immutable_df, immutable_df['ncss_target'] < 3, 'ncss_target < 3')
+    filter_with_indices_exclusion(df, immutable_df, immutable_df['ncss_extracted'] < 3, 'ncss_extracted < 3')
     # exclude abstract extract methods
     filter_with_indices_exclusion(df, immutable_df, immutable_df['ABSTRACT_METHOD'] == True, 'abstract methods')
     # REMOVE METHOD CHAINING SINCE IT IS not correct
@@ -69,12 +69,19 @@ def count_filters_for_df(immutable_df, df_changed):
     print('Filters with invocation types classification')
     is_valid_ast = immutable_df[immutable_df['is_valid_ast'] == True]
 
-    # filter_with_indices_exclusion(
-    #     df_changed,
-    #     immutable_df,
-    #     immutable_df['CROSSED_VAR_NAMES'] == True,
-    #     'Samples where var names of extracted function is crossed with target method'
-    # )
+    filter_with_indices_exclusion(
+        df_changed,
+        immutable_df,
+        immutable_df['CROSSED_VAR_NAMES_INSIDE_FUNCTION'] == True,
+        'Samples where var names of extracted function is crossed with target method excepting function arguments'
+    )
+
+    filter_with_indices_exclusion(
+        df_changed,
+        immutable_df,
+        immutable_df['NOT_CROSSED_FUNC_PARAMS'] == True,
+        'Samples where function parameters of invoked function are not matched with actual arguments'
+    )
 
     filter_with_indices_exclusion(
         df_changed,
@@ -104,12 +111,12 @@ def count_filters_for_df(immutable_df, df_changed):
         'Samples where invocation was inside while condition'
     )
 
-    filter_with_indices_exclusion(
-        df_changed,
-        immutable_df,
-        immutable_df['INSIDE_FOR'] == True,
-        'Samples where invocation was inside for condition'
-    )
+    # filter_with_indices_exclusion(
+    #     df_changed,
+    #     immutable_df,
+    #     immutable_df['INSIDE_FOR'] == True,
+    #     'Samples where invocation was inside for condition'
+    # )
 
     filter_with_indices_exclusion(
         df_changed,

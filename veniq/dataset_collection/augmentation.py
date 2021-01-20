@@ -140,7 +140,7 @@ class InvocationType(Enum):
     CROSSED_VAR_NAMES_INSIDE_FUNCTION = 20
     CAST_IN_ACTUAL_PARAMS = 21
     ABSTRACT_METHOD = 22
-    NOT_CROSSED_FUNC_PARAMS = 23
+    NOT_FUNC_PARAMS_EQUAL = 23
     #METHOD_WITH_ARGUMENTS_VAR_CROSSED = 999
 
 
@@ -312,7 +312,7 @@ def get_stats_for_pruned_cases(
         is_not_inside_if, is_not_inside_while, is_not_lambda,
         is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
         is_not_several_returns, is_not_ternary, is_not_actual_param_cast,
-        is_not_is_extract_method_abstract, are_crossed_func_params, method_invoked) -> List[str]:
+        is_not_is_extract_method_abstract, are_functional_arguments_eq, method_invoked) -> List[str]:
     invocation_types_to_ignore: List[str] = []
 
     if not is_not_is_extract_method_abstract:
@@ -356,10 +356,10 @@ def get_stats_for_pruned_cases(
     if not is_not_at_the_same_line_as_prohibited_stats:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS.name)
 
-    if not are_crossed_func_params:
-        invocation_types_to_ignore.append(InvocationType.NOT_CROSSED_FUNC_PARAMS)
+    if not are_functional_arguments_eq:
+        invocation_types_to_ignore.append(InvocationType.NOT_FUNC_PARAMS_EQUAL.name)
     if are_var_crossed_inside_extracted:
-        invocation_types_to_ignore.append(InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION)
+        invocation_types_to_ignore.append(InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION.name)
 
     return invocation_types_to_ignore
 
