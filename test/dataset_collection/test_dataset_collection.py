@@ -6,7 +6,7 @@ from veniq.dataset_collection.augmentation import (
     determine_algorithm_insertion_type,
     method_body_lines,
     is_match_to_the_conditions,
-    find_lines_in_changed_file, are_functional_arguments_equal)
+    find_lines_in_changed_file, are_functional_arguments_equal, are_not_var_crossed)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms,
@@ -377,7 +377,7 @@ class TestDatasetCollection(TestCase):
                 open(test_filepath, encoding='utf-8') as test_ex:
             self.assertMultiLineEqual(actual_file.read(), test_ex.read(), 'File are not matched')
 
-    def test_check(self):
+    def test_check_start_end_lines(self):
         old_filename = self.current_directory / 'InlineExamples/PainlessParser.java'
         new_filename = self.current_directory / 'InlineTestExamples/PainlessParser.java'
         ast = AST.build_from_javalang(build_ast(old_filename))
@@ -433,7 +433,7 @@ class TestDatasetCollection(TestCase):
         res = are_functional_arguments_equal(extracted_invocation, extracted)
         self.assertEqual(res, False)
 
-    def testInlineWithParamsWithIntersectedVarsWithReturn(self):
+    def testFunctionParamsNotEqualToArgumentsWithReturn(self):
         filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
         ast = AST.build_from_javalang(build_ast(filename))
         class_decl = [
@@ -452,7 +452,7 @@ class TestDatasetCollection(TestCase):
         res = are_functional_arguments_equal(extracted_invocation, extracted)
         self.assertEqual(res, True)
 
-    def testInlineWithComplexParamsNotEqual(self):
+    def testFunctionParamsNotEqualWithComplexParams(self):
         filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
         ast = AST.build_from_javalang(build_ast(filename))
         class_decl = [
@@ -469,4 +469,61 @@ class TestDatasetCollection(TestCase):
             if x.member == 'extracted_return'][0]
 
         res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, False)
+
+    def testCrossedVars(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target_complex'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted_return'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted_return'][0]
+
+        res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, False)
+
+    def testNotCrossedVarsOnlyFuncArguments(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target_var_not_crossed'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted'][0]
+
+        res = are_not_var_crossed(extracted_invocation, extracted, target, ast)
+        self.assertEqual(res, True)
+
+    def testNotCrossedVarsWithManyVars(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target_var_crossed'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted'][0]
+
+        res = are_not_var_crossed(extracted_invocation, extracted, target, ast)
         self.assertEqual(res, False)

@@ -248,7 +248,7 @@ def is_match_to_the_conditions(
     if is_actual_parameter_simple:
         are_functional_arguments_eq = are_functional_arguments_equal(method_invoked, found_method_decl)
         if are_functional_arguments_eq:
-            if are_not_var_crossed(method_invoked, found_method_decl, target):
+            if are_not_var_crossed(method_invoked, found_method_decl, target, ast):
                 are_var_crossed_inside_extracted = False
 
     ignored_cases = get_stats_for_pruned_cases(
@@ -283,18 +283,23 @@ def is_match_to_the_conditions(
 def are_not_var_crossed(
         invocaton_node: ASTNode,
         method_declaration: ASTNode,
-        target: ASTNode) -> bool:
+        target: ASTNode,
+        ast: AST) -> bool:
     # m_decl_names = set([x.name for x in method_declaration.parameters])
     m_inv_names = set([x.member for x in invocaton_node.arguments])
-    var_names_in_extracted = set(get_variables_decl_in_node(method_declaration))
-    var_names_in_target = set(get_variables_decl_in_node(target))
-
+    var_names_in_extracted = set(get_variables_decl_in_node(ast.get_subtree(method_declaration)))
+    var_names_in_target = set(get_variables_decl_in_node(ast.get_subtree(target)))
+    var_names_in_target = var_names_in_target.difference(m_inv_names)
     var_names_in_extracted = var_names_in_extracted.difference(m_inv_names)
-    intersected_names = var_names_in_target & var_names_in_extracted
-    if not intersected_names:
+
+    if not var_names_in_target or not var_names_in_extracted:
         return True
 
-    return False
+    intersected_names = var_names_in_target.difference(var_names_in_extracted)
+    if not intersected_names:
+        return False
+
+    return True
 
 
 def get_stats_for_pruned_cases(

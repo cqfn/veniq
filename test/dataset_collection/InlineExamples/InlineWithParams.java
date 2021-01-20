@@ -16,6 +16,24 @@ class InlineWithParams
         while (var2 == 2);
     }
 
+    public void target_var_not_crossed() {
+        int a = 0;
+        int b = 0;
+        extracted(a, b);
+        --a;
+        --b;
+    }
+
+    public void target_var_crossed() {
+        int a = 0;
+        int b = 0;
+        extracted(a, b);
+        --a;
+        --b;
+        int i = 0;
+        --i;
+    }
+
     private void extracted_not_intersected(int g, int c) {
         for (int i = 0; i < 10; i++) { int g = 5; int b = 6; }
         do
