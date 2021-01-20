@@ -9,27 +9,31 @@ def remove_indices(df_to_filter: pd.DataFrame, src_df):
 
 
 def make_filtration():
-    df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\out.csv')
+    # df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\out.csv')
+
+    df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\01_19\out.csv')
     immutable_df = df.copy()
     print(f'Total lines: {df.shape[0]}')
     duplicateRowsDF = immutable_df[immutable_df.duplicated()]
     print(f'Duplicated rows: {duplicateRowsDF.shape[0]}')
     remove_indices(duplicateRowsDF, df)
 
-    method_with_arguments = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == True]
-    percent_without = (method_with_arguments.shape[0] / float(immutable_df.shape[0])) * 100
-    print(f'Samples where extracted method has parameters: '
-          f'{method_with_arguments.shape[0]}; {percent_without:.2f}')
+    # method_with_arguments = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == True]
+    # percent_without = (method_with_arguments.shape[0] / float(immutable_df.shape[0])) * 100
+    # print(f'Samples where extracted method has parameters: '
+    #       f'{method_with_arguments.shape[0]}; {percent_without:.2f}')
 
-    without_arguments_df = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == False]
-    percent_with = (without_arguments_df.shape[0] / float(immutable_df.shape[0])) * 100
-    print(f'Samples where extracted method doesn\'t parameters: '
-          f'{without_arguments_df.shape[0]}; {percent_with:.2f}')
+    # without_arguments_df = immutable_df[immutable_df['METHOD_WITH_ARGUMENTS'] == False]
+    # percent_with = (without_arguments_df.shape[0] / float(immutable_df.shape[0])) * 100
+    # print(f'Samples where extracted method doesn\'t parameters: '
+    #       f'{without_arguments_df.shape[0]}; {percent_with:.2f}')
+    #
+    # print('Analyzing methods without arguments')
+    # must_have_filtration(without_arguments_df.__deepcopy__(), without_arguments_df.__deepcopy__())
+    # print('Analyzing methods with arguments')
+    # must_have_filtration(method_with_arguments.__deepcopy__(), df.__deepcopy__())
 
-    print('Analyzing methods without arguments')
-    must_have_filtration(without_arguments_df.__deepcopy__(), without_arguments_df.__deepcopy__())
-    print('Analyzing methods with arguments')
-    must_have_filtration(method_with_arguments.__deepcopy__(), df.__deepcopy__())
+    must_have_filtration(immutable_df.__deepcopy__(), df.__deepcopy__())
 
 
 def must_have_filtration(immutable_df, df):
@@ -65,12 +69,12 @@ def count_filters_for_df(immutable_df, df_changed):
     print('Filters with invocation types classification')
     is_valid_ast = immutable_df[immutable_df['is_valid_ast'] == True]
 
-    filter_with_indices_exclusion(
-        df_changed,
-        immutable_df,
-        immutable_df['CROSSED_VAR_NAMES'] == True,
-        'Samples where var names of extracted function is crossed with target method'
-    )
+    # filter_with_indices_exclusion(
+    #     df_changed,
+    #     immutable_df,
+    #     immutable_df['CROSSED_VAR_NAMES'] == True,
+    #     'Samples where var names of extracted function is crossed with target method'
+    # )
 
     filter_with_indices_exclusion(
         df_changed,
@@ -169,12 +173,12 @@ def count_filters_for_df(immutable_df, df_changed):
         'Samples where invocation was in lambda'
     )
 
-    filter_with_indices_exclusion(
-        df_changed,
-        immutable_df,
-        immutable_df['ALREADY_ASSIGNED_VALUE_IN_INVOCATION'] == True,
-        'Samples where already assigned value was in invocation'
-    )
+    # filter_with_indices_exclusion(
+    #     df_changed,
+    #     immutable_df,
+    #     immutable_df['ALREADY_ASSIGNED_VALUE_IN_INVOCATION'] == True,
+    #     'Samples where already assigned value was in invocation'
+    # )
 
     filter_with_indices_exclusion(
         df_changed,

@@ -123,7 +123,7 @@ class InvocationType(Enum):
     METHOD_CHAIN_AFTER = 3
     INSIDE_IF = 4
     INSIDE_WHILE = 5
-    INSIDE_FOR = 6
+    #INSIDE_FOR = 6
     INSIDE_FOREACH = 7
     INSIDE_BINARY_OPERATION = 8
     INSIDE_TERNARY = 9
@@ -137,10 +137,10 @@ class InvocationType(Enum):
     IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS = 17
     IS_NOT_PARENT_MEMBER_REF = 18
     # EXTRACTED_NCSS_SMALL = 19
-    #CROSSED_VAR_NAMES_INSIDE_FUNCTION = 20
+    CROSSED_VAR_NAMES_INSIDE_FUNCTION = 20
     CAST_IN_ACTUAL_PARAMS = 21
     ABSTRACT_METHOD = 22
-    #CROSSED_FUNC_NAMES = 23
+    NOT_CROSSED_FUNC_PARAMS = 23
     #METHOD_WITH_ARGUMENTS_VAR_CROSSED = 999
 
 
@@ -150,11 +150,40 @@ class InvocationType(Enum):
         return types
 
 
+def are_functional_arguments_equal(
+        invocaton_node: ASTNode,
+        method_declaration: ASTNode) -> bool:
+    """
+    Check if names of params of invocation are matched with
+    params of method declaration:
+
+    Matched:
+    func(a, b);
+    public void func(int a, int b)
+
+    Not matched
+    func(a, e);
+    public void func(int a, int b)
+
+    :param invocaton_node: invocation of function
+    :param method_declaration: method declaration of invoked function
+    :return:
+    """
+    m_decl_names = set([x.name for x in method_declaration.parameters])
+    m_inv_names = set([x.member for x in invocaton_node.arguments])
+    intersection = m_inv_names.difference(m_decl_names)
+    if not intersection:
+        return True
+    else:
+        return False
+
+
 @typing.no_type_check
 def is_match_to_the_conditions(
         ast: AST,
         method_invoked: ASTNode,
-        found_method_decl=None) -> List[str]:
+        found_method_decl=None,
+        target=None) -> List[str]:
     if method_invoked.parent.node_type == ASTNodeType.THIS:
         parent = method_invoked.parent.parent
         class_names = [x for x in method_invoked.parent.children if hasattr(x, 'string')]
@@ -194,7 +223,7 @@ def is_match_to_the_conditions(
     is_not_chain_after = not chains_after
     is_not_inside_if = not (parent.node_type == ASTNodeType.IF_STATEMENT)
     is_not_inside_while = not (parent.node_type == ASTNodeType.WHILE_STATEMENT)
-    is_not_inside_for = not (parent.node_type == ASTNodeType.FOR_STATEMENT)
+    # is_not_inside_for = not (parent.node_type == ASTNodeType.FOR_STATEMENT)
     is_not_enhanced_for_control = not (parent.node_type == ASTNodeType.ENHANCED_FOR_CONTROL)
     # ignore case else if (getServiceInterface() != null) {
     is_not_binary_operation = not (parent.node_type == ASTNodeType.BINARY_OPERATION)
@@ -214,10 +243,13 @@ def is_match_to_the_conditions(
     is_not_lambda = not (parent.node_type == ASTNodeType.LAMBDA_EXPRESSION)
     is_not_at_the_same_line_as_prohibited_stats = check_nesting_statements(method_invoked)
 
-    are_crossed_func_params = True
+    are_functional_arguments_eq = False
+    are_var_crossed_inside_extracted = True
     if is_actual_parameter_simple:
-        if are_not_params_crossed(method_invoked, found_method_decl):
-            are_crossed_func_params = False
+        are_functional_arguments_eq = are_functional_arguments_equal(method_invoked, found_method_decl)
+        if are_functional_arguments_eq:
+            if are_not_var_crossed(method_invoked, found_method_decl, target):
+                are_var_crossed_inside_extracted = False
 
     ignored_cases = get_stats_for_pruned_cases(
         is_actual_parameter_simple,
@@ -230,7 +262,8 @@ def is_match_to_the_conditions(
         is_not_chain_before,
         is_not_class_creator,
         is_not_enhanced_for_control,
-        is_not_inside_for,
+        # is_not_inside_for,
+        are_var_crossed_inside_extracted,
         is_not_inside_if,
         is_not_inside_while,
         is_not_lambda,
@@ -240,46 +273,37 @@ def is_match_to_the_conditions(
         is_not_ternary,
         is_not_actual_param_cast,
         is_not_is_extract_method_abstract,
-        are_crossed_func_params,
+        are_functional_arguments_eq,
         method_invoked
     )
 
     return ignored_cases
 
 
-def are_not_params_crossed(
+def are_not_var_crossed(
         invocaton_node: ASTNode,
-        method_declaration: ASTNode) -> bool:
-    """
-    Check if names of params of invocation are matched with
-    params of method declaration:
-
-    Matched:
-    func(a, b);
-    public void func(int a, int b)
-
-    Not matched
-    func(a, e);
-    public void func(int a, int b)
-
-    :param invocaton_node: invocation of function
-    :param method_declaration: method declaration of invoked function
-    :return:
-    """
-    m_decl_names = set([x.name for x in method_declaration.parameters])
+        method_declaration: ASTNode,
+        target: ASTNode) -> bool:
+    # m_decl_names = set([x.name for x in method_declaration.parameters])
     m_inv_names = set([x.member for x in invocaton_node.arguments])
-    intersection = m_inv_names.difference(m_decl_names)
-    if not intersection:
+    var_names_in_extracted = set(get_variables_decl_in_node(method_declaration))
+    var_names_in_target = set(get_variables_decl_in_node(target))
+
+    var_names_in_extracted = var_names_in_extracted.difference(m_inv_names)
+    intersected_names = var_names_in_target & var_names_in_extracted
+    if not intersected_names:
         return True
-    else:
-        return False
+
+    return False
 
 
 def get_stats_for_pruned_cases(
         is_actual_parameter_simple, is_not_array_creator, is_not_assign_value_with_return_type,
         is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation,
         is_not_cast_of_return_type, is_not_chain_after, is_not_chain_before,
-        is_not_class_creator, is_not_enhanced_for_control, is_not_inside_for,
+        is_not_class_creator, is_not_enhanced_for_control,
+        # is_not_inside_for,
+        are_var_crossed_inside_extracted,
         is_not_inside_if, is_not_inside_while, is_not_lambda,
         is_not_method_inv_single_statement_in_if, is_not_parent_member_ref,
         is_not_several_returns, is_not_ternary, is_not_actual_param_cast,
@@ -312,8 +336,8 @@ def get_stats_for_pruned_cases(
         invocation_types_to_ignore.append(InvocationType.INSIDE_ARRAY_CREATOR.name)
     if not is_not_parent_member_ref:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_PARENT_MEMBER_REF.name)
-    if not is_not_inside_for:
-        invocation_types_to_ignore.append(InvocationType.INSIDE_FOR.name)
+    # if not is_not_inside_for:
+    #     invocation_types_to_ignore.append(InvocationType.INSIDE_FOR.name)
     if not is_not_enhanced_for_control:
         invocation_types_to_ignore.append(InvocationType.INSIDE_FOREACH.name)
     if not is_not_lambda:
@@ -326,6 +350,11 @@ def get_stats_for_pruned_cases(
         invocation_types_to_ignore.append(InvocationType.SEVERAL_RETURNS.name)
     if not is_not_at_the_same_line_as_prohibited_stats:
         invocation_types_to_ignore.append(InvocationType.IS_NOT_AT_THE_SAME_LINE_AS_PROHIBITED_STATS.name)
+
+    if not are_crossed_func_params:
+        invocation_types_to_ignore.append(InvocationType.NOT_CROSSED_FUNC_PARAMS)
+    if are_var_crossed_inside_extracted:
+        invocation_types_to_ignore.append(InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION)
 
     return invocation_types_to_ignore
 
@@ -656,7 +685,9 @@ def make_insertion(
         ignored_cases = is_match_to_the_conditions(
             ast,
             method_invoked,
-            found_method_decl[0])
+            found_method_decl[0],
+            method_node
+        )
 
         original_func = method_declarations.get(method_invoked.member)[0]  # type: ignore
         ncss_extracted = NCSSMetric().value(ast.get_subtree(original_func))

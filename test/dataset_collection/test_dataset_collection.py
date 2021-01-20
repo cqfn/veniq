@@ -6,7 +6,7 @@ from veniq.dataset_collection.augmentation import (
     determine_algorithm_insertion_type,
     method_body_lines,
     is_match_to_the_conditions,
-    find_lines_in_changed_file)
+    find_lines_in_changed_file, are_functional_arguments_equal)
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.dataset_collection.types_identifier import (
     InlineTypesAlgorithms,
@@ -395,14 +395,78 @@ class TestDatasetCollection(TestCase):
         self.assertEqual(result['invocation_method_start_line'], 1022)
         self.assertEqual(result['invocation_method_end_line'], 1083)
 
-    def testInlineWithParamsWithIntersectedVars(self):
-        self.assertEqual(True, True)
+    def testFunctionParamsEqualToArguments(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted'][0]
 
-    def testInlineWithParamsWithoutIntersectedVars(self):
-        self.assertEqual(True, True)
+        res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, True)
+
+    def testFunctionParamsNotEqualToArguments(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted_not_intersected'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted_not_intersected'][0]
+
+        res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, False)
 
     def testInlineWithParamsWithIntersectedVarsWithReturn(self):
-        self.assertEqual(True, True)
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target_return'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted_return'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted_return'][0]
 
-    def testInlineWithComplexParams(self):
-        self.assertEqual(True, True)
+        res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, True)
+
+    def testInlineWithComplexParamsNotEqual(self):
+        filename = self.current_directory / 'InlineExamples/InlineWithParams.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'InlineWithParams'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target_complex'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted_return'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted_return'][0]
+
+        res = are_functional_arguments_equal(extracted_invocation, extracted)
+        self.assertEqual(res, False)
