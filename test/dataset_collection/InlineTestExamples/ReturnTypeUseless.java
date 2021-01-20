@@ -33,9 +33,16 @@ public class Example {
     public void method_decl() {
         int b = 0;
         System.out.println(b);
-        invocation();
+        int i = 0;
+        System.out.println(0);
+        if (i == 0) System.out.println(0);
+        while(i < -1) {
+            System.out.println(0);
+            --i;
+        }
+
         int c = 5;
-        +=c;
+        ++c;
 
     }
 }

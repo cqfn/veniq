@@ -3,7 +3,7 @@ public class UninstallStep implements WizardDescriptor.FinishablePanel<WizardDes
         // proceed operation
         Restarter r;
         try {
-            if ((r = handleAction ()) != null) {
+            if (handleAction () != null) {
                 presentActionNeedsRestart (r);
             } else {
                 presentActionDone ();
