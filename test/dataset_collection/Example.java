@@ -171,4 +171,30 @@ public class Example {
         delete();
     }
 
+    public int severalReturnsWithoutMainReturn() {
+        int i = 0, j = 0;
+        if (i < 0) {
+            return 0;
+        }
+    }
+
+   private Object returnInsideTry() {
+    try {
+      Object event = events.poll(10, TimeUnit.SECONDS);
+      if (event == null) {
+        throw new AssertionError("Timed out waiting for event.");
+      }
+      return event;
+    } catch (InterruptedException e) {
+      throw new AssertionError(e);
+    }
+  }
+
+    public void runSeveralReturnsWithoutMainReturn() {
+        int a = severalReturnsWithoutMainReturn();
+    }
+    public void runSeveralReturnsInTry(String payload) {
+        Object actual = returnInsideTry();
+        assertThat(actual).isEqualTo(new Message(payload));
+    }
 }

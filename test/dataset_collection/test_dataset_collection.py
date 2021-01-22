@@ -236,7 +236,31 @@ class TestDatasetCollection(TestCase):
             x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
             if x.member == 'severalReturns'][0]
         exceptions_list = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original, m_decl_original)
-        self.assertEqual(InvocationType.SEVERAL_RETURNS in exceptions_list, False)
+        self.assertEqual(InvocationType.SEVERAL_RETURNS.name in exceptions_list, True)
+
+        m_decl = [
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'runSeveralReturnsWithoutMainReturn'][0]
+        m_decl_original = [
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'severalReturnsWithoutMainReturn'][0]
+        m_inv = [
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'severalReturnsWithoutMainReturn'][0]
+        exceptions_list = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original, m_decl_original)
+        self.assertEqual(InvocationType.SEVERAL_RETURNS.name in exceptions_list, True)
+
+        m_decl = [
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'runSeveralReturnsInTry'][0]
+        m_decl_original = [
+            x for x in self.example_ast.get_proxy_nodes(ASTNodeType.METHOD_DECLARATION)
+            if x.name == 'returnInsideTry'][0]
+        m_inv = [
+            x for x in self.example_ast.get_subtree(m_decl).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'returnInsideTry'][0]
+        exceptions_list = is_match_to_the_conditions(self.example_ast, m_inv, m_decl_original, m_decl_original)
+        self.assertEqual(InvocationType.SEVERAL_RETURNS.name in exceptions_list, True)
 
     def test_invocation_inside_if_not_process(self):
         # Test checks if we have complex invocation inside if condition,

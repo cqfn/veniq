@@ -142,6 +142,7 @@ class InvocationType(Enum):
     ABSTRACT_METHOD = 22
     NOT_FUNC_PARAMS_EQUAL = 23
     THROW_IN_EXTRACTED = 24
+    RETURN_IN_ANOTHER_SCOPE = 25
     #METHOD_WITH_ARGUMENTS_VAR_CROSSED = 999
 
 
@@ -211,11 +212,16 @@ def is_match_to_the_conditions(
     is_not_several_returns = True
     if hasattr(found_method_decl, 'return_type'):
         if found_method_decl.return_type:
-            # if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
-            #     is_not_assign_value_with_return_type = False
+            return_stats = len([
+                x for x in found_method_decl.body
+                if x.node_type == ASTNodeType.RETURN_STATEMENT]
+            )
 
+            # If we do not have return in function body,
+            # it means that we will have deep inside AST tree, so remember it
             stats = [x for x in ast_subtree_method_decl.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
-            if len(stats) > 1:
+            total_return_statements = len(stats) - return_stats
+            if total_return_statements > 0:
                 is_not_several_returns = False
 
     has_not_throw = len([
@@ -715,6 +721,7 @@ def make_insertion(
             # default init
             for case_name in InvocationType.list_types():
                 log_of_inline[case_name] = False
+            log_of_inline['ONE_LINE_FUNCTION'] = False
 
             if not ignored_cases:
                 insert_code_with_new_file_creation(
