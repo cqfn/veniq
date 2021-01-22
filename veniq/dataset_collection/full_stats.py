@@ -9,9 +9,9 @@ def remove_indices(df_to_filter: pd.DataFrame, src_df):
 
 
 def make_filtration():
-    df = pd.read_csv(r'D:\git\veniq\veniq\dataset_collection\new_dataset\full_dataset\out.csv')
+    # df = pd.read_csv(r'D:\git\veniq\veniq\dataset_collection\new_dataset\full_dataset\out.csv')
 
-    # df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\01_15\01_19\out.csv')
+    df = pd.read_csv(r'D:\temp\dataset_colelction_refactoring\1_21\out.csv')
     immutable_df = df.copy()
     print(f'Total lines: {df.shape[0]}')
     duplicateRowsDF = immutable_df[immutable_df.duplicated()]
@@ -79,7 +79,7 @@ def count_filters_for_df(immutable_df, df_changed):
     filter_with_indices_exclusion(
         df_changed,
         immutable_df,
-        immutable_df['NOT_CROSSED_FUNC_PARAMS'] == True,
+        immutable_df['NOT_FUNC_PARAMS_EQUAL'] == True,
         'Samples where function parameters of invoked function are not matched with actual arguments'
     )
 
@@ -192,6 +192,13 @@ def count_filters_for_df(immutable_df, df_changed):
         immutable_df,
         immutable_df['SEVERAL_RETURNS'] == True,
         'Samples where there are several returns in extracted method'
+    )
+
+    filter_with_indices_exclusion(
+        df_changed,
+        immutable_df,
+        immutable_df['THROW_IN_EXTRACTED'] == True,
+        'Samples where we have throw statement in extracted method'
     )
 
     filter_with_indices_exclusion(

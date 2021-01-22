@@ -365,7 +365,7 @@ def get_stats_for_pruned_cases(
     if are_var_crossed_inside_extracted:
         invocation_types_to_ignore.append(InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION.name)
     if not has_not_throw:
-       invocation_types_to_ignore.append(InvocationType.THROW_IN_EXTRACTED.name)
+        invocation_types_to_ignore.append(InvocationType.THROW_IN_EXTRACTED.name)
 
     return invocation_types_to_ignore
 
