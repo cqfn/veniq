@@ -520,3 +520,23 @@ class TestDatasetCollection(TestCase):
 
         res = are_not_var_crossed(extracted_invocation, extracted, target, ast)
         self.assertEqual(res, False)
+
+    def testDoInlineWithThrow(self):
+        filename = self.current_directory / 'ThrowInline.java'
+        ast = AST.build_from_javalang(build_ast(filename))
+        class_decl = [
+            x for x in ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
+            if x.name == 'ThrowInline'][0]
+        target = [
+            x for x in class_decl.methods
+            if x.name == 'target'][0]
+        extracted = [
+            x for x in class_decl.methods
+            if x.name == 'extracted'][0]
+        extracted_invocation = [
+            x for x in ast.get_subtree(target).get_proxy_nodes(ASTNodeType.METHOD_INVOCATION)
+            if x.member == 'extracted'][0]
+
+        res = is_match_to_the_conditions(ast, extracted_invocation, extracted, target)
+        self.assertEqual(InvocationType.THROW_IN_EXTRACTED.name in res, True)
+

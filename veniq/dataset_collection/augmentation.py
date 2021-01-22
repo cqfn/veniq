@@ -141,6 +141,7 @@ class InvocationType(Enum):
     CAST_IN_ACTUAL_PARAMS = 21
     ABSTRACT_METHOD = 22
     NOT_FUNC_PARAMS_EQUAL = 23
+    THROW_IN_EXTRACTED = 24
     #METHOD_WITH_ARGUMENTS_VAR_CROSSED = 999
 
 
@@ -205,18 +206,21 @@ def is_match_to_the_conditions(
             if maybe_if.then_statement.expression.node_type == ASTNodeType.METHOD_INVOCATION:
                 is_not_method_inv_single_statement_in_if = False
 
-    is_not_assign_value_with_return_type = True
+    ast_subtree_method_decl = ast.get_subtree(found_method_decl)
+    # is_not_assign_value_with_return_type = True
     is_not_several_returns = True
     if hasattr(found_method_decl, 'return_type'):
         if found_method_decl.return_type:
-            if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
-                is_not_assign_value_with_return_type = False
+            # if parent.node_type == ASTNodeType.VARIABLE_DECLARATOR:
+            #     is_not_assign_value_with_return_type = False
 
-            ast_subtree = ast.get_subtree(found_method_decl)
-            stats = [x for x in ast_subtree.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
+            stats = [x for x in ast_subtree_method_decl.get_proxy_nodes(ASTNodeType.RETURN_STATEMENT)]
             if len(stats) > 1:
                 is_not_several_returns = False
 
+    has_not_throw = len([
+        x for x in found_method_decl.body
+        if x.node_type == ASTNodeType.THROW_STATEMENT]) < 1
     is_not_parent_member_ref = not (method_invoked.parent.node_type == ASTNodeType.MEMBER_REFERENCE)
     is_not_chain_before = not (parent.node_type == ASTNodeType.METHOD_INVOCATION) and no_children
     chains_after = [x for x in method_invoked.children if x.node_type == ASTNodeType.METHOD_INVOCATION]
@@ -254,7 +258,7 @@ def is_match_to_the_conditions(
     ignored_cases = get_stats_for_pruned_cases(
         is_actual_parameter_simple,
         is_not_array_creator,
-        is_not_assign_value_with_return_type,
+        has_not_throw,
         is_not_at_the_same_line_as_prohibited_stats,
         is_not_binary_operation,
         is_not_cast_of_return_type,
@@ -303,7 +307,7 @@ def are_not_var_crossed(
 
 
 def get_stats_for_pruned_cases(
-        is_actual_parameter_simple, is_not_array_creator, is_not_assign_value_with_return_type,
+        is_actual_parameter_simple, is_not_array_creator, has_not_throw,
         is_not_at_the_same_line_as_prohibited_stats, is_not_binary_operation,
         is_not_cast_of_return_type, is_not_chain_after, is_not_chain_before,
         is_not_class_creator, is_not_enhanced_for_control,
@@ -360,6 +364,8 @@ def get_stats_for_pruned_cases(
         invocation_types_to_ignore.append(InvocationType.NOT_FUNC_PARAMS_EQUAL.name)
     if are_var_crossed_inside_extracted:
         invocation_types_to_ignore.append(InvocationType.CROSSED_VAR_NAMES_INSIDE_FUNCTION.name)
+    if not has_not_throw:
+       invocation_types_to_ignore.append(InvocationType.THROW_IN_EXTRACTED.name)
 
     return invocation_types_to_ignore
 
