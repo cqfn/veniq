@@ -1,8 +1,0 @@
-class FakeClass {
-public int method() {
-int x = 0;
-if (x == 1) {
-x = x + 1;}
-x = x + 1;
-int y = x + 2;
-return y;} }
