@@ -16,7 +16,8 @@ from veniq.baselines.semi.extract_semantic import \
     extract_method_statements_semantic
 from veniq.baselines.semi.filter_extraction_opportunities import \
     filter_extraction_opportunities
-from veniq.baselines.semi._common_types import ExtractionOpportunity
+from veniq.baselines.semi._common_types import ExtractionOpportunity,\
+    OpportunityBenifit
 
 
 EMO = Tuple[int, int]
@@ -123,15 +124,15 @@ def recommend_for_method(method_decl: List[str]) -> Union[List[EMO], str]:
     emo_groups = _find_EMO_groups(method_subtree)
     if emo_groups is None or emo_groups == []:
         return []
-    all_opportunities = \
+
+    all_opportunities: List[Tuple[ExtractionOpportunity, OpportunityBenifit]] = \
         reduce(lambda x, y: x + list(y.opportunities), emo_groups, [])
 
     all_opportunities_ranked = sorted(all_opportunities, key=itemgetter(1),
                                       reverse=True)
-    all_opportunities_ranked = [_convert_ExtractionOpportunity_to_EMO(
+    ranked_EMOs = [_convert_ExtractionOpportunity_to_EMO(
         x[0], class_decl_fake) for x in all_opportunities_ranked]
 
     # subtract 1 because we added fake class declaration line
-    all_opportunities_ranked = [(x[0] - 1, x[1] - 1) for x
-                                in all_opportunities_ranked]
-    return all_opportunities_ranked
+    ranked_EMOs = [(x[0] - 1, x[1] - 1) for x in ranked_EMOs]
+    return ranked_EMOs
