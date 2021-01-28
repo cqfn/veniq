@@ -4,6 +4,8 @@ from functools import reduce
 from operator import itemgetter
 import os
 
+from javalang.parser import JavaSyntaxError
+
 from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST, ASTNodeType
 from veniq.baselines.semi.rank_extraction_opportunities import \
@@ -15,10 +17,14 @@ from veniq.baselines.semi.extract_semantic import \
 from veniq.baselines.semi.filter_extraction_opportunities import \
     filter_extraction_opportunities
 from veniq.baselines.semi._common_types import ExtractionOpportunity,\
-                                               OpportunityBenifit
+    OpportunityBenifit
 
 
 EMO = Tuple[int, int]
+
+
+class WrongMethodFormatException(Exception):
+    pass
 
 
 def _add_class_decl_wrap(method_decl: List[str]) -> List[str]:
@@ -30,8 +36,14 @@ def _get_method_subtree(class_decl: List[str]) -> AST:
     with NamedTemporaryFile(delete=False) as f:
         _name = f.name
         f.write('\n'.join(class_decl).encode())
-    ast = AST.build_from_javalang(build_ast(_name))
-    os.unlink(_name)
+    try:
+        javalang_ast = build_ast(_name)
+        ast = AST.build_from_javalang(javalang_ast)
+        os.unlink(_name)
+    except JavaSyntaxError as e:
+        os.unlink(_name)
+        raise e
+
     class_node = list(ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION))[0]
     objects_to_consider = list(class_node.methods) + \
         list(class_node.constructors)
@@ -79,26 +91,43 @@ def _convert_ExtractionOpportunity_to_EMO(
     return (start_line_opportunity, start_line_opportunity + i)
 
 
+def check_format_validity(method_decl: List[str]) -> None:
+    """
+    Checks that the input method declaration is a syntactically
+    correct Java method declaration.
+    Raises exception otherwise.
+    """
+    # TODO
+    pass
+
+
 def recommend_for_method(method_decl: List[str]) -> List[EMO]:
     '''
     Takes method declaration in form of list of lines,
     outputs list of EMOs in the order of decreasing recommendation.
     EMO is a (start_line_extraction, end_line_extraction)
-    (the range is inclusive)
+    (the range is inclusive).
     '''
+    try:
+        check_format_validity(method_decl)
+    except WrongMethodFormatException:
+        return "Wrong format"
+
     class_decl_fake = _add_class_decl_wrap(method_decl)
-    method_subtree = _get_method_subtree(class_decl_fake)
+    try:
+        method_subtree = _get_method_subtree(class_decl_fake)
+    except JavaSyntaxError:
+        return "Javalang can't parse"
     emo_groups = _find_EMO_groups(method_subtree)
     if emo_groups is None or emo_groups == []:
         return []
-
     all_opportunities: List[Tuple[ExtractionOpportunity, OpportunityBenifit]] = \
         reduce(lambda x, y: x + list(y.opportunities), emo_groups, [])
+
     all_opportunities_ranked = sorted(all_opportunities, key=itemgetter(1),
                                       reverse=True)
     all_opportunities_ranked = [_convert_ExtractionOpportunity_to_EMO(
-                                x[0], class_decl_fake) for x in
-                                all_opportunities_ranked]
+        x[0], class_decl_fake) for x in all_opportunities_ranked]
 
     # subtract 1 because we added fake class declaration line
     all_opportunities_ranked = [(x[0] - 1, x[1] - 1) for x

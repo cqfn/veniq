@@ -5,7 +5,8 @@ import os
 from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST
 from veniq.baselines.semi.recommend import _add_class_decl_wrap,\
-    _convert_ExtractionOpportunity_to_EMO, _get_method_subtree
+    _convert_ExtractionOpportunity_to_EMO, _get_method_subtree,\
+    recommend_for_method
 
 
 class TestRecommend(TestCase):
@@ -89,3 +90,8 @@ class TestRecommend(TestCase):
         result_EMO = _convert_ExtractionOpportunity_to_EMO(
             object_ExtractionOpportunity, self._class_2)
         self.assertEqual(expect_EMO, result_EMO)
+
+    def test_recommend_for_method(self):
+        result_emos = recommend_for_method(self._method)
+        all_possible_emos = {(1, 4)}
+        self.assertEqual(set(result_emos), all_possible_emos, str(result_emos))
