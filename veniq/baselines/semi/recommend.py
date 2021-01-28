@@ -124,7 +124,7 @@ def recommend_for_method(method_decl: List[str]) -> Union[List[EMO], str]:
     emo_groups = _find_EMO_groups(method_subtree)
     if emo_groups is None or emo_groups == []:
         return []
-    all_opportunities: List[Tuple[ExtractionOpportunity, OpportunityBenifit]] = \
+    all_opportunities = \
         reduce(lambda x, y: x + list(y.opportunities), emo_groups, [])
 
     all_opportunities_ranked = sorted(all_opportunities, key=itemgetter(1),
