@@ -108,7 +108,7 @@ def recommend_for_method(method_decl: List[str]) -> Union[List[EMO], str]:
     EMO is a (start_line_extraction, end_line_extraction)
     (the range is inclusive).
 
-    TODO: use error codes in the future insteach of string 
+    TODO: use error codes in the future insteach of string
     error messages
     '''
     try:
