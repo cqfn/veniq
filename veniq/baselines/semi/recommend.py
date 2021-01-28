@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 from tempfile import NamedTemporaryFile
 from functools import reduce
 from operator import itemgetter
@@ -101,12 +101,15 @@ def check_format_validity(method_decl: List[str]) -> None:
     pass
 
 
-def recommend_for_method(method_decl: List[str]) -> List[EMO]:
+def recommend_for_method(method_decl: List[str]) -> Union[List[EMO], str]:
     '''
     Takes method declaration in form of list of lines,
     outputs list of EMOs in the order of decreasing recommendation.
     EMO is a (start_line_extraction, end_line_extraction)
     (the range is inclusive).
+
+    TODO: use error codes in the future insteach of string 
+    error messages
     '''
     try:
         check_format_validity(method_decl)
