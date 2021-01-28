@@ -16,8 +16,7 @@ from veniq.baselines.semi.extract_semantic import \
     extract_method_statements_semantic
 from veniq.baselines.semi.filter_extraction_opportunities import \
     filter_extraction_opportunities
-from veniq.baselines.semi._common_types import ExtractionOpportunity,\
-    OpportunityBenifit
+from veniq.baselines.semi._common_types import ExtractionOpportunity
 
 
 EMO = Tuple[int, int]
