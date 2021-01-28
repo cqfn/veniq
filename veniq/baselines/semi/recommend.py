@@ -85,7 +85,7 @@ def _convert_ExtractionOpportunity_to_EMO(
         closing_brackets = x.count('}')
         bracket_balance -= closing_brackets
         if i >= extraction_lines_number - 1:
-            if bracket_balance == 0:
+            if bracket_balance <= 0:
                 break
 
     return (start_line_opportunity, start_line_opportunity + i)

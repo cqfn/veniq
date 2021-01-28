@@ -27,8 +27,7 @@ class TestRecommend(TestCase):
     _method_2 = ["public int method() {",
                  "int x = 0;",
                  "if (x == 1) {",
-                 "x = x + 1;",
-                 "}",
+                 "x = x + 1; }",
                  "x = x + 1;",
                  "int y = x + 2;",
                  "return y;",
@@ -43,6 +42,14 @@ class TestRecommend(TestCase):
                 "int y = x + 2;",
                 "return y;",
                 "} }"]
+    _class_2_close_bracket = ["class FakeClass {",
+                              "public int method() {",
+                              "int x = 0;",
+                              "if (x == 1) {",
+                              "x = x + 1; }",
+                              "x = x + 1;",
+                              "int y = x + 2;",
+                              "return y; } }"]
 
     def test_add_class_decl_wrap(self):
         class_decl = _add_class_decl_wrap(self._method)
@@ -83,12 +90,48 @@ class TestRecommend(TestCase):
 
         ast = AST.build_from_javalang(build_ast(_name))
         os.unlink(_name)
-        extr_opport_nodes = [list(ast)[18], list(ast)[26]]
 
+        extr_opport_nodes = [list(ast)[18], list(ast)[26]]
         object_ExtractionOpportunity = tuple(extr_opport_nodes)
         expect_EMO = (3, 5)
         result_EMO = _convert_ExtractionOpportunity_to_EMO(
             object_ExtractionOpportunity, self._class_2)
+        self.assertEqual(expect_EMO, result_EMO)
+
+    def test_EMO_no_open_bracket(self):
+        with NamedTemporaryFile(delete=False) as f:
+            _name = f.name
+            f.write('\n'.join(self._class_2_close_bracket).encode())
+
+        ast = AST.build_from_javalang(build_ast(_name))
+        os.unlink(_name)
+
+        extr_opport_nodes = [list(ast)[27]]
+        object_ExtractionOpportunity = tuple(extr_opport_nodes)
+        expect_EMO = (4, 4)
+        result_EMO = _convert_ExtractionOpportunity_to_EMO(
+            object_ExtractionOpportunity, self._class_2_close_bracket)
+        self.assertEqual(expect_EMO, result_EMO)
+
+    def test_EMO_no_open_bracket_2(self):
+        """
+        Case where ExtractionOpportunity is Local Variable Decl
+        and return statement:
+        "int y = x + 2;",
+        "return y; } }"
+        Should return just these two lines.
+        """
+        with NamedTemporaryFile(delete=False) as f:
+            _name = f.name
+            f.write('\n'.join(self._class_2_close_bracket).encode())
+
+        ast = AST.build_from_javalang(build_ast(_name))
+        os.unlink(_name)
+        extr_opport_nodes = [list(ast)[53], list(ast)[66]]
+        object_ExtractionOpportunity = tuple(extr_opport_nodes)
+        expect_EMO = (6, 7)
+        result_EMO = _convert_ExtractionOpportunity_to_EMO(
+            object_ExtractionOpportunity, self._class_2_close_bracket)
         self.assertEqual(expect_EMO, result_EMO)
 
     def test_recommend_for_method(self):
