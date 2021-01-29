@@ -65,6 +65,22 @@ def _find_EMO_groups(method_subtree: AST) -> List[ExtractionOpportunityGroup]:
     return extraction_opportunities_groups
 
 
+def _find_closing_brackets(extraction_till_end: List[str], num_extr_lines_orig: int) -> int:
+    if num_extr_lines_orig == 0 or extraction_till_end == []:
+        return 0
+
+    bracket_balance = 0
+    for i, x in enumerate(extraction_till_end):
+        open_brackets = x.count('{')
+        bracket_balance += open_brackets
+        closing_brackets = x.count('}')
+        bracket_balance -= closing_brackets
+        if i >= num_extr_lines_orig - 1:
+            if bracket_balance <= 0:
+                break
+    return i
+
+
 def _convert_ExtractionOpportunity_to_EMO(
         extr_opport: ExtractionOpportunity, class_decl: List[str]) -> EMO:
     ''' Converts extraction opportunity of type ExtractionOpportunity from
@@ -78,17 +94,9 @@ def _convert_ExtractionOpportunity_to_EMO(
     extraction_lines_number = end_line_opportunity - start_line_opportunity + 1
 
     # additional procedure to find closing brackets
-    bracket_balance = 0
-    for i, x in enumerate(extraction):
-        open_brackets = x.count('{')
-        bracket_balance += open_brackets
-        closing_brackets = x.count('}')
-        bracket_balance -= closing_brackets
-        if i >= extraction_lines_number - 1:
-            if bracket_balance <= 0:
-                break
+    addit_lines_brackets = _find_closing_brackets(extraction, extraction_lines_number)
 
-    return (start_line_opportunity, start_line_opportunity + i)
+    return (start_line_opportunity, start_line_opportunity + addit_lines_brackets)
 
 
 def check_format_validity(method_decl: List[str]) -> None:
