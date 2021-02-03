@@ -48,7 +48,7 @@ def _get_method_subtree(class_decl: List[str]) -> AST:
     class_node = list(ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION))[0]
     objects_to_consider = list(class_node.methods) + \
         list(class_node.constructors)
-    if len(objects_to_consider) > 1:
+    if len(objects_to_consider) != 1:
         raise WrongInputToApi("More than 1 method passed to API.")
     method_node = objects_to_consider[0]
     ast_subtree = ast.get_subtree(method_node)
@@ -100,25 +100,6 @@ def _convert_ExtractionOpportunity_to_EMO(
     addit_lines_brackets = _find_closing_brackets(extraction, extraction_lines_number)
 
     return (start_line_opportunity, start_line_opportunity + addit_lines_brackets)
-
-
-# def remove_comments(method_decl: str) -> str:
-#     pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
-#     # first group captures quoted strings (double or single)
-#     # second group captures comments (//single-line or /* multi-line */)
-#     pattern_comp = re.compile(pattern, re.MULTILINE | re.DOTALL)
-
-#     def _replacer(match):
-#         # if the 2nd group (capturing comments) is not None,
-#         # it means we have captured a non-quoted (real) comment string.
-#         if match.group(2) is not None:
-#             # so we will return empty to remove the comment
-#             return ""
-#         # otherwise, we will return the 1st group
-#         # (captured quoted-string)
-#         return match.group(1)
-
-#     return pattern_comp.sub(_replacer, method_decl)
 
 
 def check_input_method_format(method_decl: str) -> None:
