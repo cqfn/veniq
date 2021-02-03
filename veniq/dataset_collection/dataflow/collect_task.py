@@ -62,31 +62,29 @@ class TaskAggregatorJavaFiles(d6tflow.tasks.TaskCache):
         self.input_dir = full_dataset_folder / 'input_files'
         # df = pd.DataFrame(columns=columns)
         results = []
-        with ProcessPool(system_cores_qty) as executor:
-
-            future = executor.map(TaskPreprocessJavaFile.run, timeout=200, )
-            result = future.result()
-
-            # each 100 cycles we dump the results
-            iteration_cycle = 1000
-            iteration_number = 0
-            for filename in tqdm(files_without_tests):
-                try:
-                    print(iteration_number)
-                    iteration_number+=1
-                    single_file_features = next(result)
-                    print(single_file_features)
-                    single_file_features.outputLoad(cached=False)
-                    results.append(single_file_features)
-                except Exception as e:
-                    print(e)
-        # for x in files_without_tests:
-        #     # d = {j: '' for j in columns}
-        #     # d.update({'original_filename': x})
-        #     # df = df.append(d, ignore_index=True)
-        #     # self.save({'file': str(x)})
-        #     a = yield TaskPreprocessJavaFile(file=str(x))
-        #     results.append(a)
+        # with ProcessPool(system_cores_qty) as executor:
+        #
+        #     future = executor.map(TaskPreprocessJavaFile.run, timeout=200, )
+        #     result = future.result()
+        #
+        #     # each 100 cycles we dump the results
+        #     iteration_cycle = 1000
+        #     iteration_number = 0
+        #     for filename in tqdm(files_without_tests):
+        #         try:
+        #             # print(filename)
+        #             single_file_features = next(result)
+        #             if single_file_features:
+        #                 results.append(single_file_features)
+        #         except Exception as e:
+        #             print(e)
+        for x in files_without_tests:
+            # d = {j: '' for j in columns}
+            # d.update({'original_filename': x})
+            # df = df.append(d, ignore_index=True)
+            # self.save({'file': str(x)})
+            a = yield TaskPreprocessJavaFile(file=str(x))
+            results.append(a)
         self.save({"results": results})
 
 
@@ -129,7 +127,7 @@ class TaskPreprocessJavaFile(d6tflow.tasks.TaskCache):
     #
     #     return dst_filename, text
 
-    @classmethod
+    # @classmethod
     def run(self):
         # file = self.inputLoad()['file']['file']
         print(self.file)
@@ -143,7 +141,6 @@ class TaskPreprocessJavaFile(d6tflow.tasks.TaskCache):
         try:
             ast = AST.build_from_javalang(parse(text))
             self.save({'text': text, 'ast': ast})
-            # return {'text': text, 'ast': ast}
         except javalang.parser.JavaSyntaxError:
             pass
         # for _, x in df.iterrows():
