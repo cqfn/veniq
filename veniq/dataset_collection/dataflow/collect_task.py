@@ -46,45 +46,48 @@ d6tcollect.submit = False
 
 
 class TaskAggregatorJavaFiles(d6tflow.tasks.TaskCache):
-    dir_to_search = d6tflow.Parameter()
-    dir_to_save = d6tflow.Parameter()
-    system_cores_qty = d6tflow.IntParameter()
+    # dir_to_search = d6tflow.Parameter()
+    # dir_to_save = d6tflow.Parameter()
+    # system_cores_qty = d6tflow.IntParameter()
+    # files_without_tests = d6tflow.ListParameter()
+    file = d6tflow.Parameter()
 
     def run(self):
-        test_files = set(Path(self.dir_to_search).glob('**/*Test*.java'))
-        not_test_files = set(Path(self.dir_to_search).glob('**/*.java'))
-        files_without_tests = list(not_test_files.difference(test_files))
-        if not files_without_tests:
-            raise Exception("No java files were found")
-
-        full_dataset_folder = Path(self.dir_to_save) / 'full_dataset'
-        self.output_dir = full_dataset_folder / 'output_files'
-        self.input_dir = full_dataset_folder / 'input_files'
-        # df = pd.DataFrame(columns=columns)
+        # test_files = set(Path(self.dir_to_search).glob('**/*Test*.java'))
+        # not_test_files = set(Path(self.dir_to_search).glob('**/*.java'))
+        # files_without_tests = list(not_test_files.difference(test_files))
+        # if not files_without_tests:
+        #     raise Exception("No java files were found")
+        #
+        # full_dataset_folder = Path(self.dir_to_save) / 'full_dataset'
+        # self.output_dir = full_dataset_folder / 'output_files'
+        # self.input_dir = full_dataset_folder / 'input_files'
+        # # df = pd.DataFrame(columns=columns)
+        # results = []
+        # # with ProcessPool(system_cores_qty) as executor:
+        # #
+        # #     future = executor.map(TaskPreprocessJavaFile.run, timeout=200, )
+        # #     result = future.result()
+        # #
+        # #     # each 100 cycles we dump the results
+        # #     iteration_cycle = 1000
+        # #     iteration_number = 0
+        # #     for filename in tqdm(files_without_tests):
+        # #         try:
+        # #             # print(filename)
+        # #             single_file_features = next(result)
+        # #             if single_file_features:
+        # #                 results.append(single_file_features)
+        # #         except Exception as e:
+        # #             print(e)
         results = []
-        # with ProcessPool(system_cores_qty) as executor:
-        #
-        #     future = executor.map(TaskPreprocessJavaFile.run, timeout=200, )
-        #     result = future.result()
-        #
-        #     # each 100 cycles we dump the results
-        #     iteration_cycle = 1000
-        #     iteration_number = 0
-        #     for filename in tqdm(files_without_tests):
-        #         try:
-        #             # print(filename)
-        #             single_file_features = next(result)
-        #             if single_file_features:
-        #                 results.append(single_file_features)
-        #         except Exception as e:
-        #             print(e)
-        for x in files_without_tests:
-            # d = {j: '' for j in columns}
-            # d.update({'original_filename': x})
-            # df = df.append(d, ignore_index=True)
-            # self.save({'file': str(x)})
-            a = yield TaskPreprocessJavaFile(file=str(x))
-            results.append(a)
+        # for x in self.files_without_tests:
+        #     # d = {j: '' for j in columns}
+        #     # d.update({'original_filename': x})
+        #     # df = df.append(d, ignore_index=True)
+        #     # self.save({'file': str(x)})
+        a = yield TaskPreprocessJavaFile(file=str(self.file))
+        results.append(a)
         self.save({"results": results})
 
 
@@ -173,6 +176,48 @@ class TaskPreprocessJavaFile(d6tflow.tasks.TaskCache):
 #         self.save({"class_name": class_name})
 
 
+def retunrn(i):
+    if i == 1:
+        return []
+
+
+def get_files(dir_to_search, dir_to_save, system_cores_qty):
+    test_files = set(Path(dir_to_search).glob('**/*Test*.java'))
+    not_test_files = set(Path(dir_to_search).glob('**/*.java'))
+    files_without_tests = list(not_test_files.difference(test_files))
+    if not files_without_tests:
+        raise Exception("No java files were found")
+
+    full_dataset_folder = Path(dir_to_save) / 'full_dataset'
+    output_dir = full_dataset_folder / 'output_files'
+    input_dir = full_dataset_folder / 'input_files'
+    # df = pd.DataFrame(columns=columns)
+    results = []
+    with ProcessPool(system_cores_qty) as executor:
+
+        # d6tflow.preview(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
+        # d6tflow.run(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
+        # data = TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs).outputLoad(cached=False)
+        tasks = [TaskAggregatorJavaFiles(file=str(x)) for x in files_without_tests]
+        future = executor.map(d6tflow.run, tasks, timeout=200, )
+        # future = executor.map(retunrn, [x for x in range(4)], )
+        result = future.result()
+
+        # each 100 cycles we dump the results
+        iteration_cycle = 1000
+        iteration_number = 0
+        for filename in tqdm(files_without_tests):
+            try:
+                # print(filename)
+                next(result)
+                data = TaskAggregatorJavaFiles(file=str(filename)).outputLoad()
+                if data:
+                    results.append(data)
+            except Exception as e:
+                print(e)
+        print(results)
+
+
 if __name__ == '__main__':
     # Intelligently rerun workflow after changing parameters
     system_cores_qty = os.cpu_count() or 1
@@ -210,9 +255,9 @@ if __name__ == '__main__':
     )
 
     args = parser.parse_args()
-
-    d6tflow.preview(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
-    d6tflow.run(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
-    data = TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs).outputLoad(cached=False)
-    print(data)
+    get_files(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs)
+    # d6tflow.preview(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
+    # d6tflow.run(TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs))
+    # data = TaskAggregatorJavaFiles(dir_to_search=args.dir, dir_to_save=args.output, system_cores_qty=args.jobs).outputLoad(cached=False)
+    # print(data)
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
