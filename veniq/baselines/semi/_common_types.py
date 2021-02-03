@@ -39,4 +39,4 @@ class StatementSemantic:
 
 ExtractionOpportunity = Tuple[Statement, ...]
 
-OpportunityBenifit = int
+OpportunityBenefit = int
