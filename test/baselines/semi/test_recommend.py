@@ -6,7 +6,7 @@ from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST
 from veniq.baselines.semi.recommend import _add_class_decl_wrap,\
     _convert_ExtractionOpportunity_to_EMO, _get_method_subtree,\
-    recommend_for_method
+    recommend_for_method, WrongInputToApi, check_input_method_format
 from test.baselines.semi.utils import create_extraction_opportunity
 
 
@@ -116,6 +116,56 @@ class TestRecommend(TestCase):
         self.assertEqual(expect_EMO, result_EMO)
 
     def test_recommend_for_method(self):
-        result_emos = recommend_for_method(self._method)
+        result_emos = recommend_for_method('\n'.join(self._method))
         all_possible_emos = {(1, 4)}
         self.assertEqual(set(result_emos), all_possible_emos, str(result_emos))
+
+    def test_check_input_method_format_1(self):
+        """
+        Not a string
+        """
+        with self.assertRaises(WrongInputToApi):
+            check_input_method_format(0)
+
+        with self.assertRaises(WrongInputToApi):
+            check_input_method_format(self._method_2)
+
+    def test_check_input_method_format_2(self):
+        """
+        Class input instead of method
+        """
+        with self.assertRaises(WrongInputToApi):
+            check_input_method_format('\n'.join(self._class))
+
+        with self.assertRaises(WrongInputToApi):
+            check_input_method_format('\n'.join(self._class_2))
+
+    def test_wronginput_toapi_1(self):
+        """
+        Class input instead of method
+        """
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._class))
+
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._class_2))
+
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._class_2_close_bracket))
+
+    def test_wronginput_toapi_2(self):
+        """
+        Invalid java syntax
+        """
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._method[1:]))
+
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._method[:-1]))
+
+    def test_wronginput_toapi_3(self):
+        """
+        Multiple methods
+        """
+        with self.assertRaises(WrongInputToApi):
+            recommend_for_method('\n'.join(self._method + self._method_2))
