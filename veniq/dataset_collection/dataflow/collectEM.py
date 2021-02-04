@@ -4,9 +4,6 @@ from typing import List, Dict
 import d6tcollect
 import d6tflow
 # from veniq.dataset_collection.augmentation import InvocationType
-from pebble import ProcessPool
-from tqdm import tqdm
-import numpy as np
 from joblib import Parallel, delayed
 
 from veniq.ast_framework import AST
@@ -59,8 +56,6 @@ class TaskFindEM(d6tflow.tasks.TaskCache):
 
     def run(self):
         csv = self.inputLoad()['csv']
-        lst = []
-        print('csv')
         rows = [x for _, x in csv.iterrows()]
 
         with Parallel(n_jobs=2, require='sharedmem') as parallel:

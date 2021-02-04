@@ -20,26 +20,26 @@ class TaskAggregatorJavaFiles(d6tflow.tasks.TaskCSVPandas):
     system_cores_qty = d6tflow.IntParameter()
 
     columns = [
-            'project_id',
-            'original_filename',
-            'class_name',
-            'invocation_line_string',
-            'invocation_line_number_in_original_file',
-            'target_method',
-            'target_method_start_line',
-            'extract_method',
-            'extract_method_start_line',
-            'extract_method_end_line',
-            'output_filename',
-            'is_valid_ast',
-            'insertion_start',
-            'insertion_end',
-            'ncss_target',
-            'ncss_extracted',
-            'do_nothing',
-            'ONE_LINE_FUNCTION',
-            'NO_IGNORED_CASES'
-        ] # + [x for x in InvocationType.list_types()]
+        'project_id',
+        'original_filename',
+        'class_name',
+        'invocation_line_string',
+        'invocation_line_number_in_original_file',
+        'target_method',
+        'target_method_start_line',
+        'extract_method',
+        'extract_method_start_line',
+        'extract_method_end_line',
+        'output_filename',
+        'is_valid_ast',
+        'insertion_start',
+        'insertion_end',
+        'ncss_target',
+        'ncss_extracted',
+        'do_nothing',
+        'ONE_LINE_FUNCTION',
+        'NO_IGNORED_CASES'
+    ]  # + [x for x in InvocationType.list_types()]
 
     def _remove_comments(self, string: str):
         pattern = r"(\".*?\"|\'.*?\')|(/\*.*?\*/|//[^\r\n]*$)"
@@ -64,11 +64,6 @@ class TaskAggregatorJavaFiles(d6tflow.tasks.TaskCSVPandas):
         text_without_comments = self._remove_comments(original_text)
         # remove whitespaces
         text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
-        # try:
-        #     ast = AST.build_from_javalang(parse(text))
-        #     return {'text': text, 'ast': ast}
-        # except Exception:
-        #     pass
 
         return text
 
@@ -109,7 +104,8 @@ class TaskAggregatorJavaFiles(d6tflow.tasks.TaskCSVPandas):
                     text = next(result)
                     if text:
                         df = df.append(
-                            {'original_filename': self._save_text_to_new_file(self.input_dir, text, filename).absolute()},
+                            {'original_filename': self._save_text_to_new_file(self.input_dir, text,
+                                                                              filename).absolute()},
                             ignore_index=True
                         )
                 except Exception as e:

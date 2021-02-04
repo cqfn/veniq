@@ -5,7 +5,6 @@ import d6tcollect
 import d6tflow
 
 from veniq.dataset_collection.dataflow.collectEM import TaskFindEM
-from veniq.dataset_collection.dataflow.preprocess import TaskAggregatorJavaFiles
 
 d6tcollect.submit = False
 
@@ -57,8 +56,9 @@ if __name__ == '__main__':
             system_cores_qty=args.jobs
         ))
     data = TaskFindEM(
-            dir_to_search=args.dir,
-            dir_to_save=args.output,
-            system_cores_qty=args.jobs).outputLoad(cached=False)
+        dir_to_search=args.dir,
+        dir_to_save=args.output,
+        system_cores_qty=args.jobs
+    ).outputLoad(cached=False)
 
     print(data)
