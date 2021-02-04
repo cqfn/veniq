@@ -4,7 +4,7 @@ from veniq.ast_framework import AST
 from .extract_semantic import extract_method_statements_semantic
 from .create_extraction_opportunities import create_extraction_opportunities
 from .filter_extraction_opportunities import filter_extraction_opportunities
-from ._common_types import Statement, StatementSemantic, ExtractionOpportunity, OpportunityBenifit
+from ._common_types import Statement, StatementSemantic, ExtractionOpportunity, OpportunityBenefit
 from ._common_cli import common_cli
 from ._lcom2 import LCOM2
 
@@ -12,7 +12,7 @@ from ._lcom2 import LCOM2
 class ExtractionOpportunityGroupSettings(NamedTuple):
     max_size_difference: float = 0.2
     min_overlap: float = 0.1
-    significant_difference_treshold: float = 0.01
+    significant_difference_threshold: float = 0.01
 
 
 class ExtractionOpportunityGroup:
@@ -24,10 +24,10 @@ class ExtractionOpportunityGroup:
     ):
         self._optimal_opportunity = extraction_opportunity
         self._statements_semantic = statements_semantic
-        self._all_statements_benifit = LCOM2(statements_semantic)
+        self._all_statements_benefit = LCOM2(statements_semantic)
 
-        self._opportunities_to_benifit: Dict[ExtractionOpportunity, OpportunityBenifit] = {
-            extraction_opportunity: self._calculate_benifit(extraction_opportunity)
+        self._opportunities_to_benefit: Dict[ExtractionOpportunity, OpportunityBenefit] = {
+            extraction_opportunity: self._calculate_benefit(extraction_opportunity)
         }
 
         self._settings = settings
@@ -38,17 +38,17 @@ class ExtractionOpportunityGroup:
         ) and self._is_significantly_overlapping(self._optimal_opportunity, extraction_opportunity)
 
     def add_extraction_opportunity(self, extraction_opportunity: ExtractionOpportunity) -> None:
-        new_opportunity_benifit = self._calculate_benifit(extraction_opportunity)
-        self._opportunities_to_benifit[extraction_opportunity] = new_opportunity_benifit
+        new_opportunity_benefit = self._calculate_benefit(extraction_opportunity)
+        self._opportunities_to_benefit[extraction_opportunity] = new_opportunity_benefit
 
-        benifit_difference = abs(new_opportunity_benifit - self.benifit)
-        max_benifit = max(new_opportunity_benifit, self.benifit)
+        benefit_difference = abs(new_opportunity_benefit - self.benefit)
+        max_benefit = max(new_opportunity_benefit, self.benefit)
         is_new_opportunity_optimal: bool
         if (
-            max_benifit > 0
-            and benifit_difference / max_benifit >= self._settings.significant_difference_treshold
+            max_benefit > 0
+            and benefit_difference / max_benefit >= self._settings.significant_difference_threshold
         ):
-            is_new_opportunity_optimal = new_opportunity_benifit > self.benifit
+            is_new_opportunity_optimal = new_opportunity_benefit > self.benefit
         else:
             is_new_opportunity_optimal = len(extraction_opportunity) > len(self._optimal_opportunity)
 
@@ -56,13 +56,13 @@ class ExtractionOpportunityGroup:
             self._optimal_opportunity = extraction_opportunity
 
     @property
-    def benifit(self) -> OpportunityBenifit:
-        return self._opportunities_to_benifit[self._optimal_opportunity]
+    def benefit(self) -> OpportunityBenefit:
+        return self._opportunities_to_benefit[self._optimal_opportunity]
 
     @property
-    def opportunities(self) -> Iterator[Tuple[ExtractionOpportunity, OpportunityBenifit]]:
-        for opportunity, benifit in self._opportunities_to_benifit.items():
-            yield opportunity, benifit
+    def opportunities(self) -> Iterator[Tuple[ExtractionOpportunity, OpportunityBenefit]]:
+        for opportunity, benefit in self._opportunities_to_benefit.items():
+            yield opportunity, benefit
 
     def _is_similar_size(
         self, extraction_opportunity1: ExtractionOpportunity, extraction_opportunity2: ExtractionOpportunity
@@ -80,20 +80,20 @@ class ExtractionOpportunityGroup:
         max_size = max(len(extraction_opportunity1), len(extraction_opportunity2))
         return shared_statements_qty / max_size > self._settings.min_overlap
 
-    def _calculate_benifit(self, extraction_opportunity: ExtractionOpportunity) -> OpportunityBenifit:
+    def _calculate_benefit(self, extraction_opportunity: ExtractionOpportunity) -> OpportunityBenefit:
         opportunity_semantic = {
             statement: self._statements_semantic[statement] for statement in extraction_opportunity
         }
-        opportunity_benifit = LCOM2(opportunity_semantic)
+        opportunity_benefit = LCOM2(opportunity_semantic)
 
         rest_statements_semantic = {
             statement: self._statements_semantic[statement]
             for statement in self._statements_semantic
             if statement not in extraction_opportunity
         }
-        rest_statements_benifit = LCOM2(rest_statements_semantic)
+        rest_statements_benefit = LCOM2(rest_statements_semantic)
 
-        return self._all_statements_benifit - max(opportunity_benifit, rest_statements_benifit)
+        return self._all_statements_benefit - max(opportunity_benefit, rest_statements_benefit)
 
 
 def rank_extraction_opportunities(
@@ -116,7 +116,7 @@ def rank_extraction_opportunities(
 
     return sorted(
         extraction_opportunities_groups,
-        key=lambda extraction_opportunity_group: extraction_opportunity_group.benifit,
+        key=lambda extraction_opportunity_group: extraction_opportunity_group.benefit,
         reverse=True,
     )
 
@@ -154,9 +154,9 @@ def _print_extraction_opportunities(
     )
 
     for extraction_opportunity_group in extraction_opportunities_groups:
-        print(f"\tExtraction opportunities group with scope {extraction_opportunity_group.benifit}:")
-        for extraction_opportunity, benifit in extraction_opportunity_group.opportunities:
-            print(f"\t\tExtraction opportunity with score {benifit}:")
+        print(f"\tExtraction opportunities group with scope {extraction_opportunity_group.benefit}:")
+        for extraction_opportunity, benefit in extraction_opportunity_group.opportunities:
+            print(f"\t\tExtraction opportunity with score {benefit}:")
             for statement in extraction_opportunity:
                 print(f"\t\t\t{statement.node_type} on line {statement.line}")
 
