@@ -6,6 +6,8 @@ import d6tflow
 # from veniq.dataset_collection.augmentation import InvocationType
 from pebble import ProcessPool
 from tqdm import tqdm
+import numpy as np
+from joblib import Parallel, delayed
 
 from veniq.ast_framework import AST
 from veniq.ast_framework import ASTNodeType, ASTNode
@@ -17,7 +19,7 @@ d6tcollect.submit = False
 
 
 @d6tflow.requires({'csv': TaskAggregatorJavaFiles})
-class TaskFindEM(d6tflow.tasks.TaskPickle):
+class TaskFindEM(d6tflow.tasks.TaskCache):
     dir_to_search = d6tflow.Parameter()
     dir_to_save = d6tflow.Parameter()
     system_cores_qty = d6tflow.IntParameter()
@@ -58,20 +60,9 @@ class TaskFindEM(d6tflow.tasks.TaskPickle):
     def run(self):
         csv = self.inputLoad()['csv']
         lst = []
-        with ProcessPool(self.system_cores_qty) as executor:
-            rows = [x for _, x in csv.iterrows()]
-            future = executor.map(self._find_EMs, rows, timeout=200, )
-            result = future.result()
-            for filename in tqdm(rows):
-                try:
-                    res = next(result)
-                    print(f'HH {res}')
-                    if res:
-                        em_list = res.get('em_list')
-                        # print(res)
-                        if em_list:
-                            lst.append({'original_filename': filename, 'em_list': em_list})
-                except Exception as e:
-                    print(str(e))
-        print(lst)
-        self.save({"data": lst})
+        print('csv')
+        rows = [x for _, x in csv.iterrows()]
+
+        with Parallel(n_jobs=2, require='sharedmem') as parallel:
+            results = parallel((delayed(self._find_EMs)(a) for a in rows))
+        self.save({"data": [x for x in results if x]})
