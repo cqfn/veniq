@@ -1,3 +1,5 @@
+import difflib
+import pprint
 import tempfile
 from os import listdir
 from pathlib import Path
@@ -10,6 +12,14 @@ from veniq.dataset_collection.augmentation import analyze_file
 
 
 class IntegrationDatasetCollection(TestCase):
+
+    def diff_dicts(self, a, b):
+        if a == b:
+            return ''
+        return '\n'.join(
+            difflib.ndiff(pprint.pformat(a, width=30).splitlines(),
+                          pprint.pformat(b, width=30).splitlines())
+        )
 
     def test_dataset_collection(self):
         samples_path = Path(__file__).absolute().parent / "dataset_collection"
@@ -40,6 +50,7 @@ class IntegrationDatasetCollection(TestCase):
                     ) from e
 
             new_results = pd.DataFrame(columns=[
+                'project'
                 'input_filename',
                 'class_name',
                 'invocation_text_string',
@@ -55,6 +66,7 @@ class IntegrationDatasetCollection(TestCase):
             for x in results_output:
                 x['input_filename'] = str(Path(x['input_filename']).name).split('_')[0] + '.java'
                 del x['output_filename']
+                del x['project']
                 new_results = new_results.append(x, ignore_index=True)
 
         df = pd.DataFrame(new_results)
@@ -65,4 +77,9 @@ class IntegrationDatasetCollection(TestCase):
         df_diff = pd.concat([new_results, results_predefined]).drop_duplicates(keep=False)
         size_of_difference = df_diff.shape[0]
         print(f'Difference in dataframes: {size_of_difference} rows')
-        self.assertEqual(size_of_difference, 0)
+
+        try:
+            self.assertEqual(size_of_difference, 0)
+        except AssertionError as e:
+            print(self.diff_dicts(new_results.to_dict(), results_predefined.to_dict()))
+            raise e

@@ -11,6 +11,7 @@ from functools import partial
 from pathlib import Path
 from typing import Tuple, Dict, List, Any, Set, Optional
 
+import javalang
 import pandas as pd
 from pebble import ProcessPool
 from tqdm import tqdm
@@ -278,7 +279,8 @@ def insert_code_with_new_file_creation(
         invocation_node: ASTNode,
         file_path: Path,
         output_path: Path,
-        dict_original_invocations: Dict[str, List[ASTNode]]
+        dict_original_invocations: Dict[str, List[ASTNode]],
+        source_filepath: str
 ) -> Dict[str, Any]:
     """
     If invocations of class methods were found,
@@ -310,12 +312,14 @@ def insert_code_with_new_file_creation(
             algorithm_for_inlining = AlgorithmFactory().create_obj(algorithm_type)
             if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
                 line_to_csv = {
+                    'project': source_filepath,
                     'input_filename': file_path,
                     'class_name': class_name,
                     'invocation_text_string': text_lines[invocation_node.line - 1].lstrip(),
                     'method_where_invocation_occurred': method_node.name,
                     'invocation_method_name': original_func.name,
-                    'output_filename': new_full_filename
+                    'output_filename': new_full_filename,
+                    'start_line_of_function_where_invocation_occurred': method_node.line
                 }
 
                 inline_method_bounds = algorithm_for_inlining().inline_function(
@@ -332,10 +336,8 @@ def insert_code_with_new_file_creation(
                     if get_ast_if_possible(new_full_filename):
                         rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
                             class_name=class_name,
-                            method_node=method_node,
                             new_full_filename=new_full_filename,
                             original_func=original_func)
-
                         can_be_parsed = True
                         line_to_csv.update(rest_of_csv_row_for_changed_file)
                     else:
@@ -349,7 +351,6 @@ def insert_code_with_new_file_creation(
 # type: ignore
 def find_lines_in_changed_file(
         new_full_filename: Path,
-        method_node: ASTNode,
         original_func: ASTNode,
         class_name: str) -> Dict[str, Any]:
     """
@@ -365,25 +366,20 @@ def find_lines_in_changed_file(
         class_node_of_changed_file = [
             x for x in changed_ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION)
             if x.name == class_name][0]
-        class_subtree = changed_ast.get_subtree(class_node_of_changed_file)
-        node = [x for x in class_subtree.get_proxy_nodes(
-            ASTNodeType.METHOD_DECLARATION,
-            ASTNodeType.CONSTRUCTOR_DECLARATION)
-            if x.name == method_node.name][0]  # type: ignore
-        original_func_changed = [x for x in class_subtree.get_proxy_nodes(
-            ASTNodeType.METHOD_DECLARATION) if x.name == original_func.name][0]
+        original_func_changed = [
+            x for x in class_node_of_changed_file.methods
+            if x.name == original_func.name][0]
 
         body_start_line, body_end_line = method_body_lines(original_func_changed, new_full_filename)
         return {
             'invocation_method_start_line': body_start_line,
-            'invocation_method_end_line': body_end_line,
-            'start_line_of_function_where_invocation_occurred': node.line
+            'invocation_method_end_line': body_end_line
         }
     else:
         return {}
 
 
-def get_ast_if_possible(file_path: Path) -> Optional[AST]:
+def get_ast_if_possible(file_path: Path, res=None) -> Optional[AST]:
     """
     Processing file in order to check
     that its original version can be parsed
@@ -391,8 +387,13 @@ def get_ast_if_possible(file_path: Path) -> Optional[AST]:
     ast = None
     try:
         ast = AST.build_from_javalang(build_ast(str(file_path)))
-    except Exception:
-        print(f"Processing {file_path} is aborted due to parsing")
+    except javalang.parser.JavaSyntaxError:
+        if res:
+            res.error = 'JavaSyntaxError'
+    except Exception as e:
+        if res:
+            res.error = str(e)
+
     return ast
 
 
@@ -410,6 +411,7 @@ def remove_comments(string):
             return ""
         else:  # otherwise, we will return the 1st group
             return match.group(1)  # captured quoted-string
+
     return regex.sub(_replacer, string)
 
 
@@ -453,7 +455,7 @@ def analyze_file(
             for method_invoked in method_decl.get_proxy_nodes(
                     ASTNodeType.METHOD_INVOCATION):
                 found_method_decl = method_declarations.get(method_invoked.member, [])
-                # ignore overloaded functions
+                # ignore overloaded extracted functions
                 if len(found_method_decl) == 1:
                     try:
                         make_insertion(
@@ -465,6 +467,7 @@ def analyze_file(
                             method_invoked,
                             method_node,
                             output_path,
+                            file_path,
                             results
                         )
                     except Exception as e:
@@ -477,7 +480,7 @@ def analyze_file(
 
 
 def make_insertion(ast, class_declaration, dst_filename, found_method_decl, method_declarations, method_invoked,
-                   method_node, output_path, results):
+                   method_node, output_path, source_filepath, results):
     is_matched = is_match_to_the_conditions(
         ast,
         method_invoked,
@@ -491,7 +494,8 @@ def make_insertion(ast, class_declaration, dst_filename, found_method_decl, meth
             method_invoked,
             dst_filename,
             output_path,
-            method_declarations)
+            method_declarations,
+            source_filepath)
         if log_of_inline:
             # change source filename, since it will be changed
             log_of_inline['input_filename'] = str(dst_filename.as_posix())
@@ -504,6 +508,7 @@ def collect_info_about_functions_without_params(
     for method in class_declaration.methods:
         if not method.parameters:
             method_declarations[method.name].append(method)
+
 
 # def save_input_file(input_dir: Path, filename: Path) -> Path:
 #     # need to avoid situation when filenames are the same
@@ -579,6 +584,7 @@ if __name__ == '__main__':  # noqa: C901
 
     df = pd.DataFrame(
         columns=[
+            'project',
             'input_filename',
             'class_name',
             'invocation_text_string',
