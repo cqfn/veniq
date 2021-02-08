@@ -3,7 +3,6 @@ from tempfile import NamedTemporaryFile
 from functools import reduce
 from operator import itemgetter
 import os
-import re
 
 from javalang.parser import JavaSyntaxError
 
@@ -24,10 +23,6 @@ from veniq.baselines.semi._common_types import ExtractionOpportunity,\
 EMORange = Tuple[int, int]
 
 
-class WrongInputToApi(ValueError):
-    pass
-
-
 def _add_class_decl_wrap(method_decl: List[str]) -> List[str]:
     class_decl = ['class FakeClass {'] + method_decl + ['}']
     return class_decl
@@ -41,15 +36,18 @@ def _get_method_subtree(class_decl: List[str]) -> AST:
         javalang_ast = build_ast(_name)
         ast = AST.build_from_javalang(javalang_ast)
         os.unlink(_name)
-    except JavaSyntaxError:
+    except JavaSyntaxError as e:
         os.unlink(_name)
-        raise WrongInputToApi("Javalang failed to build AST tree (javalang.JavaSyntaxError)")
+        raise e
 
     class_node = list(ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION))[0]
     objects_to_consider = list(class_node.methods) + \
         list(class_node.constructors)
+    """
+    move this check to API:
     if len(objects_to_consider) != 1:
-        raise WrongInputToApi("More than 1 method passed to API.")
+        raise WrongInput("More than 1 method passed to 'recommend_for_method'.")
+    """
     method_node = objects_to_consider[0]
     ast_subtree = ast.get_subtree(method_node)
     return ast_subtree
@@ -102,22 +100,25 @@ def _convert_ExtractionOpportunity_to_EMO(
     return (start_line_opportunity, start_line_opportunity + addit_lines_brackets)
 
 
+"""
+TODO: move to API
+
 def check_input_method_format(method_decl: str) -> None:
-    """
-    Checks that the input method declaration is a syntactically
-    correct Java method declaration.
-    Raises exception otherwise.
-    """
-    # check type
-    if type(method_decl) != str:
-        raise WrongInputToApi('Input should be a string with line breaks.')
+
+   # check type
+   if type(method_decl) != str:
+       raise WrongInput('Input should be a string with line breaks.')
 
     # check it is a method declaration
-    class_interf_pattern = r"\s*(|(public|protected|private|static|)\s+)(class|interface)\s+[\w\W]+\s*"
-    class_interf_pattern_comp = re.compile(class_interf_pattern)
-    if class_interf_pattern_comp.match(method_decl):
-        raise WrongInputToApi('Input to recommend API should a method declaration, \
-                              received class or interface instead.')
+    try:
+        snippet_parsed = javalang.parse.parse_member_signature(method_decl)
+        snippet_type = type(snippet_parsed)
+        if snippet_type != javalang.tree.MethodDeclaration:
+            raise WrongInput('Input to "recommend_for_method" should be a method declaration \
+                              string, received {} instead'.format(str(snippet_type)))
+    except JavaSyntaxError:
+        raise WrongInput("Javalang failed to build AST tree (javalang.parser.JavaSyntaxError)")
+"""
 
 
 def recommend_for_method(method_decl: str) -> List[EMORange]:
@@ -130,16 +131,18 @@ def recommend_for_method(method_decl: str) -> List[EMORange]:
     # TODO: use error codes in the future insteach of string
     error messages
     '''
+    '''
+    # move this check to API:
     try:
         check_input_method_format(method_decl)
-    except WrongInputToApi as e:
+    except WrongInput as e:
         raise e
-
+    '''
     method_decl_lines = method_decl.splitlines()
     class_decl_fake = _add_class_decl_wrap(method_decl_lines)
     try:
         method_subtree = _get_method_subtree(class_decl_fake)
-    except WrongInputToApi as e:
+    except JavaSyntaxError as e:
         raise e
     emo_groups_semi = _find_EMO_groups(method_subtree)
     if emo_groups_semi is None or emo_groups_semi == []:
