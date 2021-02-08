@@ -45,7 +45,7 @@ class TaskFindEM(d6tflow.tasks.TaskCache):
                             result_dict[method_invoked.line] = [target_node, method_invoked, extracted_m_decl]
             # print({'em_list': result_dict, 'ast': ast})
             if result_dict:
-                print(f' ZHOPA {result_dict}')
+                print(f' FFF {result_dict}')
                 return [{'em_list': result_dict, 'ast': ast}]
             else:
                 return {}
