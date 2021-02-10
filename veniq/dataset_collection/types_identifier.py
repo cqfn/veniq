@@ -1,8 +1,7 @@
 import abc
-from enum import Enum
-from typing import List, Union
-import pathlib
 import re
+from enum import Enum
+from typing import List, Union, Any, Tuple
 
 
 class InlineTypesAlgorithms(Enum):
@@ -36,9 +35,7 @@ class AlgorithmFactory(metaclass=Singleton):
         InlineTypesAlgorithms.WITH_RETURN_WITHOUT_ARGUMENTS:
             lambda: InlineWithReturnWithoutArguments,
         InlineTypesAlgorithms.WITHOUT_RETURN_WITHOUT_ARGUMENTS:
-            lambda: InlineWithoutReturnWithoutArguments,
-        InlineTypesAlgorithms.DO_NOTHING:
-            lambda: DoNothing}
+            lambda: InlineWithoutReturnWithoutArguments}
 
     def create_obj(self, val_type):
         return self.objects.get(val_type)()
@@ -55,14 +52,14 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
             before_body_line: str
     ) -> str:
         space_or_tab = self.spaces_or_tab(before_body_line)
-        new_line = (to_insert_line).replace(' ' * 4, space_or_tab)
+        new_line = to_insert_line.replace(' ' * 4, space_or_tab)
         return new_line
 
     def form_body_for_inline(
-        self,
-        lines: List[str],
-        body_start_line: int,
-        body_end_line: int
+            self,
+            lines: List[str],
+            body_start_line: int,
+            body_end_line: int
     ) -> List[str]:
 
         if lines[body_start_line - 2].lstrip().startswith('{'):
@@ -124,113 +121,47 @@ class IBaseInlineAlgorithm(metaclass=abc.ABCMeta):
         num_spaces_body = self.get_spaces_diff(lines[body_start_line - 1])
         return num_spaces_before - num_spaces_body
 
-    def get_lines_before_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
-            invocation_line: int
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file before invocation line, which was detected.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_before_invoсation = lines[:invocation_line - 1]
-        original_file.close()
-        return lines_before_invoсation
-
-    def get_lines_after_invocation(
-            self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
-            invocation_line: int
-    ) -> List[str]:
-        """
-        This function is aimed to obtain lines from the original
-        file after invocation line, which was detected.
-        Especially, it will be inserted after body of inlined method.
-        """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
-        lines_after_invoсation = lines[invocation_line:]
-        original_file.close()
-        return lines_after_invoсation
-
     @abc.abstractmethod
-    def get_lines_of_method_body(self,
-                                 filename_out: pathlib.Path,
-                                 filename_in: pathlib.Path,
-                                 invocation_line: int,
-                                 body_start_line: int,
-                                 body_end_line: int
-                                 ) -> List[str]:
+    def get_lines_of_method_body(
+            self,
+            invocation_line: int,
+            body_start_line: int,
+            body_end_line: int,
+            text_lines
+    ) -> List[str]:
         raise NotImplementedError("Cannot run abstract function")
 
     def inline_function(
             self,
-            filename_in: pathlib.Path,
             invocation_line: int,
             body_start_line: int,
             body_end_line: int,
-            filename_out: pathlib.Path
-    ) -> Union[None, str, List]:
+            text_lines: List[str]
+    ) -> Tuple[list, List[Union[int, Any]]]:
         lines_of_final_file = []
-        inline_method_bounds = []
-        inline_method_bounds.append(invocation_line)
+        inline_method_bounds = [invocation_line]
 
         # original code before method invocation, which will be substituted
-        lines_before_invoсation = self.get_lines_before_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
-        lines_of_final_file += lines_before_invoсation
+        lines_before_invocation = text_lines[:invocation_line - 1]
+        lines_of_final_file += lines_before_invocation
 
         # body of the original method, which will be inserted
         body_lines = self.get_lines_of_method_body(
-            filename_out,
-            filename_in,
             invocation_line,
             body_start_line + 1,
-            body_end_line - 1
+            body_end_line - 1,
+            text_lines
         )
         lines_of_final_file += body_lines
         end_inline_method = inline_method_bounds[0] + len(body_lines) - 1
         inline_method_bounds.append(end_inline_method)
 
         # original code after method invocation
-        original_code_lines = self.get_lines_after_invocation(
-            filename_out,
-            filename_in,
-            invocation_line
-        )
+        original_code_lines = text_lines[invocation_line:]
         lines_of_final_file += original_code_lines
-
-        f_out = open(filename_out, 'w', encoding='utf-8')
-        for line in lines_of_final_file:
-            f_out.write(line)
-        f_out.close()
         # return bounds of inline method
         # counted relative to parent method body
-        return inline_method_bounds
-
-
-class DoNothing(IBaseInlineAlgorithm):
-    """
-    When we have case when our function inline is too complex,
-    we should ignore it and do nothing
-    """
-
-    def inline_function(
-            self,
-            filename_in: pathlib.Path,
-            invocation_line: int,
-            body_start_line: int,
-            body_end_line: int,
-            filename_out: pathlib.Path
-    ) -> str:
-        return ""
+        return lines_of_final_file, inline_method_bounds
 
 
 class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
@@ -240,18 +171,15 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def get_lines_of_method_body(
             self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
             invocation_line: int,
             body_start_line: int,
-            body_end_line: int
+            body_end_line: int,
+            lines
     ) -> List[str]:
         """
         In order to get an appropriate text view, we also need to insert
         lines according to the current number of spaced before the line
         """
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
         body_lines_original = self.form_body_for_inline(lines, body_start_line, body_end_line)
         num_spaces_in_body = self.complement_spaces(body_start_line, invocation_line, lines)
         body_lines = []
@@ -263,7 +191,6 @@ class InlineWithoutReturnWithoutArguments(IBaseInlineAlgorithm):
                 lines[invocation_line - 2]
             )
             body_lines.append(new_line)
-        original_file.close()
         return body_lines
 
 
@@ -309,11 +236,10 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
 
     def get_lines_of_method_body(
             self,
-            filename_out: pathlib.Path,
-            filename_in: pathlib.Path,
             invocation_line: int,
             body_start_line: int,
-            body_end_line: int
+            body_end_line: int,
+            text_lines: List[str]
     ) -> List[str]:
         """
         In order to get an appropriate text view, we also need to insert
@@ -321,14 +247,12 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
         """
 
         body_lines = []
-        original_file = open(filename_in, encoding='utf-8')
-        lines = list(original_file)
         # body of the original method, which will be inserted
-        body_lines_original = self.form_body_for_inline(lines, body_start_line, body_end_line)
-        line_with_declaration = lines[invocation_line - 1].split('=')
-        is_var_declaration = self.is_var_declaration(lines, invocation_line)
-        is_direct_return = self.is_direct_return(lines, invocation_line)
-        spaces_in_body = ' ' * self.complement_spaces(body_start_line, invocation_line, lines)
+        body_lines_original = self.form_body_for_inline(text_lines, body_start_line, body_end_line)
+        line_with_declaration = text_lines[invocation_line - 1].split('=')
+        is_var_declaration = self.is_var_declaration(text_lines, invocation_line)
+        is_direct_return = self.is_direct_return(text_lines, invocation_line)
+        spaces_in_body = ' ' * self.complement_spaces(body_start_line, invocation_line, text_lines)
         for i, line in enumerate(body_lines_original):
             line = line.replace('\t', ' ' * 4)
             return_statement = line.split('return ')
@@ -347,7 +271,6 @@ class InlineWithReturnWithoutArguments(IBaseInlineAlgorithm):
                     break
             else:
                 new_body_line = spaces_in_body + line
-            body_lines.append(self.get_line_for_body(new_body_line, lines[invocation_line - 2]))
+            body_lines.append(self.get_line_for_body(new_body_line, text_lines[invocation_line - 2]))
 
-        original_file.close()
         return body_lines

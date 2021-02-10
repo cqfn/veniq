@@ -14,6 +14,7 @@ import bonobo
 from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
+from veniq.dataset_collection.dataflow.annotation import annotate
 from veniq.dataset_collection.augmentation import collect_info_about_functions_without_params
 
 from veniq.utils.encoding_detector import detect_encoding_of_file, read_text_with_autodetected_encoding
@@ -119,13 +120,12 @@ def print_ast(lst):
 
 
 def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
-    # print(f'dict')
     class_name, invocation_line = list(em_item.keys())[0]
     ast, text, target_node, method_invoked, extracted_m_decl = list(em_item.values())[0]
     params_dict = {
         'ast': ast,
         'class_name': class_name,
-        'invocation_line': invocation_line,
+        'invocation_line_number_in_original_file': invocation_line,
         'text': text,
         'target_node': target_node,
         'method_invoked': method_invoked,
@@ -135,55 +135,42 @@ def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
     yield {**params_dict, **dirs_dict}
 
 
-# def pass_params_to_next_node(**dct):
-#     print(f'dict {dct}')
-#     create_dirs()
-#     yield dct
-
 def filter_by_ncss(em_info):
     ast = em_info['ast']
     extracted_m_decl = em_info['extracted_m_decl']
     ncss = NCSSMetric().value(ast.get_subtree(extracted_m_decl))
     if ncss > 3:
+        em_info['ncss_extracted'] = ncss
+        ncss_target_node = NCSSMetric().value(ast.get_subtree(extracted_m_decl))
+        em_info['ncss_target'] = ncss_target_node
         yield em_info
 
 
-def annotate(res):
-    res['INV'] = True
-    yield res
-
-
 def filter_code_duplication(res):
-    yield res
-
-def filter_by_first_filter(res):
     yield res
 
 
 def filter_by_second_filter(res):
     yield res
 
+
 def make_inline(res):
     yield res
 
+
 def save_file(res):
     yield res
+
 
 def get_graph(**bonobo_args):
     output_dir = bonobo_args['output']
     dataset_dir = bonobo_args['dir']
     graph = bonobo.Graph()
     dirs = create_dirs(output_dir)
-    # g = list(dirs)
-    # graph.get_cursor(None) >> pass_params_to_next_node
     em_dict = graph >> get_list_of_files(dataset_dir) >> preprocess >> find_EMS
-    # input_dir = dirs['input_dir']
-    # output_dir = dirs['output_dir']
     f_pass_params_to_next_node = partial(pass_params_to_next_node, dirs)
-    em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> filter_code_duplication >> \
-    annotate >> filter_by_first_filter >> filter_by_second_filter >> make_inline >> save_file
-    # dirs >> pass_params_to_next_node
-    # em_dict >> save_text_to_new_file
+    em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> annotate >> make_inline >> save_filee
+    # TODO ignore overridden extracted functions, now it must be a different filter
     return graph
 
 
@@ -235,8 +222,3 @@ if __name__ == '__main__':
             get_graph(**options),
             services=get_services(**options),
         )
-
-    # graph.get_cursor(f) >> print
-    # read_file
-    # graph.get_cursor(b) >> f >> g
-    # files_without_tests
