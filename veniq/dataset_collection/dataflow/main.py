@@ -5,12 +5,13 @@ from argparse import ArgumentParser
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
 from javalang.parse import parse
-
+from functools import lru_cache
 import aiofiles
 import bonobo
 
+from veniq.metrics.ncss.ncss import NCSSMetric
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
 from veniq.utils.ast_builder import build_ast
 from veniq.dataset_collection.augmentation import collect_info_about_functions_without_params
@@ -25,7 +26,6 @@ def read_file(filepath: str):
 def get_list_of_files(path: str):
     test_files = set(Path(path).glob('**/*Test*.java'))
     not_test_files = set(Path(path).glob('**/*.java'))
-    print('get_list_of_files')
     for x in not_test_files.difference(test_files):
         yield x
 
@@ -57,6 +57,7 @@ def preprocess(file: str):
     yield {'text': text}
 
 
+@lru_cache()
 def create_dirs(output):
     def create_existing_dir(directory):
         if not directory.exists():
@@ -67,10 +68,12 @@ def create_dirs(output):
     create_existing_dir(output_dir)
     input_dir = full_dataset_folder / 'input_files'
     create_existing_dir(input_dir)
-    yield {'input_dir': input_dir, 'output_dir': output_dir}
+    return {'input_dir': input_dir, 'output_dir': output_dir}
 
 
-def save_text_to_new_file(input_dir: Path, text: str, filename: Path):
+def save_text_to_new_file(input_dir: Path, text: str, dct: Dict[Tuple, Tuple], output_dir=None):
+    print(dct)
+    filename = dct.key()
     # need to avoid situation when filenames are the same
     hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
     dst_filename = input_dir / f'{filename.stem}_{hash_path}.java'
@@ -105,18 +108,9 @@ def find_EMS(dct):
                     extracted_m_decl = method_declarations.get(method_invoked.member, [])
                     if len(extracted_m_decl) == 1:
                         t = tuple([class_declaration.name, method_invoked.line])
-                        yield {t: tuple([target_node, method_invoked, extracted_m_decl])}
-                        # result_dict[method_invoked.line] = [target_node, method_invoked, extracted_m_decl]
-        # print({'em_list': result_dict, 'ast': ast})
-        # if result_dict:
-        #     # print(f' FFF {result_dict}')
-        #     return [{'em_list': result_dict, 'ast': ast}]
-        # else:
-        #     yield {}
+                        yield {t: tuple([ast, text, target_node, method_invoked, extracted_m_decl[0]])}
     except Exception as e:
         print(str(e))
-
-    # yield {}
 
 
 def print_ast(lst):
@@ -124,29 +118,73 @@ def print_ast(lst):
     yield {}
 
 
+def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
+    # print(f'dict')
+    class_name, invocation_line = list(em_item.keys())[0]
+    ast, text, target_node, method_invoked, extracted_m_decl = list(em_item.values())[0]
+    params_dict = {
+        'ast': ast,
+        'class_name': class_name,
+        'invocation_line': invocation_line,
+        'text': text,
+        'target_node': target_node,
+        'method_invoked': method_invoked,
+        'extracted_m_decl': extracted_m_decl
+    }
+
+    yield {**params_dict, **dirs_dict}
+
+
+# def pass_params_to_next_node(**dct):
+#     print(f'dict {dct}')
+#     create_dirs()
+#     yield dct
+
+def filter_by_ncss(em_info):
+    ast = em_info['ast']
+    extracted_m_decl = em_info['extracted_m_decl']
+    ncss = NCSSMetric().value(ast.get_subtree(extracted_m_decl))
+    if ncss > 3:
+        yield em_info
+
+
+def annotate(res):
+    res['INV'] = True
+    yield res
+
+
+def filter_code_duplication(res):
+    yield res
+
+def filter_by_first_filter(res):
+    yield res
+
+
+def filter_by_second_filter(res):
+    yield res
+
+def make_inline(res):
+    yield res
+
+def save_file(res):
+    yield res
+
 def get_graph(**bonobo_args):
     output_dir = bonobo_args['output']
     dataset_dir = bonobo_args['dir']
     graph = bonobo.Graph()
-    # files = get_list_of_files('/mnt/d/temp/dataset/01')
-    # files = get_list_of_files(r'd:\\temp\\dataset\\01')
-    # print(type(files[0]))
-    # f = partial(get_list_of_files, '/mnt/d/temp/dataset/01')
-
-    dirs = graph >> create_dirs(output_dir)
-    graph.get_cursor(None) >> save_text_to_new_file
-    preprocessed_texts = dirs >> get_list_of_files(dataset_dir) >> preprocess
-    # graph.add_chain(
-    #     create_dirs(output_dir),
-    #     get_list_of_files(dataset_dir),
-    #     preprocess
-    # )
-    # dirs >> save_text_to_new_file
-    # preprocessed_texts >> save_text_to_new_file
-    result = preprocessed_texts >> find_EMS >> print_ast
-
-    # preprocessed_texts >> save_text_to_new_file
-    return result
+    dirs = create_dirs(output_dir)
+    # g = list(dirs)
+    # graph.get_cursor(None) >> pass_params_to_next_node
+    em_dict = graph >> get_list_of_files(dataset_dir) >> preprocess >> find_EMS
+    # input_dir = dirs['input_dir']
+    # output_dir = dirs['output_dir']
+    f_pass_params_to_next_node = partial(pass_params_to_next_node, dirs)
+    em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> filter_code_duplication >> \
+    annotate >> filter_by_first_filter >> filter_by_second_filter >> make_inline >> save_file
+    # dirs >> pass_params_to_next_node
+    # em_dict >> save_text_to_new_file
+    return graph
 
 
 def get_services(**options):
@@ -163,8 +201,9 @@ if __name__ == '__main__':
     bonobo_parser.add_argument(
         "-d",
         "--dir",
-        required=True,
-        help="File path to JAVA source code for methods augmentations"
+        # required=True,
+        help="File path to JAVA source code for methods augmentations",
+        default='/d/mnt/temp/dataset/01'
     )
     bonobo_parser.add_argument(
         "-o", "--output",
@@ -201,4 +240,3 @@ if __name__ == '__main__':
     # read_file
     # graph.get_cursor(b) >> f >> g
     # files_without_tests
-
