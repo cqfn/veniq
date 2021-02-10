@@ -1,6 +1,12 @@
 import re
+from pathlib import Path
 
 from veniq.utils.encoding_detector import read_text_with_autodetected_encoding
+
+
+def create_existing_dir(directory: Path):
+    if not directory.exists():
+        directory.mkdir(parents=True)
 
 
 def preprocess(file: str):
@@ -27,4 +33,4 @@ def preprocess(file: str):
     # remove whitespaces
     text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
 
-    yield {'text': text}
+    yield {'text': text, 'input_filename': file}

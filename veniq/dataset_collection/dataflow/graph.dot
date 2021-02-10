@@ -1,0 +1,128 @@
+digraph {
+	rankdir=LR
+	BEGIN [shape=point]
+	BEGIN -> 0
+	0 [label=get_list_of_files]
+	0 -> 11 [label="Java file 1"]
+	0 -> 12 [label="Java file 2"]
+	0 -> 13 [label="Java file 3"]
+	11 [label=preprocess]
+	12 [label=preprocess]
+	13 [label=preprocess]
+	21 [label=find_EMS]
+	22 [label=find_EMS]
+	23 [label=find_EMS]
+	#3 [label=partial_create_output_dirs]
+	11 -> 21 [label="Java file 1 with removed spaces and comments"]
+	12 -> 22 [label="Java file 2 with removed spaces and comments"]
+	13 -> 23 [label="Java file 3 with removed spaces and comments"]
+	31 [label=filter_by_ncss]
+	32 [label=filter_by_ncss]
+	33 [label=filter_by_ncss]
+	41 [label=filter_by_ncss]
+	42 [label=filter_by_ncss]
+	51 [label=filter_by_ncss]
+	
+	21 -> 31
+	21 -> 32
+	21 -> 33
+	22 -> 41 [label="class name, invocation_line, ast tree, text, target_method_decl, extracted_invocation, extracted_method_decl"]
+	22 -> 42
+	23 -> 51
+	
+	61 [label=filter_code_duplication]
+	62 [label=filter_code_duplication]
+	63 [label=filter_code_duplication]
+	64 [label=filter_code_duplication]
+	65 [label=filter_code_duplication]
+	66 [label=filter_code_duplication]
+	
+	31 -> 61 
+	32 -> 62 
+	33 -> 63 
+	41 -> 64 [label="prev filters"]
+	42 -> 65 
+	51 -> 66 
+
+	81 [label=filter_by_first_filter]
+	82 [label=filter_by_first_filter]
+	83 [label=filter_by_first_filter]
+	84 [label=filter_by_first_filter]
+	85 [label=filter_by_first_filter]
+	86 [label=filter_by_first_filter]
+	
+	61 -> 81
+	62 -> 82
+	63 -> 83 
+	64 -> 84 
+	65 -> 85
+	66 -> 86
+	
+
+	
+	91 [label=filter_by_second_filter]
+	92 [label=filter_by_second_filter]
+	93 [label=filter_by_second_filter]
+	94 [label=filter_by_second_filter]
+	95 [label=filter_by_second_filter]
+	96 [label=filter_by_second_filter]
+	
+	81 -> 91
+	82 -> 92
+	83 -> 93
+	84 -> 94 [label="prev filters + first_filter"]
+	85 -> 95
+	86 -> 96
+	
+	191 [label=make_inline]
+	192 [label=make_inline]
+	193 [label=make_inline]
+	194 [label=make_inline]
+	195 [label=make_inline]
+	196 [label=make_inline]
+	
+	91 -> 191
+	92 -> 192
+	93 -> 193 [label="prev filters + second_filter"]
+	94 -> 194
+	95 -> 195
+	96 -> 196
+	
+	291 [label=save_file]
+	292 [label=save_file]
+	293 [label=save_file]
+	294 [label=save_file]
+	295 [label=save_file]
+	296 [label=save_file]
+	
+	191 -> 291
+	192 -> 292
+	193 -> 293 [label="prev filters + all info about dataset"]
+	194 -> 294
+	195 -> 295
+	196 -> 296
+	
+	999 [label=aggerate_to_csv]
+	
+	391 [label=save_row_csv]
+	392 [label=save_row_csv]
+	393 [label=save_row_csv]
+	394 [label=save_row_csv]
+	395 [label=save_row_csv]
+	396 [label=save_row_csv]
+	
+	191 -> 391
+	192 -> 392
+	193 -> 393 [label="2"]
+	194 -> 394
+	195 -> 395
+	196 -> 396
+	
+	391 -> 999
+	392 -> 999
+	393 -> 999[label="row_csv"]
+	394 -> 999
+	395 -> 999
+	396 -> 999
+	
+}

@@ -7,7 +7,11 @@ from typing import List, Union, Any, Tuple
 class InlineTypesAlgorithms(Enum):
     WITH_RETURN_WITHOUT_ARGUMENTS = 0
     WITHOUT_RETURN_WITHOUT_ARGUMENTS = 1
-    DO_NOTHING = -1
+
+    @classmethod
+    def list_types(cls):
+        types = [member.name for role, member in cls.__members__.items()]
+        return types
 
 
 class SingletonDecorator:

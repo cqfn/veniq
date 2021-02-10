@@ -6,9 +6,12 @@ from typing import Dict, Tuple
 
 import bonobo
 
-from veniq.dataset_collection.dataflow.preprocess import preprocess
+from veniq.dataset_collection.dataflow.data_aggregation import aggregate
+from veniq.dataset_collection.dataflow.filter_invalid_cases import filter_invalid_cases
+from veniq.dataset_collection.dataflow.save_file import save_input_file, save_output_file
+from veniq.dataset_collection.dataflow.preprocess import preprocess, create_existing_dir
 from veniq.dataset_collection.dataflow.annotation import annotate
-from veniq.dataset_collection.dataflow.find_inline_methods import find_EMS
+from veniq.dataset_collection.dataflow.find_inline_methods import find_EMs
 from veniq.dataset_collection.dataflow.inlining import inline
 from veniq.dataset_collection.dataflow.ncss_filter import filter_by_ncss
 
@@ -22,20 +25,16 @@ def get_list_of_files(path: str):
 
 @lru_cache()
 def create_dirs(output):
-    def create_existing_dir(directory):
-        if not directory.exists():
-            directory.mkdir(parents=True)
-
     full_dataset_folder = Path(output) / 'full_dataset'
     output_dir = full_dataset_folder / 'output_files'
     create_existing_dir(output_dir)
     input_dir = full_dataset_folder / 'input_files'
     create_existing_dir(input_dir)
-    return {'input_dir': input_dir, 'output_dir': output_dir}
+    return {'input_dir': str(input_dir), 'output_dir': str(output_dir)}
 
 
 def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
-    class_name, invocation_line = list(em_item.keys())[0]
+    input_filename, class_name, invocation_line = list(em_item.keys())[0]
     ast, text, target_node, method_invoked, extracted_m_decl = list(em_item.values())[0]
     params_dict = {
         'ast': ast,
@@ -44,7 +43,8 @@ def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
         'text': text,
         'target_node': target_node,
         'method_invoked': method_invoked,
-        'extracted_m_decl': extracted_m_decl
+        'extracted_m_decl': extracted_m_decl,
+        'input_filename': input_filename
     }
 
     yield {**params_dict, **dirs_dict}
@@ -55,12 +55,22 @@ def get_graph(**bonobo_args):
     dataset_dir = bonobo_args['dir']
     graph = bonobo.Graph()
     dirs = create_dirs(output_dir)
-    em_dict = graph >> get_list_of_files(dataset_dir) >> preprocess >> find_EMS
+
+    f_save_input_files = partial(save_input_file, dirs)
+    f_aggregate = partial(aggregate, dirs)
     f_pass_params_to_next_node = partial(pass_params_to_next_node, dirs)
-    em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> annotate >> inline
+    f_save_output_files = partial(save_output_file, dirs)
+
+    preprocessed_text = graph >> get_list_of_files(dataset_dir) >> preprocess
+    em_dict = preprocessed_text >> find_EMs
+    preprocessed_text >> f_save_input_files
+    annotation_result = em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> annotate
+    inline_result = annotation_result >> filter_invalid_cases >> inline
+    annotation_result >> f_aggregate
+    inline_result >> f_save_output_files
     # TODO save file to output directory
     # TODO ignore overridden extracted functions, now it must be a different filter
-    return graph
+    return inline_result
 
 
 def get_services(**options):

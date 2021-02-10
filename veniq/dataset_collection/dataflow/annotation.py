@@ -1,9 +1,8 @@
 from enum import Enum
-from pathlib import Path
 from typing import List, Dict, Any, Tuple
 
-from dataset_collection.types_identifier import InlineTypesAlgorithms
 from veniq.ast_framework import ASTNode, AST, ASTNodeType
+from veniq.dataset_collection.types_identifier import InlineTypesAlgorithms
 
 
 class InvocationType(Enum):
@@ -398,6 +397,7 @@ def annotate(dct: Dict[str, Any]):
     if body_end_line != body_end_line:
         updated_dict['ONE_LINE_FUNCTION'] = False
     else:
+        ignored_cases.append('ONE_LINE_FUNCTION')
         updated_dict['ONE_LINE_FUNCTION'] = True
 
     if not ignored_cases:
@@ -405,8 +405,7 @@ def annotate(dct: Dict[str, Any]):
     else:
         updated_dict['NO_IGNORED_CASES'] = False
 
-
     algorithm_type = determine_algorithm_insertion_type(extracted_m_decl)
-    updated_dict['algorithm_type'] = algorithm_type.name
+    updated_dict['algorithm_type'] = algorithm_type
 
     yield {**updated_dict, **dct}

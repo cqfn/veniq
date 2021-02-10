@@ -60,7 +60,7 @@ def inline(dct: Dict[str, Any]):
     substitution opportunity by method's body,
     we create new file.
     """
-    extracted_method_decl = dct['extracted_method_decl']
+    extracted_method_decl = dct['extracted_m_decl']
     method_invoked = dct['method_invoked']
     target_node = dct['target_node']
     text = dct['text']
@@ -78,33 +78,32 @@ def inline(dct: Dict[str, Any]):
         'target_method_start_line': target_node.line,
         'do_nothing': algorithm_type.name
     }
-    updated_dict = {**updated_dict, **dct.update}
+    updated_dict = {**updated_dict, **dct}
+    lines_of_final_file, inline_method_bounds = algorithm_for_inlining().inline_function(
+        method_invoked.line,
+        body_start_line,
+        body_end_line,
+        text_lines
+    )
+    updated_dict['do_nothing'] = False
+    if inline_method_bounds is not None:
+        dct['insertion_start'] = inline_method_bounds[0]
+        dct['insertion_end'] = inline_method_bounds[1]
 
-    if algorithm_type != InlineTypesAlgorithms.DO_NOTHING:
-        lines_of_final_file, inline_method_bounds = algorithm_for_inlining().inline_function(
-            method_invoked.line,
-            body_start_line,
-            body_end_line,
-            text_lines
-        )
-        if inline_method_bounds is not None:
-            dct['insertion_start'] = inline_method_bounds[0]
-            dct['insertion_end'] = inline_method_bounds[1]
+        if get_ast_if_possible(text):
+            rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
+                method_node=target_node,
+                class_name=class_name,
+                lines_of_final_file=lines_of_final_file,
+                original_func=extracted_method_decl)
 
-            if get_ast_if_possible(text):
-                rest_of_csv_row_for_changed_file = find_lines_in_changed_file(
-                    method_node=target_node,
-                    class_name=class_name,
-                    lines_of_final_file=lines_of_final_file,
-                    original_func=extracted_method_decl)
-
-                is_valid_ast = True
-                updated_dict['is_valid_ast'] = is_valid_ast
-                updated_dict = {**updated_dict, **rest_of_csv_row_for_changed_file}
-            else:
-                is_valid_ast = False
-                updated_dict['is_valid_ast'] = is_valid_ast
-    else:
-        updated_dict['do_nothing'] = True
+            is_valid_ast = True
+            updated_dict['is_valid_ast'] = is_valid_ast
+            updated_dict['inlined_text'] = '\n'.join(lines_of_final_file)
+            updated_dict = {**updated_dict, **rest_of_csv_row_for_changed_file}
+        else:
+            is_valid_ast = False
+            updated_dict['is_valid_ast'] = is_valid_ast
+            updated_dict['do_nothing'] = True
 
     yield updated_dict

@@ -1,4 +1,5 @@
 from collections import defaultdict
+from pathlib import Path
 from typing import Dict, List
 
 from veniq.ast_framework import AST, ASTNodeType, ASTNode
@@ -6,8 +7,9 @@ from veniq.dataset_collection.augmentation import collect_info_about_functions_w
 from javalang.parse import parse
 
 
-def find_EMS(dct):
+def find_EMs(dct):
     text: str = dct['text']
+    input_filename: str = dct['input_filename']
     try:
         ast = AST.build_from_javalang(parse(text))
         classes_declaration = [
@@ -27,7 +29,7 @@ def find_EMS(dct):
                         ASTNodeType.METHOD_INVOCATION):
                     extracted_m_decl = method_declarations.get(method_invoked.member, [])
                     if len(extracted_m_decl) == 1:
-                        t = tuple([class_declaration.name, method_invoked.line])
-                        yield {t: tuple([ast, text, target_node, method_invoked, extracted_m_decl[0]])}
+                        t = tuple([input_filename, class_declaration.name, method_invoked.line])
+                        yield {t: tuple([ast, text, method_node, method_invoked, extracted_m_decl[0]])}
     except Exception as e:
         print(str(e))
