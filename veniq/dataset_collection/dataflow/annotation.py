@@ -408,5 +408,4 @@ def annotate(dct: Dict[str, Any]):
     algorithm_type = determine_algorithm_insertion_type(extracted_m_decl)
     updated_dict['algorithm_type'] = algorithm_type
 
-    print('annotated')
     yield {**updated_dict, **dct}

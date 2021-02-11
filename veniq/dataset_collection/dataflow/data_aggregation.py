@@ -1,13 +1,12 @@
-import uuid
 from pathlib import Path
 from typing import Dict, Any
 
 import pandas as pd
+from bonobo.config import Exclusive
 from pandas import DataFrame
 
 from veniq.dataset_collection.dataflow.annotation import InvocationType
 from veniq.dataset_collection.types_identifier import InlineTypesAlgorithms
-from bonobo.config import Exclusive
 
 
 def aggregate(dct: Dict[str, Any]):
@@ -44,14 +43,10 @@ def aggregate(dct: Dict[str, Any]):
     df = DataFrame(columns=columns)
     df = df.append(result, ignore_index=True)
     dataset_csv_path = input_dir.parent / 'dataset_mmm.csv'
-    debug = str(uuid.uuid1())
-    print(debug)
     if dataset_csv_path.exists():
         with Exclusive(dct):
             old_df = pd.read_csv(dataset_csv_path, encoding='utf-8', index_col=None)
             new_df = old_df.append(df)
             new_df.to_csv(dataset_csv_path, index=False)
-            print(f'{debug}_1')
     else:
-        print(f'{debug}_2')
         df.to_csv(dataset_csv_path, index=False)

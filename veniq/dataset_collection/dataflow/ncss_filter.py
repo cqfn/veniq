@@ -7,6 +7,7 @@ def filter_by_ncss(em_info):
     ncss = NCSSMetric().value(ast.get_subtree(extracted_m_decl))
     if ncss > 3:
         em_info['ncss_extracted'] = ncss
-        ncss_target_node = NCSSMetric().value(ast.get_subtree(extracted_m_decl))
+        target_node = em_info['target_node']
+        ncss_target_node = NCSSMetric().value(ast.get_subtree(target_node))
         em_info['ncss_target'] = ncss_target_node
         yield em_info

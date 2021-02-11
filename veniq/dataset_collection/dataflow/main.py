@@ -6,8 +6,8 @@ from typing import Dict, Tuple
 
 import bonobo
 
+from veniq.dataset_collection.dataflow.post_process import post_process_data
 from veniq.dataset_collection.dataflow.data_aggregation import aggregate
-from veniq.dataset_collection.dataflow.filter_invalid_cases import filter_invalid_cases
 from veniq.dataset_collection.dataflow.save_file import save_input_file, save_output_file
 from veniq.dataset_collection.dataflow.preprocess import preprocess, create_existing_dir
 from veniq.dataset_collection.dataflow.annotation import annotate
@@ -33,8 +33,8 @@ def create_dirs(output):
     return {'input_dir': str(input_dir), 'output_dir': str(output_dir)}
 
 
-def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
-    input_filename, class_name, invocation_line = list(em_item.keys())[0]
+def add_additional_params_to_output(dirs_dict: Dict[str, str], dataset_dir: str, em_item: Dict[Tuple, Tuple]):
+    original_filename, class_name, invocation_line = list(em_item.keys())[0]
     ast, text, target_node, method_invoked, extracted_m_decl = list(em_item.values())[0]
     params_dict = {
         'ast': ast,
@@ -44,7 +44,8 @@ def pass_params_to_next_node(dirs_dict, em_item: Dict[Tuple, Tuple]):
         'target_node': target_node,
         'method_invoked': method_invoked,
         'extracted_m_decl': extracted_m_decl,
-        'input_filename': input_filename
+        'original_filename': original_filename,
+        'dataset_dir': dataset_dir
     }
 
     yield {**params_dict, **dirs_dict}
@@ -56,17 +57,12 @@ def get_graph(**bonobo_args):
     graph = bonobo.Graph()
     dirs = create_dirs(output_dir)
 
-    # f_save_input_files = partial(save_input_file, dirs)
-    # f_aggregate = partial(aggregate, dirs)
-    f_pass_params_to_next_node = partial(pass_params_to_next_node, dirs)
-    # f_save_output_files = partial(save_output_file, dirs)
-
+    f_pass_params_to_next_node = partial(add_additional_params_to_output, dirs, dataset_dir)
     res = graph >> get_list_of_files(dataset_dir) >> preprocess >> find_EMs >> \
-        f_pass_params_to_next_node >> save_input_file >> filter_by_ncss >> annotate >> filter_invalid_cases
+        f_pass_params_to_next_node >> save_input_file >> filter_by_ncss >> \
+        annotate >> bonobo.Filter(lambda *s: s[1] != 'NO_IGNORED_CASES') >> \
+        inline >> save_output_file >> post_process_data >> aggregate
 
-    res = res >> save_output_file >> aggregate
-    # TODO save file to output directory
-    # TODO ignore overridden extracted functions, now it must be a different filter
     return res
 
 
@@ -76,10 +72,6 @@ def get_services(**options):
 
 if __name__ == '__main__':
     system_cores_qty = os.cpu_count() or 1
-    # argument_parser = ArgumentParser()
-
-    # args = argument_parser.parse_args()
-
     bonobo_parser = bonobo.get_argument_parser()
     bonobo_parser.add_argument(
         "-d",

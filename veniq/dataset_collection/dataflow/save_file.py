@@ -7,7 +7,8 @@ from veniq.dataset_collection.dataflow.preprocess import create_existing_dir
 
 def save_input_file(dct: Dict[str, Any]):
     input_dir = dct['input_dir']
-    filename = dct['input_filename']
+    filename = dct['original_filename']
+    print(dct['original_filename'])
     text = dct['text']
     # need to avoid situation when filenames are the same
     hash_path = hashlib.sha256(str(filename.parent).encode('utf-8')).hexdigest()
@@ -21,7 +22,7 @@ def save_input_file(dct: Dict[str, Any]):
 
 def save_output_file(dct: Dict[str, Any]):
     output_dir = dct['output_dir']
-    filename = dct['input_filename']
+    filename = dct['original_filename']
     target_node = dct['target_node']
     method_invoked = dct['method_invoked']
     text = dct['inlined_text']

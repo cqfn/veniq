@@ -33,4 +33,4 @@ def preprocess(file: str):
     # remove whitespaces
     text = "\n".join([ll.rstrip() for ll in text_without_comments.splitlines() if ll.strip()])
 
-    yield {'text': text, 'input_filename': file}
+    yield {'text': text, 'original_filename': file}
