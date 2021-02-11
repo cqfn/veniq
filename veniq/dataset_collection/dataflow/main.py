@@ -56,21 +56,18 @@ def get_graph(**bonobo_args):
     graph = bonobo.Graph()
     dirs = create_dirs(output_dir)
 
-    f_save_input_files = partial(save_input_file, dirs)
-    f_aggregate = partial(aggregate, dirs)
+    # f_save_input_files = partial(save_input_file, dirs)
+    # f_aggregate = partial(aggregate, dirs)
     f_pass_params_to_next_node = partial(pass_params_to_next_node, dirs)
-    f_save_output_files = partial(save_output_file, dirs)
+    # f_save_output_files = partial(save_output_file, dirs)
 
-    preprocessed_text = graph >> get_list_of_files(dataset_dir) >> preprocess
-    em_dict = preprocessed_text >> find_EMs
-    preprocessed_text >> f_save_input_files
-    annotation_result = em_dict >> f_pass_params_to_next_node >> filter_by_ncss >> annotate
-    inline_result = annotation_result >> filter_invalid_cases >> inline
-    annotation_result >> f_aggregate
-    inline_result >> f_save_output_files
+    res = graph >> get_list_of_files(dataset_dir) >> preprocess >> find_EMs >> \
+        f_pass_params_to_next_node >> save_input_file >> filter_by_ncss >> annotate >> filter_invalid_cases
+
+    res = res >> save_output_file >> aggregate
     # TODO save file to output directory
     # TODO ignore overridden extracted functions, now it must be a different filter
-    return inline_result
+    return res
 
 
 def get_services(**options):

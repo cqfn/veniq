@@ -60,6 +60,7 @@ def inline(dct: Dict[str, Any]):
     substitution opportunity by method's body,
     we create new file.
     """
+    print('begin inline')
     extracted_method_decl = dct['extracted_m_decl']
     method_invoked = dct['method_invoked']
     target_node = dct['target_node']
@@ -106,4 +107,5 @@ def inline(dct: Dict[str, Any]):
             updated_dict['is_valid_ast'] = is_valid_ast
             updated_dict['do_nothing'] = True
 
+    print('inlined')
     yield updated_dict

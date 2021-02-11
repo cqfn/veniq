@@ -394,7 +394,7 @@ def annotate(dct: Dict[str, Any]):
     updated_dict['extract_method_start_line'] = body_start_line
     updated_dict['extract_method_end_line'] = body_end_line
 
-    if body_end_line != body_end_line:
+    if body_start_line != body_end_line:
         updated_dict['ONE_LINE_FUNCTION'] = False
     else:
         ignored_cases.append('ONE_LINE_FUNCTION')
@@ -408,4 +408,5 @@ def annotate(dct: Dict[str, Any]):
     algorithm_type = determine_algorithm_insertion_type(extracted_m_decl)
     updated_dict['algorithm_type'] = algorithm_type
 
+    print('annotated')
     yield {**updated_dict, **dct}

@@ -5,8 +5,8 @@ from typing import Dict, Any
 from veniq.dataset_collection.dataflow.preprocess import create_existing_dir
 
 
-def save_input_file(dirs: Dict[str, Any], dct: Dict[str, Any]):
-    input_dir = dirs['input_dir']
+def save_input_file(dct: Dict[str, Any]):
+    input_dir = dct['input_dir']
     filename = dct['input_filename']
     text = dct['text']
     # need to avoid situation when filenames are the same
@@ -16,18 +16,19 @@ def save_input_file(dirs: Dict[str, Any], dct: Dict[str, Any]):
     if not dst_filename.exists():
         with open(dst_filename, 'w', encoding='utf-8') as w:
             w.write(text)
-    yield {}
+    yield dct
 
 
-def save_output_file(dirs: Dict[str, Any], dct: Dict[str, Any]):
-    output_dir = dirs['output_dir']
+def save_output_file(dct: Dict[str, Any]):
+    output_dir = dct['output_dir']
     filename = dct['input_filename']
     target_node = dct['target_node']
     method_invoked = dct['method_invoked']
     text = dct['inlined_text']
     new_full_filename = Path(output_dir, f'{filename.name}_{target_node.name}_{method_invoked.line}.java')
     create_existing_dir(new_full_filename.parent)
+    dct['output_filename'] = new_full_filename
     if not new_full_filename.exists():
         with open(new_full_filename, 'w', encoding='utf-8') as w:
             w.write(text)
-    yield {}
+    yield dct
