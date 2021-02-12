@@ -17,7 +17,7 @@ from veniq.baselines.semi.extract_semantic import \
 from veniq.baselines.semi.filter_extraction_opportunities import \
     filter_extraction_opportunities
 from veniq.baselines.semi._common_types import ExtractionOpportunity,\
-    OpportunityBenifit
+    OpportunityBenefit
 
 
 EMORange = Tuple[int, int]
@@ -148,7 +148,7 @@ def recommend_for_method(method_decl: str) -> List[EMORange]:
     if emo_groups_semi is None or emo_groups_semi == []:
         return []
 
-    all_opportunities_semi: List[Tuple[ExtractionOpportunity, OpportunityBenifit]] = \
+    all_opportunities_semi: List[Tuple[ExtractionOpportunity, OpportunityBenefit]] = \
         reduce(lambda x, y: x + list(y.opportunities), emo_groups_semi, [])
 
     all_opportunities_semi_ranked = sorted(all_opportunities_semi, key=itemgetter(1),

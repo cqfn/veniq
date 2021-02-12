@@ -22,10 +22,10 @@ class ExtractionOpportunitiesRanking(TestCase):
         extraction_opportunity_group = ExtractionOpportunityGroup(
             extraction_opportunity1, statements_semantic
         )
-        self.assertEqual(extraction_opportunity_group.benifit, 1)
+        self.assertEqual(extraction_opportunity_group.benefit, 1)
 
         extraction_opportunity_group.add_extraction_opportunity(extraction_opportunity2)
-        self.assertEqual(extraction_opportunity_group.benifit, 2)
+        self.assertEqual(extraction_opportunity_group.benefit, 2)
 
     def test_secondary_metric(self):
         statements_semantic = self._create_statements_semantic("x", "y", "x", "y")
@@ -36,12 +36,12 @@ class ExtractionOpportunitiesRanking(TestCase):
 
         extraction_opportunity_group = ExtractionOpportunityGroup(
             extraction_opportunity1, statements_semantic,
-            ExtractionOpportunityGroupSettings(significant_difference_treshold=0.6)
+            ExtractionOpportunityGroupSettings(significant_difference_threshold=0.6)
         )
-        self.assertEqual(extraction_opportunity_group.benifit, 1)
+        self.assertEqual(extraction_opportunity_group.benefit, 1)
 
         extraction_opportunity_group.add_extraction_opportunity(extraction_opportunity2)
-        self.assertEqual(extraction_opportunity_group.benifit, 1)
+        self.assertEqual(extraction_opportunity_group.benefit, 1)
 
     @staticmethod
     def _create_statements_semantic(
