@@ -68,8 +68,8 @@ class PaperExampleTestCase(TestCase):
             semantic, filtered_extraction_opportunities
         )
 
-        benifits = [group.benifit for group in ranked_extraction_opportunities_groups]
-        self.assertEqual(benifits, [24, 23, 21, 19, 19, 3])
+        benefits = [group.benefit for group in ranked_extraction_opportunities_groups]
+        self.assertEqual(benefits, [24, 23, 21, 19, 19, 3])
 
         group_sizes = [len(list(group.opportunities)) for group in ranked_extraction_opportunities_groups]
         self.assertEqual(group_sizes, [1, 1, 1, 1, 1, 1])

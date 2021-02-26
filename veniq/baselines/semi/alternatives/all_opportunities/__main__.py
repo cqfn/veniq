@@ -23,9 +23,9 @@ def _print_extraction_opportunities(
     )
 
     for extraction_opportunity_group in extraction_opportunities_groups:
-        print(f"\tExtraction opportunities group with scope {extraction_opportunity_group.benifit}:")
-        for extraction_opportunity, benifit in extraction_opportunity_group.opportunities:
-            print(f"\t\tExtraction opportunity with score {benifit}:")
+        print(f"\tExtraction opportunities group with scope {extraction_opportunity_group.benefit}:")
+        for extraction_opportunity, benefit in extraction_opportunity_group.opportunities:
+            print(f"\t\tExtraction opportunity with score {benefit}:")
             for statement in extraction_opportunity:
                 print(f"\t\t\t{statement.node_type} on line {statement.line}")
 
