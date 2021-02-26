@@ -2,6 +2,8 @@ from unittest import TestCase
 from tempfile import NamedTemporaryFile
 import os
 
+from javalang.parser import JavaSyntaxError
+
 from veniq.utils.ast_builder import build_ast
 from veniq.ast_framework import AST
 from veniq.baselines.semi.recommend import _add_class_decl_wrap,\
@@ -116,6 +118,16 @@ class TestRecommend(TestCase):
         self.assertEqual(expect_EMO, result_EMO)
 
     def test_recommend_for_method(self):
-        result_emos = recommend_for_method(self._method)
+        result_emos = recommend_for_method('\n'.join(self._method))
         all_possible_emos = {(1, 4)}
         self.assertEqual(set(result_emos), all_possible_emos, str(result_emos))
+
+    def test_javasyntaxerror(self):
+        """
+        Invalid java syntax
+        """
+        with self.assertRaises(JavaSyntaxError):
+            recommend_for_method('\n'.join(self._method[1:]))
+
+        with self.assertRaises(JavaSyntaxError):
+            recommend_for_method('\n'.join(self._method[:-1]))
