@@ -43,11 +43,7 @@ def _get_method_subtree(class_decl: List[str]) -> AST:
     class_node = list(ast.get_proxy_nodes(ASTNodeType.CLASS_DECLARATION))[0]
     objects_to_consider = list(class_node.methods) + \
         list(class_node.constructors)
-    """
-    move this check to API:
-    if len(objects_to_consider) != 1:
-        raise WrongInput("More than 1 method passed to 'recommend_for_method'.")
-    """
+
     method_node = objects_to_consider[0]
     ast_subtree = ast.get_subtree(method_node)
     return ast_subtree
@@ -100,43 +96,12 @@ def _convert_ExtractionOpportunity_to_EMO(
     return (start_line_opportunity, start_line_opportunity + addit_lines_brackets)
 
 
-"""
-TODO: move to API
-
-def check_input_method_format(method_decl: str) -> None:
-
-   # check type
-   if type(method_decl) != str:
-       raise WrongInput('Input should be a string with line breaks.')
-
-    # check it is a method declaration
-    try:
-        snippet_parsed = javalang.parse.parse_member_signature(method_decl)
-        snippet_type = type(snippet_parsed)
-        if snippet_type != javalang.tree.MethodDeclaration:
-            raise WrongInput('Input to "recommend_for_method" should be a method declaration \
-                              string, received {} instead'.format(str(snippet_type)))
-    except JavaSyntaxError:
-        raise WrongInput("Javalang failed to build AST tree (javalang.parser.JavaSyntaxError)")
-"""
-
-
 def recommend_for_method(method_decl: str) -> List[EMORange]:
     '''
     Takes method declaration in form of a string with newline delimiters,
     outputs list of EMORanges in the order of decreasing recommendation.
     EMORange is a (start_line_extraction, end_line_extraction)
     (the range is inclusive).
-
-    # TODO: use error codes in the future insteach of string
-    error messages
-    '''
-    '''
-    # move this check to API:
-    try:
-        check_input_method_format(method_decl)
-    except WrongInput as e:
-        raise e
     '''
     method_decl_lines = method_decl.splitlines()
     class_decl_fake = _add_class_decl_wrap(method_decl_lines)

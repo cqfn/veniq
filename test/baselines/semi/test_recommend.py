@@ -122,39 +122,6 @@ class TestRecommend(TestCase):
         all_possible_emos = {(1, 4)}
         self.assertEqual(set(result_emos), all_possible_emos, str(result_emos))
 
-    # def test_check_input_method_format_1(self):
-    #     """
-    #     Not a string
-    #     """
-    #     with self.assertRaises(WrongInputToApi):
-    #         check_input_method_format(0)
-
-    #     with self.assertRaises(WrongInputToApi):
-    #         check_input_method_format(self._method_2)
-
-    # def test_check_input_method_format_2(self):
-    #     """
-    #     Class input instead of method
-    #     """
-    #     with self.assertRaises(WrongInputToApi):
-    #         check_input_method_format('\n'.join(self._class))
-
-    #     with self.assertRaises(WrongInputToApi):
-    #         check_input_method_format('\n'.join(self._class_2))
-
-    # def test_wronginput_toapi_1(self):
-    #     """
-    #     Class input instead of method
-    #     """
-    #     with self.assertRaises(WrongInputToApi):
-    #         recommend_for_method('\n'.join(self._class))
-
-    #     with self.assertRaises(WrongInputToApi):
-    #         recommend_for_method('\n'.join(self._class_2))
-
-    #     with self.assertRaises(WrongInputToApi):
-    #         recommend_for_method('\n'.join(self._class_2_close_bracket))
-
     def test_javasyntaxerror(self):
         """
         Invalid java syntax
@@ -164,10 +131,3 @@ class TestRecommend(TestCase):
 
         with self.assertRaises(JavaSyntaxError):
             recommend_for_method('\n'.join(self._method[:-1]))
-
-    # def test_wronginput_toapi_3(self):
-    #     """
-    #     Multiple methods
-    #     """
-    #     with self.assertRaises(WrongInputToApi):
-    #         recommend_for_method('\n'.join(self._method + self._method_2))
