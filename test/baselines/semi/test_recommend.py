@@ -118,7 +118,7 @@ class TestRecommend(TestCase):
         self.assertEqual(expect_EMO, result_EMO)
 
     def test_recommend_for_method(self):
-        result_emos = recommend_for_method('\n'.join(self._method))
+        result_emos = recommend_for_method(self._method)
         all_possible_emos = {(1, 4)}
         self.assertEqual(set(result_emos), all_possible_emos, str(result_emos))
 
@@ -127,7 +127,7 @@ class TestRecommend(TestCase):
         Invalid java syntax
         """
         with self.assertRaises(JavaSyntaxError):
-            recommend_for_method('\n'.join(self._method[1:]))
+            recommend_for_method(self._method[1:])
 
         with self.assertRaises(JavaSyntaxError):
-            recommend_for_method('\n'.join(self._method[:-1]))
+            recommend_for_method(self._method[:-1])

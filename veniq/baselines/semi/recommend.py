@@ -96,14 +96,13 @@ def _convert_ExtractionOpportunity_to_EMO(
     return (start_line_opportunity, start_line_opportunity + addit_lines_brackets)
 
 
-def recommend_for_method(method_decl: str) -> List[EMORange]:
+def recommend_for_method(method_decl_lines: List[str]) -> List[EMORange]:
     '''
-    Takes method declaration in form of a string with newline delimiters,
+    Takes method declaration in form of a list of strings,
     outputs list of EMORanges in the order of decreasing recommendation.
     EMORange is a (start_line_extraction, end_line_extraction)
     (the range is inclusive).
     '''
-    method_decl_lines = method_decl.splitlines()
     class_decl_fake = _add_class_decl_wrap(method_decl_lines)
     try:
         method_subtree = _get_method_subtree(class_decl_fake)
