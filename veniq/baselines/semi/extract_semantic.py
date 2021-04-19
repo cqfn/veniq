@@ -40,6 +40,8 @@ class _SemanticExtractor:
             ASTNodeType.CLASS_DECLARATION: lambda _: StatementSemantic(),
             # Try by itself does not has any semantic
             ASTNodeType.TRY_STATEMENT: lambda _: StatementSemantic(),
+            # Empty statement
+            ASTNodeType.STATEMENT: lambda _: StatementSemantic(),
         }
 
     def on_node_entering(self, node: Union[Block, Statement]) -> None:

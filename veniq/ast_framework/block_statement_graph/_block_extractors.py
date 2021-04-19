@@ -143,4 +143,7 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     # multi block statements
     ASTNodeType.IF_STATEMENT: _extract_blocks_from_if_branching,
     ASTNodeType.TRY_STATEMENT: _extract_blocks_from_try_statement,
+    # Empty statement
+    ASTNodeType.STATEMENT: lambda _: [],
 }
+
