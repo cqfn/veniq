@@ -146,4 +146,3 @@ _block_extractors: Dict[ASTNodeType, Callable[[ASTNode], List[BlockInfo]]] = {
     # Empty statement
     ASTNodeType.STATEMENT: lambda _: [],
 }
-
